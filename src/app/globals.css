@@ -126,4 +126,9 @@
   html {
     @apply font-sans;
   }
+
+  buttonbutton:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
 }
