@@ -20,9 +20,27 @@ import type { GenericId as Id } from "convex/values";
  * ```
  */
 export declare const api: {
-  task: {
-    create: FunctionReference<"mutation", "public", {}, any>;
-    get: FunctionReference<"query", "public", {}, any>;
+  seed: {
+    seedEmployee: FunctionReference<
+      "action",
+      "public",
+      {
+        employees: Array<{
+          department: string;
+          division: string;
+          email?: string;
+          employeeId: string;
+          name: string;
+          password: string;
+          position: string;
+          rank: string;
+        }>;
+      },
+      any
+    >;
+  };
+  user: {
+    getCurrentUser: FunctionReference<"query", "public", {}, any>;
   };
 };
 
@@ -166,6 +184,55 @@ export declare const internal: {
         any
       >;
     };
+    server: {
+      aggregateBackfill: FunctionReference<"mutation", "internal", any, any>;
+      aggregateBackfillChunk: FunctionReference<
+        "mutation",
+        "internal",
+        any,
+        any
+      >;
+      aggregateBackfillStatus: FunctionReference<
+        "mutation",
+        "internal",
+        any,
+        any
+      >;
+      migrationCancel: FunctionReference<"mutation", "internal", any, any>;
+      migrationRun: FunctionReference<"mutation", "internal", any, any>;
+      migrationRunChunk: FunctionReference<"mutation", "internal", any, any>;
+      migrationStatus: FunctionReference<"mutation", "internal", any, any>;
+      reset: FunctionReference<"action", "internal", any, any>;
+      resetChunk: FunctionReference<
+        "mutation",
+        "internal",
+        { cursor: string | null; tableName: string },
+        any
+      >;
+      scheduledDelete: FunctionReference<"mutation", "internal", any, any>;
+      scheduledMutationBatch: FunctionReference<
+        "mutation",
+        "internal",
+        any,
+        any
+      >;
+    };
+  };
+  seed: {
+    insertEmployee: FunctionReference<
+      "mutation",
+      "internal",
+      {
+        department: string;
+        division: string;
+        email?: string;
+        employeeId: string;
+        name: string;
+        position: string;
+        rank: string;
+      },
+      any
+    >;
   };
 };
 

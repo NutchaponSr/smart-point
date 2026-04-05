@@ -13,7 +13,7 @@ import {
 import { internal } from '../_generated/api.js';
 import type { DataModel } from '../_generated/dataModel';
 import type { GenericCtx, MutationCtx } from './server';
-
+import { withOrm } from './server';
 import schema from '../schema';
 import * as authDefinitionModule from '../auth';
 
@@ -47,6 +47,7 @@ const authRuntime = createAuthRuntime<
   moduleName: "generated/auth",
   schema,
   auth: authDefinition,
+  context: withOrm,
 });
 
 export const {

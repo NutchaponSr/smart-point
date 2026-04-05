@@ -19,8 +19,7 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
-  "create": ["mutation", typedProcedureResolver(api["task"]["create"], () => (require("../task") as Record<string, unknown>)["create"])],
-  "get": ["query", typedProcedureResolver(api["task"]["get"], () => (require("../task") as Record<string, unknown>)["get"])],
+  "getCurrentUser": ["query", typedProcedureResolver(api["user"]["getCurrentUser"], () => (require("../user") as Record<string, unknown>)["getCurrentUser"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
@@ -68,7 +67,7 @@ type GeneratedProcedureHandler<
 >;
 
 
-export function createTaskCaller<TCtx extends ProcedureCallerContext>(
+export function createUserCaller<TCtx extends ProcedureCallerContext>(
   ctx: TCtx
 ): GeneratedProcedureCaller<TCtx> {
   return generatedRuntime.getCallerFactory()(
@@ -76,7 +75,7 @@ export function createTaskCaller<TCtx extends ProcedureCallerContext>(
   ) as GeneratedProcedureCaller<TCtx>;
 }
 
-export function createTaskHandler<TCtx extends ProcedureHandlerContext>(
+export function createUserHandler<TCtx extends ProcedureHandlerContext>(
   ctx: TCtx
 ): GeneratedProcedureHandler<TCtx> {
   return generatedRuntime.getHandlerFactory()(ctx) as GeneratedProcedureHandler<TCtx>;

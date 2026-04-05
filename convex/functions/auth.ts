@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import authConfig from "./auth.config";
 
 import { convex } from "better-convex/auth";
+import { username } from "better-auth/plugins";
 
 import { defineAuth } from "./generated/auth";
 
@@ -16,8 +17,8 @@ export default defineAuth((ctx) => {
     emailAndPassword: {
       enabled: true,
       autoSignIn: true,
-      requireEmailVerification: true,
-      minPasswordLength: 8,
+      requireEmailVerification: false,
+      minPasswordLength: 5,
       maxPasswordLength: 20,
       password: {
         hash: async (password) => {
@@ -31,7 +32,8 @@ export default defineAuth((ctx) => {
       },
     },
     plugins: [
-      convex({ authConfig })
+      convex({ authConfig }),
+      username(),
     ]
   }
-})
+});

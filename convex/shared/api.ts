@@ -10,9 +10,8 @@ import type { InferInsertModel, InferSelectModel } from "better-convex/orm";
 import type { tables } from "../functions/schema";
 
 export const api = {
-  task: {
-    create: createApiLeaf<"mutation", typeof import("../functions/task").create>(convexApi["task"]["create"], { type: "mutation" }),
-    get: createApiLeaf<"query", typeof import("../functions/task").get>(convexApi["task"]["get"], { type: "query" }),
+  user: {
+    getCurrentUser: createApiLeaf<"query", typeof import("../functions/user").getCurrentUser>(convexApi["user"]["getCurrentUser"], { auth: "required", type: "query" }),
   },
   _http: {
   },
