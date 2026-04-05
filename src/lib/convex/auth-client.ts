@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 import { convexClient } from "better-convex/auth/client";
 import { createAuthMutations } from "better-convex/react";
-import { inferAdditionalFields, organizationClient } from "better-auth/client/plugins";
+import { inferAdditionalFields, usernameClient } from "better-auth/client/plugins";
 
 import type { Auth } from "@convex/auth-shared";
 
@@ -10,7 +10,7 @@ export const authClient = createAuthClient({
   plugins: [
     inferAdditionalFields<Auth>(), 
     convexClient(),
-    organizationClient(),
+    usernameClient(),
   ],
 });
 

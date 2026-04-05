@@ -27,6 +27,49 @@ import type { GenericId } from "convex/values";
  */
 
 export type DataModel = {
+  account: {
+    document: {
+      accessToken?: null | string;
+      accessTokenExpiresAt?: null | number;
+      accountId: string;
+      createdAt?: number;
+      idToken?: null | string;
+      password?: null | string;
+      providerId: string;
+      refreshToken?: null | string;
+      refreshTokenExpiresAt?: null | number;
+      scope?: null | string;
+      updatedAt?: null | number;
+      userId: Id<"user">;
+      _id: Id<"account">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "accessToken"
+      | "accessTokenExpiresAt"
+      | "accountId"
+      | "createdAt"
+      | "_creationTime"
+      | "_id"
+      | "idToken"
+      | "password"
+      | "providerId"
+      | "refreshToken"
+      | "refreshTokenExpiresAt"
+      | "scope"
+      | "updatedAt"
+      | "userId";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_accountId: ["accountId", "_creationTime"];
+      by_accountId_providerId: ["accountId", "providerId", "_creationTime"];
+      by_providerId_userId: ["providerId", "userId", "_creationTime"];
+      by_userId: ["userId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   aggregate_bucket: {
     document: {
       count: number;
@@ -258,6 +301,58 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  employee: {
+    document: {
+      department: string;
+      division: string;
+      email?: null | string;
+      employeeId: string;
+      name: string;
+      position: string;
+      rank: string;
+      _id: Id<"employee">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "_creationTime"
+      | "department"
+      | "division"
+      | "email"
+      | "employeeId"
+      | "_id"
+      | "name"
+      | "position"
+      | "rank";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_department: ["department", "_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  jwks: {
+    document: {
+      createdAt?: number;
+      privateKey: string;
+      publicKey: string;
+      _id: Id<"jwks">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "_id"
+      | "privateKey"
+      | "publicKey";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   migration_run: {
     document: {
       allowDrift: boolean;
@@ -342,19 +437,95 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
-  tasks: {
+  session: {
     document: {
-      completed?: null | boolean;
-      description?: null | string;
-      title?: null | string;
-      _id: Id<"tasks">;
+      createdAt?: number;
+      expiresAt: number;
+      ipAddress?: null | string;
+      token: string;
+      updatedAt?: null | number;
+      userAgent?: null | string;
+      userId: Id<"user">;
+      _id: Id<"session">;
       _creationTime: number;
     };
-    fieldPaths: "completed" | "_creationTime" | "description" | "_id" | "title";
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "expiresAt"
+      | "_id"
+      | "ipAddress"
+      | "token"
+      | "updatedAt"
+      | "userAgent"
+      | "userId";
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
-      by_completed: ["completed", "_creationTime"];
+      by_expiresAt: ["expiresAt", "_creationTime"];
+      by_expiresAt_userId: ["expiresAt", "userId", "_creationTime"];
+      by_token: ["token", "_creationTime"];
+      by_userId: ["userId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  user: {
+    document: {
+      createdAt?: number;
+      displayUsername: string;
+      email: string;
+      emailVerified?: null | boolean;
+      image?: null | string;
+      name: string;
+      updatedAt?: null | number;
+      username: string;
+      _id: Id<"user">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "displayUsername"
+      | "email"
+      | "emailVerified"
+      | "_id"
+      | "image"
+      | "name"
+      | "updatedAt"
+      | "username";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      email: ["email", "_creationTime"];
+      username: ["username", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  verification: {
+    document: {
+      createdAt?: number;
+      expiresAt: number;
+      identifier: string;
+      updatedAt?: null | number;
+      value: string;
+      _id: Id<"verification">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "expiresAt"
+      | "_id"
+      | "identifier"
+      | "updatedAt"
+      | "value";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_expiresAt: ["expiresAt", "_creationTime"];
+      by_identifier: ["identifier", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};
