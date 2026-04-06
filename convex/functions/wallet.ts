@@ -1,9 +1,10 @@
 import z from "zod/v4";
 
-import { privateMutation, publicQuery } from "../lib/crpc";
+import { authQuery, privateMutation, publicQuery } from "../lib/crpc";
 
 import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import { CRPCError } from "better-convex/server";
 
 const BATCH_SIZE = 100;
 
@@ -70,9 +71,19 @@ export const initial = privateMutation
     });
   });
 
-export const getMany = publicQuery
+export const getOne = authQuery
   .query(async ({ ctx }) => {
-    return await ctx.db
+    const wallet = await ctx.db
       .query("wallet")
-      .collect();
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", ctx.user.employeeId as Id<"employee">))
+      .first();
+
+    if (!wallet) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Wallet not found",
+      })
+    }
+
+    return wallet;
   });

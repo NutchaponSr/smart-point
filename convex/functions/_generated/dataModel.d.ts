@@ -476,6 +476,7 @@ export type DataModel = {
       displayUsername: string;
       email: string;
       emailVerified?: null | boolean;
+      employeeId: Id<"employee">;
       image?: null | string;
       name: string;
       updatedAt?: null | number;
@@ -489,6 +490,7 @@ export type DataModel = {
       | "displayUsername"
       | "email"
       | "emailVerified"
+      | "employeeId"
       | "_id"
       | "image"
       | "name"
@@ -497,8 +499,9 @@ export type DataModel = {
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
-      email: ["email", "_creationTime"];
-      username: ["username", "_creationTime"];
+      by_email: ["email", "_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_username: ["username", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};

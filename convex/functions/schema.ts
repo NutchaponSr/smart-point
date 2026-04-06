@@ -9,9 +9,11 @@ export const user = convexTable("user", {
   updatedAt: timestamp().$onUpdate(() => new Date()),
   username: text().notNull(),
   displayUsername: text().notNull(),
+  employeeId: id("employee").notNull(),
 }, (t) => [
-  index("email").on(t.email),
-  index("username").on(t.username),
+  index("by_email").on(t.email),
+  index("by_username").on(t.username),
+  index("by_employeeId").on(t.employeeId),
 ]);
 
 export const session = convexTable("session", {

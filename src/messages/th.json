@@ -1,0 +1,8 @@
+{
+  "nav": {
+      "transaction": "รายการ",
+      "reward": "รางวัล",
+      "leaderboard": "กระดานผู้นำ",
+      "dashboard": "แดชบอร์ด"
+  }
+}
