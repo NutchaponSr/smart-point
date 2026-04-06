@@ -530,6 +530,30 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  wallet: {
+    document: {
+      employeeId: Id<"employee">;
+      givingBudget: number;
+      lastBudgetUpdate: number;
+      receivingBudget: number;
+      _id: Id<"wallet">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "_creationTime"
+      | "employeeId"
+      | "givingBudget"
+      | "_id"
+      | "lastBudgetUpdate"
+      | "receivingBudget";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
 };
 
 /**

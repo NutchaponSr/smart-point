@@ -1,16 +1,21 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+
 import { useCRPC } from "@/lib/convex/crpc";
 import { authClient } from "@/lib/convex/auth-client";
-import { useMutation, useQuery } from "@tanstack/react-query";
 
 const Page = () => {
+  const crpc = useCRPC();
+  
   const { data: session } = authClient.useSession();
+
+  const { data: wallets } = useQuery(crpc.wallet.getMany.queryOptions());
 
   return (
     <div>
       {JSON.stringify(session)}
+      {JSON.stringify(wallets)}
     </div>
   );
 };

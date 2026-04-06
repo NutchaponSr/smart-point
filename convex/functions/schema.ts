@@ -79,6 +79,15 @@ export const employee = convexTable("employee", {
   index("by_department").on(t.department),
 ]);
 
+export const wallet = convexTable("wallet", {
+  employeeId: id("employee").notNull(),
+  givingBudget: integer().notNull(),
+  receivingBudget: integer().notNull(),
+  lastBudgetUpdate: timestamp().notNull().defaultNow(),
+}, (t) => [
+  index("by_employeeId").on(t.employeeId),
+]);
+
 export const tables = {
   user,
   session,
@@ -86,6 +95,7 @@ export const tables = {
   verification,
   jwks,
   employee,
+  wallet,
 }
 
 export const relations = defineRelations(tables, (r) => ({
