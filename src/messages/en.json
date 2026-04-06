@@ -1,0 +1,8 @@
+{
+  "nav": {
+      "transaction": "Transaction",
+      "reward": "Reward",
+      "leaderboard": "Leaderboard",
+      "dashboard": "Dashboard"
+  }
+}

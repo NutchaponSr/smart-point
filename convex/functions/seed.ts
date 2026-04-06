@@ -87,6 +87,7 @@ export const seedEmployee = optionalAuthAction
             email: emp.email ? emp.email : `example@somboon.co.th`,
             password: emp.password,
             username: emp.employeeId,
+            employeeId: empId,
           },
         });
       } catch (err) {

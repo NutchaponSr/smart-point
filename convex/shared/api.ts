@@ -17,7 +17,7 @@ export const api = {
     getCurrentUser: createApiLeaf<"query", typeof import("../functions/user").getCurrentUser>(convexApi["user"]["getCurrentUser"], { auth: "required", type: "query" }),
   },
   wallet: {
-    getMany: createApiLeaf<"query", typeof import("../functions/wallet").getMany>(convexApi["wallet"]["getMany"], { type: "query" }),
+    getOne: createApiLeaf<"query", typeof import("../functions/wallet").getOne>(convexApi["wallet"]["getOne"], { auth: "required", type: "query" }),
   },
   _http: {
   },

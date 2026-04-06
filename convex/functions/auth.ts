@@ -16,7 +16,7 @@ export default defineAuth((ctx) => {
     },
     emailAndPassword: {
       enabled: true,
-      autoSignIn: true,
+      autoSignIn: false,
       requireEmailVerification: false,
       minPasswordLength: 5,
       maxPasswordLength: 20,
@@ -28,6 +28,14 @@ export default defineAuth((ctx) => {
         },
         verify: async ({ password, hash }) => {
           return await bcrypt.compare(password, hash);
+        },
+      },
+    },
+    user: {
+      additionalFields: {
+        employeeId: {
+          type: "string",
+          required: true,
         },
       },
     },

@@ -1,7 +1,11 @@
-
+import createMiddleware from "next-intl/middleware";
 
 import { getSessionCookie } from "better-auth/cookies";
 import { NextRequest, NextResponse } from "next/server";
+
+import { routing } from "@/i18n/routing";
+
+const initMiddleware = createMiddleware(routing);
 
 const PROTECTED_PREFIX = ["/"];
 const PUBLIC_PREFIX = ["/auth"];
@@ -13,8 +17,10 @@ function matchPrefix(pathname: string, prefixes: string[]) {
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const isProtected = matchPrefix(pathname, PROTECTED_PREFIX);
-  const isPublic = matchPrefix(pathname, PUBLIC_PREFIX);
+  const pathnameWithoutLocale = pathname.replace(/^\/(en|th)/, "") || "/";
+
+  const isProtected = matchPrefix(pathnameWithoutLocale, PROTECTED_PREFIX);
+  const isPublic = matchPrefix(pathnameWithoutLocale, PUBLIC_PREFIX);
 
   const isSignedIn = !!getSessionCookie(req);
 
@@ -29,7 +35,7 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  return NextResponse.next();
+  return initMiddleware(req);
 }
 
 export const config = {

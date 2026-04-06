@@ -43,7 +43,7 @@ export declare const api: {
     getCurrentUser: FunctionReference<"query", "public", {}, any>;
   };
   wallet: {
-    getMany: FunctionReference<"query", "public", {}, any>;
+    getOne: FunctionReference<"query", "public", {}, any>;
   };
 };
 
