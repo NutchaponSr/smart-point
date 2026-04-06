@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { BsDoorOpen } from "react-icons/bs";
 
 import { authClient } from "@/lib/convex/auth-client";
 
@@ -11,7 +12,6 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { BsDoorOpen } from "react-icons/bs";
 
 export const UserButton = () => {
   const router = useRouter();
@@ -48,7 +48,7 @@ export const UserButton = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger>
         <div role="button" className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-pink p-4 text-2xl lg:hover:text-black no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20">
           {fallback.charAt(0).toUpperCase()}
         </div>

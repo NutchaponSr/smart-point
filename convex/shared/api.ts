@@ -10,8 +10,14 @@ import type { InferInsertModel, InferSelectModel } from "better-convex/orm";
 import type { tables } from "../functions/schema";
 
 export const api = {
+  seed: {
+    seedEmployee: createApiLeaf<"action", typeof import("../functions/seed").seedEmployee>(convexApi["seed"]["seedEmployee"], { auth: "optional", type: "action" }),
+  },
   user: {
     getCurrentUser: createApiLeaf<"query", typeof import("../functions/user").getCurrentUser>(convexApi["user"]["getCurrentUser"], { auth: "required", type: "query" }),
+  },
+  wallet: {
+    getMany: createApiLeaf<"query", typeof import("../functions/wallet").getMany>(convexApi["wallet"]["getMany"], { type: "query" }),
   },
   _http: {
   },

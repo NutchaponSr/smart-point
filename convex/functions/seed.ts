@@ -34,12 +34,12 @@ export const insertEmployee = privateMutation
     });
 
     // init wallet ทันที
-    // await ctx.db.insert("wallet", {
-    //   employeeId: employeeDocId,
-    //   givingBudget: 100,
-    //   receivingBudget: 0,
-    //   lastBudgetUpdate: Date.now(),
-    // });
+    await ctx.db.insert("wallet", {
+      employeeId: employeeDocId,
+      givingBudget: 100,
+      receivingBudget: 0,
+      lastBudgetUpdate: Date.now(),
+    });
 
     return employeeDocId;
   });

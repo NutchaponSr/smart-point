@@ -42,6 +42,9 @@ export declare const api: {
   user: {
     getCurrentUser: FunctionReference<"query", "public", {}, any>;
   };
+  wallet: {
+    getMany: FunctionReference<"query", "public", {}, any>;
+  };
 };
 
 /**
@@ -231,6 +234,21 @@ export declare const internal: {
         position: string;
         rank: string;
       },
+      any
+    >;
+  };
+  wallet: {
+    initial: FunctionReference<
+      "mutation",
+      "internal",
+      { employeeId: string },
+      any
+    >;
+    monthlyReset: FunctionReference<"mutation", "internal", {}, any>;
+    resetGivingBudget: FunctionReference<
+      "mutation",
+      "internal",
+      { cursor: string | null },
       any
     >;
   };
