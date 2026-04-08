@@ -19,8 +19,8 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
-  "approve": ["mutation", typedProcedureResolver(api["transaction"]["approve"], () => (require("../transaction") as Record<string, unknown>)["approve"])],
-  "send": ["mutation", typedProcedureResolver(api["transaction"]["send"], () => (require("../transaction") as Record<string, unknown>)["send"])],
+  "getMany": ["query", typedProcedureResolver(api["reward"]["getMany"], () => (require("../reward") as Record<string, unknown>)["getMany"])],
+  "getTrending": ["query", typedProcedureResolver(api["reward"]["getTrending"], () => (require("../reward") as Record<string, unknown>)["getTrending"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
@@ -68,7 +68,7 @@ type GeneratedProcedureHandler<
 >;
 
 
-export function createTransactionCaller<TCtx extends ProcedureCallerContext>(
+export function createRewardCaller<TCtx extends ProcedureCallerContext>(
   ctx: TCtx
 ): GeneratedProcedureCaller<TCtx> {
   return generatedRuntime.getCallerFactory()(
@@ -76,7 +76,7 @@ export function createTransactionCaller<TCtx extends ProcedureCallerContext>(
   ) as GeneratedProcedureCaller<TCtx>;
 }
 
-export function createTransactionHandler<TCtx extends ProcedureHandlerContext>(
+export function createRewardHandler<TCtx extends ProcedureHandlerContext>(
   ctx: TCtx
 ): GeneratedProcedureHandler<TCtx> {
   return generatedRuntime.getHandlerFactory()(ctx) as GeneratedProcedureHandler<TCtx>;

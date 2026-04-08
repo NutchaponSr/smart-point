@@ -158,8 +158,7 @@ export const OptionsStep = ({ user }: Props) => {
               <label
                 key={index}
                 className={cn(
-                  "relative cursor-pointer text-current font-[inherit] text-base leading-snug no-underline flex gap-3 rounded-xs px-4 py-3 text-left transition-all flex-row items-center bg-background border-2 border-border",
-                  "hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[4px] hover:-translate-y-[4px]",
+                  "relative cursor-pointer text-current font-[inherit] text-base leading-snug no-underline flex gap-3 rounded-xs px-4 py-3 text-left transition-all flex-row items-center bg-background border-2 border-border hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[4px] hover:-translate-y-[4px]",
                   checked && "border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-[4px] -translate-y-[4px]"
                 )}
               >

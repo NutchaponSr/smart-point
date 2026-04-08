@@ -217,8 +217,8 @@ export const Selection = ({
               handleUnSelect();
             }}
           >
-          <BsFillXCircleFill className="size-4 block text-icon-tertiary shrink-0" />
-        </div>
+            <BsFillXCircleFill className="size-4 block text-icon-tertiary shrink-0" />
+          </div>
         ) : (
           <ChevronDownIcon className="size-4.5 shrink-0" />
         )}

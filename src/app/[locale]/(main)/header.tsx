@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BsList } from "react-icons/bs";
 import { Domine } from "next/font/google";
 import { useTranslations } from "next-intl";
+import { HiShoppingBag } from "react-icons/hi2";
 
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ export const Header = () => {
 
   return (
     <header className="z-50 pl-4 h-20 lg:pl-0 lg:pr-0 flex flex-row justify-between items-center sticky top-0 left-0 right-0 shadow-[0_2px_0_0_rgba(0,0,0,1)] bg-black">
-      <div className="flex w-full items-center gap-4">
+      <div className="flex items-center gap-4">
         <Link href="/" aria-label="Smart Point" className="shrink-0 lg:gap-1 lg:px-6">
           <span className={cn("inline-block aspect-115/22 shrink-0 text-2xl font-bold select-none text-white", font.className)}>
             Smart Point
@@ -51,10 +52,17 @@ export const Header = () => {
             </Link>
           </Button>
         </div>
+      </div>
+
+      <div className="hidden lg:flex lg:items-center gap-4">
+        <Button variant="elevated" size="iconLg" className="hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+          <HiShoppingBag className="size-6" />
+        </Button>
         <div className="flex flex-col lg:flex-row lg:h-full">
           <UserButton />
         </div>
       </div>
+
       <div className="lg:hidden flex lg:flex-col flex-row h-full">
         <button className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-pink p-4 text-lg lg:hover:text-white no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20 border-l-2">
           <BsList className="size-6" />

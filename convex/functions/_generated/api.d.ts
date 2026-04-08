@@ -23,6 +23,21 @@ export declare const api: {
   employee: {
     search: FunctionReference<"query", "public", { query: string }, any>;
   };
+  reward: {
+    getMany: FunctionReference<
+      "query",
+      "public",
+      {
+        affordable?: boolean;
+        cursor?: string | null;
+        maxCost?: number;
+        minCost?: number;
+        query?: string;
+      },
+      any
+    >;
+    getTrending: FunctionReference<"query", "public", { query?: string }, any>;
+  };
   seed: {
     seedEmployee: FunctionReference<
       "action",
@@ -41,6 +56,7 @@ export declare const api: {
       },
       any
     >;
+    seedReward: FunctionReference<"action", "public", {}, any>;
   };
   transaction: {
     approve: FunctionReference<
@@ -255,6 +271,19 @@ export declare const internal: {
         name: string;
         position: string;
         rank: string;
+      },
+      any
+    >;
+    insertReward: FunctionReference<
+      "mutation",
+      "internal",
+      {
+        description?: string;
+        image?: string;
+        isActive: boolean;
+        name: string;
+        pointCost: number;
+        stock: number;
       },
       any
     >;
