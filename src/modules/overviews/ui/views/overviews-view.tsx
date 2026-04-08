@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/tabs"
 
 import { PointHero } from "@/modules/wallets/ui/components/point-hero";
+import { RewardContent } from "@/modules/wallets/ui/components/reward-content";
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
 
 export const OverviewsView = () => {
@@ -29,11 +30,14 @@ export const OverviewsView = () => {
       <div className="relative grid grid-cols-1 px-4 lg:px-6">
         <Tabs defaultValue="transactions">
           <TabsList className="gap-0">
-            <TabsTrigger value="transactions" className="data-active:bg-purple">Transactions</TabsTrigger>
-            <TabsTrigger value="rewards" className="data-active:bg-orange">Rewards</TabsTrigger>
+            <TabsTrigger value="transactions" className="data-active:bg-purple">ธุรกรรม</TabsTrigger>
+            <TabsTrigger value="rewards" className="data-active:bg-orange">รางวัล</TabsTrigger>
           </TabsList>
           <TabsContent value="transactions">
             <TransactionContent givingBudget={wallet.givingBudget} receivingBudget={wallet.receivingBudget} />
+          </TabsContent>
+          <TabsContent value="rewards">
+            <RewardContent />
           </TabsContent>
         </Tabs>
       </div>

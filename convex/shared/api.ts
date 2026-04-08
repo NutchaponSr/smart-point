@@ -13,10 +13,16 @@ export const api = {
   employee: {
     search: createApiLeaf<"query", typeof import("../functions/employee").search>(convexApi["employee"]["search"], { auth: "required", type: "query" }),
   },
+  reward: {
+    getMany: createApiLeaf<"query", typeof import("../functions/reward").getMany>(convexApi["reward"]["getMany"], { auth: "required", type: "query" }),
+    getTrending: createApiLeaf<"query", typeof import("../functions/reward").getTrending>(convexApi["reward"]["getTrending"], { auth: "required", type: "query" }),
+  },
   seed: {
     seedEmployee: createApiLeaf<"action", typeof import("../functions/seed").seedEmployee>(convexApi["seed"]["seedEmployee"], { auth: "optional", type: "action" }),
+    seedReward: createApiLeaf<"action", typeof import("../functions/seed").seedReward>(convexApi["seed"]["seedReward"], { auth: "optional", type: "action" }),
   },
   transaction: {
+    approve: createApiLeaf<"mutation", typeof import("../functions/transaction").approve>(convexApi["transaction"]["approve"], { auth: "required", type: "mutation" }),
     send: createApiLeaf<"mutation", typeof import("../functions/transaction").send>(convexApi["transaction"]["send"], { auth: "required", type: "mutation" }),
   },
   user: {

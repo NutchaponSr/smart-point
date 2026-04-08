@@ -20,7 +20,9 @@ function createProcedureRegistry() {
 
   const procedureRegistry = {
   "insertEmployee": ["mutation", typedProcedureResolver(internal["seed"]["insertEmployee"], () => (require("../seed") as Record<string, unknown>)["insertEmployee"])],
+  "insertReward": ["mutation", typedProcedureResolver(internal["seed"]["insertReward"], () => (require("../seed") as Record<string, unknown>)["insertReward"])],
   "seedEmployee": ["action", typedProcedureResolver(api["seed"]["seedEmployee"], () => (require("../seed") as Record<string, unknown>)["seedEmployee"])],
+  "seedReward": ["action", typedProcedureResolver(api["seed"]["seedReward"], () => (require("../seed") as Record<string, unknown>)["seedReward"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
