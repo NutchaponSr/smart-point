@@ -1,4 +1,4 @@
-import { boolean, convexTable, defineRelations, defineSchema, id, index, integer, text, timestamp, uniqueIndex } from "better-convex/orm";
+import { arrayOf, boolean, convexTable, defineRelations, defineSchema, id, index, integer, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
 
 export const user = convexTable("user", {
   name: text().notNull(),
@@ -90,6 +90,97 @@ export const wallet = convexTable("wallet", {
   index("by_employeeId").on(t.employeeId),
 ]);
 
+export const transaction = convexTable("transaction", {
+  senderId: id("employee").notNull(),
+  receiverId: id("employee").notNull(),
+  amount: integer().notNull(),
+  message: text().notNull(),
+  tags: arrayOf(text()).notNull(),
+  status: textEnum(["pending", "approved", "rejected", "completed"] as const).notNull(),
+  reviewedBy: id("employee").notNull(),
+  reviewedAt: timestamp().notNull(),
+  rejectionReason: text(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_senderId").on(t.senderId),
+  index("by_receiverId").on(t.receiverId),
+  index("by_status").on(t.status),
+]);
+
+export const reward = convexTable("reward", {
+  name: text().notNull(),
+  description: text(),
+  image: text(),
+  pointCost: integer().notNull(),
+  stock: integer().notNull(), // -1 = unlimited
+  isActive: boolean().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_isActive").on(t.isActive),
+]);
+
+export const redemption = convexTable("redemption", {
+  employeeId: id("employee").notNull(),
+  rewardId: id("reward").notNull(),
+  pointSpent: integer().notNull(),
+  status: textEnum(["pending", "fulfilled", "cancelled"] as const).notNull(),
+  fulfilledBy: id("employee"),
+  fulfilledAt: timestamp(),
+  note: text(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_employeeId").on(t.employeeId),
+  index("by_rewardId").on(t.rewardId),
+  index("by_status").on(t.status),
+]);
+
+export const activity = convexTable("activity", {
+  name: text().notNull(),
+  description: text(),
+  pointReward: integer().notNull(),
+  startDate: timestamp().notNull(),
+  endDate: timestamp(),
+  maxParticipants: integer(), // null = unlimited
+  isActive: boolean().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_isActive").on(t.isActive),
+  index("by_startDate").on(t.startDate),
+]);
+
+export const activityParticipant = convexTable("activityParticipant", {
+  activityId: id("activity").notNull(),
+  employeeId: id("employee").notNull(),
+  status: textEnum(["registered", "attended", "rewarded", "cancelled"] as const).notNull(),
+  pointAwarded: integer(),
+  awardedBy: id("user"),
+  awardedAt: timestamp(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_activityId").on(t.activityId),
+  index("by_employeeId").on(t.employeeId),
+  index("by_activityId_employeeId").on(t.activityId, t.employeeId),
+]);
+
+export const pointLedger = convexTable("pointLedger", {
+  employeeId: id("employee").notNull(),
+  delta: integer().notNull(), // บวก = รับ, ลบ = จ่าย
+  balanceAfter: integer().notNull(),
+  balanceType: textEnum(["giving", "receiving"] as const).notNull(),
+  sourceType: textEnum(["transaction", "redemption", "activity", "monthly_reset"] as const).notNull(),
+  sourceId: text(),
+  note: text(),
+  createdAt: timestamp().notNull().defaultNow(),
+}, (t) => [
+  index("by_employeeId").on(t.employeeId),
+  index("by_sourceType_sourceId").on(t.sourceType, t.sourceId),
+]);
+
 export const tables = {
   user,
   session,
@@ -98,6 +189,12 @@ export const tables = {
   jwks,
   employee,
   wallet,
+  transaction,
+  reward,
+  redemption,
+  activity,
+  activityParticipant,
+  pointLedger,
 }
 
 export const relations = defineRelations(tables, (r) => ({

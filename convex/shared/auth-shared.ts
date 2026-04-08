@@ -3,5 +3,6 @@ import { Select } from "./api";
 
 export type Auth = ReturnType<typeof getAuth>;
 export type SessionUser = Select<"user"> & {
+  employee: Select<"employee">;
   session: Select<"session">;
 }

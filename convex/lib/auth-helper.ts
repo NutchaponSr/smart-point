@@ -8,20 +8,27 @@ export const getSessionData = async (ctx: QueryCtx) => {
 
   if (!session) return null;
 
-  const [user] = await Promise.all([
-    ctx.orm.query.user.findFirst({
-      where: {
-        id: session.userId,
-      },
-    }),
-  ]);
+  const user = await ctx.orm.query.user.findFirst({
+    where: {
+      id: session.userId,
+    },
+  });
 
   if (!user) return null;
+
+  const employee = await ctx.orm.query.employee.findFirst({
+    where: {
+      id: user.employeeId,
+    },
+  });
+
+  if (!employee) return null;
 
 
   return {
     session,
     user,
+    employee,
   };
 }
 
@@ -33,13 +40,12 @@ export const getSessionUser = async (ctx: QueryCtx): Promise<SessionUser | null>
   const {
     user,
     session,
+    employee,
   } = data;
 
-  const { id, ...rest } = user;
-
   return {
-    ...rest,
-    id,
+    ...user,
+    employee,
     session,
   };
 }

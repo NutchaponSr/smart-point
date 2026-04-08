@@ -49,7 +49,7 @@ export const UserButton = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <div role="button" className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-pink p-4 text-2xl lg:hover:text-black no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20">
+        <div role="button" className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-purple p-4 text-2xl lg:hover:text-black no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20">
           {fallback.charAt(0).toUpperCase()}
         </div>
       </DropdownMenuTrigger>
