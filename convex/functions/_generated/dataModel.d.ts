@@ -70,6 +70,75 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  activity: {
+    document: {
+      createdAt?: number;
+      description?: null | string;
+      endDate?: null | number;
+      isActive: boolean;
+      maxParticipants?: null | number;
+      name: string;
+      pointReward: number;
+      startDate: number;
+      updatedAt?: null | number;
+      _id: Id<"activity">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "description"
+      | "endDate"
+      | "_id"
+      | "isActive"
+      | "maxParticipants"
+      | "name"
+      | "pointReward"
+      | "startDate"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_isActive: ["isActive", "_creationTime"];
+      by_startDate: ["startDate", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  activityParticipant: {
+    document: {
+      activityId: Id<"activity">;
+      awardedAt?: null | number;
+      awardedBy?: null | Id<"user">;
+      createdAt?: number;
+      employeeId: Id<"employee">;
+      pointAwarded?: null | number;
+      status: "registered" | "attended" | "rewarded" | "cancelled";
+      updatedAt?: null | number;
+      _id: Id<"activityParticipant">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "activityId"
+      | "awardedAt"
+      | "awardedBy"
+      | "createdAt"
+      | "_creationTime"
+      | "employeeId"
+      | "_id"
+      | "pointAwarded"
+      | "status"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_activityId: ["activityId", "_creationTime"];
+      by_activityId_employeeId: ["activityId", "employeeId", "_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   aggregate_bucket: {
     document: {
       count: number;
@@ -437,6 +506,107 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  pointLedger: {
+    document: {
+      balanceAfter: number;
+      balanceType: "giving" | "receiving";
+      createdAt?: number;
+      delta: number;
+      employeeId: Id<"employee">;
+      note?: null | string;
+      sourceId?: null | string;
+      sourceType: "transaction" | "redemption" | "activity" | "monthly_reset";
+      _id: Id<"pointLedger">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "balanceAfter"
+      | "balanceType"
+      | "createdAt"
+      | "_creationTime"
+      | "delta"
+      | "employeeId"
+      | "_id"
+      | "note"
+      | "sourceId"
+      | "sourceType";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_sourceType_sourceId: ["sourceType", "sourceId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  redemption: {
+    document: {
+      createdAt?: number;
+      employeeId: Id<"employee">;
+      fulfilledAt?: null | number;
+      fulfilledBy?: null | Id<"employee">;
+      note?: null | string;
+      pointSpent: number;
+      rewardId: Id<"reward">;
+      status: "pending" | "fulfilled" | "cancelled";
+      updatedAt?: null | number;
+      _id: Id<"redemption">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "employeeId"
+      | "fulfilledAt"
+      | "fulfilledBy"
+      | "_id"
+      | "note"
+      | "pointSpent"
+      | "rewardId"
+      | "status"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_rewardId: ["rewardId", "_creationTime"];
+      by_status: ["status", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  reward: {
+    document: {
+      createdAt?: number;
+      description?: null | string;
+      image?: null | string;
+      isActive: boolean;
+      name: string;
+      pointCost: number;
+      stock: number;
+      updatedAt?: null | number;
+      _id: Id<"reward">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "description"
+      | "_id"
+      | "image"
+      | "isActive"
+      | "name"
+      | "pointCost"
+      | "stock"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_isActive: ["isActive", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   session: {
     document: {
       createdAt?: number;
@@ -466,6 +636,46 @@ export type DataModel = {
       by_expiresAt_userId: ["expiresAt", "userId", "_creationTime"];
       by_token: ["token", "_creationTime"];
       by_userId: ["userId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  transaction: {
+    document: {
+      amount: number;
+      createdAt?: number;
+      message: string;
+      receiverId: Id<"employee">;
+      rejectionReason?: null | string;
+      reviewedAt: number;
+      reviewedBy: Id<"employee">;
+      senderId: Id<"employee">;
+      status: "pending" | "approved" | "rejected" | "completed";
+      tags: Array<null | string>;
+      updatedAt?: null | number;
+      _id: Id<"transaction">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "amount"
+      | "createdAt"
+      | "_creationTime"
+      | "_id"
+      | "message"
+      | "receiverId"
+      | "rejectionReason"
+      | "reviewedAt"
+      | "reviewedBy"
+      | "senderId"
+      | "status"
+      | "tags"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_receiverId: ["receiverId", "_creationTime"];
+      by_senderId: ["senderId", "_creationTime"];
+      by_status: ["status", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};

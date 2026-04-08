@@ -17,12 +17,13 @@ import {
 export const pointHeroVariants = cva("group/card flex flex-col gap-1 overflow-hidden rounded-xs bg-card py-4 text-sm ring-2 ring-ring has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t *:[img:last-child]:rounded-b", {
   variants: {
     variant: {
-      pink: "bg-pink",
+      purple: "bg-purple",
       orange: "bg-orange", 
+      blueTint: "bg-[#D6E4ED]"
     },
   },
   defaultVariants: {
-    variant: "pink",
+    variant: "purple",
   },
 });
 
@@ -49,7 +50,7 @@ export const PointHero = ({
         <div className="flex flex-row items-center justify-between w-full">
           <Link href="/wallets" className="hover:underline">View history</Link>
           <div className="flex items-center gap-2">
-            <BsClock className="size-4" />
+            <BsClock className="size-4 stroke-[0.2]" />
             <span>Last updated 12 hours ago</span>
           </div>
         </div>

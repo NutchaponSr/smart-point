@@ -14,6 +14,18 @@ const googleSans = localFont({
       path: "../../../public/GoogleSans-Regular.woff2",
       weight: "400",
     },
+    {
+      path: "../../../public/GoogleSans-Medium.woff2",
+      weight: "500",
+    },
+    {
+      path: "../../../public/GoogleSans-SemiBold.woff2",
+      weight: "600",
+    },
+    {
+      path: "../../../public/GoogleSans-Bold.woff2",
+      weight: "700",
+    },
   ],
 });
 

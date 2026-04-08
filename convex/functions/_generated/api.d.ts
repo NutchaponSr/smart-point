@@ -20,6 +20,9 @@ import type { GenericId as Id } from "convex/values";
  * ```
  */
 export declare const api: {
+  employee: {
+    search: FunctionReference<"query", "public", { query: string }, any>;
+  };
   seed: {
     seedEmployee: FunctionReference<
       "action",
@@ -35,6 +38,25 @@ export declare const api: {
           position: string;
           rank: string;
         }>;
+      },
+      any
+    >;
+  };
+  transaction: {
+    approve: FunctionReference<
+      "mutation",
+      "public",
+      { transactionId: string },
+      any
+    >;
+    send: FunctionReference<
+      "mutation",
+      "public",
+      {
+        amount: number;
+        message: string;
+        receiverId: string;
+        tags: Array<string>;
       },
       any
     >;

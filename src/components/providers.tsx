@@ -1,17 +1,22 @@
 import { Toaster } from "sonner";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
-import { caller, HydrateClient } from "@/lib/convex/rsc";
 import { BetterConvexProvider } from "@/lib/convex/convex-provider";
+import { caller, crpc, HydrateClient, prefetch } from "@/lib/convex/rsc";
 
 export async function Providers({ children }: { children: React.ReactNode }) {
   const token = await caller.getToken();
 
+  prefetch(crpc.user.getCurrentUser.queryOptions());
+
   return (
-    <BetterConvexProvider token={token}>
-      <HydrateClient>
-        {children}
-        <Toaster />
-      </HydrateClient>
-    </BetterConvexProvider>
+    <NuqsAdapter>
+      <BetterConvexProvider token={token}>
+        <HydrateClient>
+          {children}
+          <Toaster />
+        </HydrateClient>
+      </BetterConvexProvider>
+    </NuqsAdapter>
   );
 }
