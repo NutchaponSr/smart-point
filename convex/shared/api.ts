@@ -23,6 +23,7 @@ export const api = {
   },
   transaction: {
     approve: createApiLeaf<"mutation", typeof import("../functions/transaction").approve>(convexApi["transaction"]["approve"], { auth: "required", type: "mutation" }),
+    getHistory: createApiLeaf<"query", typeof import("../functions/transaction").getHistory>(convexApi["transaction"]["getHistory"], { auth: "required", type: "query" }),
     send: createApiLeaf<"mutation", typeof import("../functions/transaction").send>(convexApi["transaction"]["send"], { auth: "required", type: "mutation" }),
   },
   user: {

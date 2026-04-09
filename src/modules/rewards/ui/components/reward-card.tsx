@@ -23,7 +23,7 @@ export const RewardCard = ({ reward }: Props) => {
         <footer className="flex h-16">
           <div className="grow p-4">
             <div className="relative grid border-[1.5px] border-border w-fit">
-              <div className="bg-pink-300 px-2 py-1 text-accent-" itemProp="point" content={String(reward.pointCost)}>
+              <div className="bg-pink px-2 py-1 text-accent-" itemProp="point" content={String(reward.pointCost)}>
                 {reward.pointCost}
               </div>
             </div>

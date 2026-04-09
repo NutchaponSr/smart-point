@@ -14,11 +14,12 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 
-export const pointHeroVariants = cva("group/card flex flex-col gap-1 overflow-hidden rounded-xs bg-card py-4 text-sm ring-2 ring-ring has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t *:[img:last-child]:rounded-b", {
+export const pointHeroVariants = cva("group/card flex flex-col gap-1 overflow-hidden rounded-xs bg-card py-4 text-sm ring-2 ring-ring has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t *:[img:last-child]:rounded-b h-max", {
   variants: {
     variant: {
       purple: "bg-purple",
       orange: "bg-orange", 
+      pink: "bg-pink",
       blueTint: "bg-[#D6E4ED]"
     },
   },

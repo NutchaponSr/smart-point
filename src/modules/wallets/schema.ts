@@ -4,7 +4,7 @@ export const sendTransactionSchema = z.object({
   employee: z.object({
     id: z.string().min(1, "กรุณาเลือกพนักงาน"),
     name: z.string(),
-    email: z.string(),
+    email: z.string().optional(),
     department: z.string(),
   }),
   amount: z.number().min(1, "กรุณาระบุจำนวนที่มากกว่า 0"),
