@@ -65,6 +65,21 @@ export declare const api: {
       { transactionId: string },
       any
     >;
+    getHistory: FunctionReference<
+      "query",
+      "public",
+      {
+        cursor?: number | null;
+        from?: number;
+        limit: number;
+        max?: number;
+        min?: number;
+        query?: string;
+        status?: Array<"pending" | "completed" | "rejected" | "approved">;
+        to?: number;
+      },
+      any
+    >;
     send: FunctionReference<
       "mutation",
       "public",

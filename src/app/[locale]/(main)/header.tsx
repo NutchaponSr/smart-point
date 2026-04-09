@@ -3,18 +3,14 @@
 import Link from "next/link";
 
 import { BsList } from "react-icons/bs";
-import { Domine } from "next/font/google";
 import { useTranslations } from "next-intl";
 import { HiShoppingBag } from "react-icons/hi2";
 
-import { cn } from "@/lib/utils";
-
 import { Button } from "@/components/ui/button";
-import { UserButton } from "@/modules/auth/ui/components/user-button";
 
-const font = Domine({
-  subsets: ["latin"],
-})
+import { Logo } from "@/components/logo";
+
+import { UserButton } from "@/modules/auth/ui/components/user-button";
 
 export const Header = () => {
   const t = useTranslations("nav");
@@ -22,11 +18,7 @@ export const Header = () => {
   return (
     <header className="z-50 pl-4 h-20 lg:pl-0 lg:pr-0 flex flex-row justify-between items-center sticky top-0 left-0 right-0 shadow-[0_2px_0_0_rgba(0,0,0,1)] bg-black">
       <div className="flex items-center gap-4">
-        <Link href="/" aria-label="Smart Point" className="shrink-0 lg:gap-1 lg:px-6">
-          <span className={cn("inline-block aspect-115/22 shrink-0 text-2xl font-bold select-none text-white", font.className)}>
-            Smart Point
-          </span>
-        </Link>
+        <Logo />
       </div>
 
       <div className="hidden lg:flex lg:items-center">

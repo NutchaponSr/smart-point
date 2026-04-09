@@ -1,18 +1,22 @@
 import CurrencyInput from "react-currency-input-field";
 
+import { ApiOutputs } from "@convex/api";
+import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
+import { RiCopperCoinFill } from "react-icons/ri";
 import { useController, useFormContext } from "react-hook-form";
 
-import { SendTransactionSchema } from "../../schema";
-import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
-import { useQuery } from "@tanstack/react-query";
 import { useCRPC } from "@/lib/convex/crpc";
-import { Label } from "@/components/ui/label";
-import { useSearchEmployee } from "../../stores/use-search-employee";
-import { Selection } from "@/components/selection";
-import { RiCopperCoinFill } from "react-icons/ri";
-import { ApiOutputs } from "@convex/api";
 
+import { Label } from "@/components/ui/label";
+
+import { Selection } from "@/components/selection";
+
+import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
+
+import { SendTransactionSchema } from "@/modules/wallets/schema";
+
+import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
 
 interface Props {
   points: number;
@@ -56,7 +60,7 @@ export const SendStep = ({ points, user }: Props) => {
         <div className="flex items-center gap-2.5">
           <UserAvatar 
             name={user.name}
-            src={user.image}
+            src={user.image || null}
             className={{
               container: "size-9",
               fallback: "text-base font-medium",

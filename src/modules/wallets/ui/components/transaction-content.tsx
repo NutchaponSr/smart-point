@@ -6,30 +6,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
+import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { Button } from "@/components/ui/button";
 
 import { SendStep } from "@/modules/wallets/ui/components/send-step";
 import { OptionsStep } from "@/modules/wallets/ui/components/options-step";
+import { CompleteStep } from "@/modules/wallets/ui/components/complete-step";
 
-import { 
-  sendTransactionSchema, 
-  SendTransactionSchema, 
-  stepFields 
+import {
+  sendTransactionSchema,
+  SendTransactionSchema,
+  stepFields
 } from "@/modules/wallets/schema";
-import { cn } from "@/lib/utils";
-import { CompleteStep } from "./complete-step";
 
 type Step = "send" | "options" | "complete";
 type Direction = "forward" | "backward";
 
 interface Props {
+  showHeader?: boolean;
   givingBudget: number;
   receivingBudget: number;
 }
 
-export const TransactionContent = ({ givingBudget }: Props) => {
+export const TransactionContent = ({ showHeader = true, givingBudget }: Props) => {
   const crpc = useCRPC();
 
   const { data: user } = useSuspenseQuery(crpc.user.getCurrentUser.queryOptions());
@@ -67,7 +68,7 @@ export const TransactionContent = ({ givingBudget }: Props) => {
 
   return (
     <section className="grid gap-4 border-t-2 border-border py-4 grid-cols-1 first:border-t-0 lg:gap-x-16 lg:gap-y-4">
-      <header className="grid content-start gap-3 pb-3 mb-3 border-b-2 border-border">
+      <header data-show={showHeader} className="data-[show=false]:hidden grid content-start gap-3 pb-3 mb-3 border-b-2 border-border">
         <div className="flex items-center gap-2 h-8">
           {step === "options" && (
             <Button
@@ -85,7 +86,7 @@ export const TransactionContent = ({ givingBudget }: Props) => {
           </h2>
         </div>
       </header>
-      
+
       <FormProvider {...form}>
         <div className={cn(
           "w-full transition-all duration-200",
@@ -111,7 +112,7 @@ export const TransactionContent = ({ givingBudget }: Props) => {
       </FormProvider>
 
       <Button
-        disabled={transaction.isPending} 
+        disabled={transaction.isPending}
         onClick={async () => {
           if (step === "complete") {
             animate("send", "backward");
@@ -121,13 +122,16 @@ export const TransactionContent = ({ givingBudget }: Props) => {
           const fieldsToValidate = stepFields[step as keyof typeof stepFields];
           const isValid = await form.trigger(fieldsToValidate);
 
-          if (!isValid) return;
+          if (!isValid) {
+            console.log("Invalid form", form.formState.errors);
+            return;
+          };
 
           if (step === "send") {
             animate("options", "forward");
           } else if (step === "options") {
             const values = form.getValues();
-            
+
             transaction.mutate({
               receiverId: values.employee.id,
               amount: values.amount,

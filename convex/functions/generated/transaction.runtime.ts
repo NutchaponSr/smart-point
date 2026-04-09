@@ -20,6 +20,7 @@ function createProcedureRegistry() {
 
   const procedureRegistry = {
   "approve": ["mutation", typedProcedureResolver(api["transaction"]["approve"], () => (require("../transaction") as Record<string, unknown>)["approve"])],
+  "getHistory": ["query", typedProcedureResolver(api["transaction"]["getHistory"], () => (require("../transaction") as Record<string, unknown>)["getHistory"])],
   "send": ["mutation", typedProcedureResolver(api["transaction"]["send"], () => (require("../transaction") as Record<string, unknown>)["send"])],
 } as const;
 
