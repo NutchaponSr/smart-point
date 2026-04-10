@@ -255,7 +255,26 @@ export const getCart = authQuery
       );
   
       return { cart, items, totalPoints };
-  })
+  });
+
+export const getOne = authQuery
+  .input(
+    z.object({
+      rewardId: z.string(),
+    })
+  )
+  .query(async ({ ctx, input }) => {
+    const reward = await ctx.db.get(input.rewardId as Id<"reward">);
+
+    if (!reward) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Reward not found",
+      });
+    }
+
+    return reward;
+  });
 
 export const addToCart = authMutation
   .input(z.object({
