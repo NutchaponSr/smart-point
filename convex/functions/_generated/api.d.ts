@@ -60,6 +60,7 @@ export declare const api: {
         }>;
       }
     >;
+    getOne: FunctionReference<"query", "public", { rewardId: string }, any>;
     getRecommend: FunctionReference<"query", "public", {}, any>;
     getTrending: FunctionReference<"query", "public", { query?: string }, any>;
   };

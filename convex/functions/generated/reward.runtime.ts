@@ -22,6 +22,7 @@ function createProcedureRegistry() {
   "addToCart": ["mutation", typedProcedureResolver(api["reward"]["addToCart"], () => (require("../reward") as Record<string, unknown>)["addToCart"])],
   "getCart": ["query", typedProcedureResolver(api["reward"]["getCart"], () => (require("../reward") as Record<string, unknown>)["getCart"])],
   "getMany": ["query", typedProcedureResolver(api["reward"]["getMany"], () => (require("../reward") as Record<string, unknown>)["getMany"])],
+  "getOne": ["query", typedProcedureResolver(api["reward"]["getOne"], () => (require("../reward") as Record<string, unknown>)["getOne"])],
   "getRecommend": ["query", typedProcedureResolver(api["reward"]["getRecommend"], () => (require("../reward") as Record<string, unknown>)["getRecommend"])],
   "getTrending": ["query", typedProcedureResolver(api["reward"]["getTrending"], () => (require("../reward") as Record<string, unknown>)["getTrending"])],
 } as const;
