@@ -370,6 +370,49 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  cart: {
+    document: {
+      createdAt?: number;
+      employeeId: Id<"employee">;
+      status: "active" | "checked_out" | "abandoned";
+      updatedAt?: null | number;
+      _id: Id<"cart">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "employeeId"
+      | "_id"
+      | "status"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_employeeId_status: ["employeeId", "status", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  cartItem: {
+    document: {
+      cartId: Id<"cart">;
+      quantity: number;
+      rewardId: Id<"reward">;
+      _id: Id<"cartItem">;
+      _creationTime: number;
+    };
+    fieldPaths: "cartId" | "_creationTime" | "_id" | "quantity" | "rewardId";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_cartId: ["cartId", "_creationTime"];
+      by_cartId_rewardId: ["cartId", "rewardId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   employee: {
     document: {
       department: string;
@@ -569,8 +612,34 @@ export type DataModel = {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
       by_employeeId: ["employeeId", "_creationTime"];
+      by_employeeId_status: ["employeeId", "status", "_creationTime"];
       by_rewardId: ["rewardId", "_creationTime"];
       by_status: ["status", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  redemptionItem: {
+    document: {
+      pointCostPerItem: number;
+      quantity: number;
+      redemptionId: Id<"redemption">;
+      rewardId: Id<"reward">;
+      _id: Id<"redemptionItem">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "_creationTime"
+      | "_id"
+      | "pointCostPerItem"
+      | "quantity"
+      | "redemptionId"
+      | "rewardId";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_redemptionId: ["redemptionId", "_creationTime"];
+      by_rewardId: ["rewardId", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};
@@ -584,6 +653,8 @@ export type DataModel = {
       name: string;
       pointCost: number;
       stock: number;
+      totalReviews: number;
+      totalStars: number;
       updatedAt?: null | number;
       _id: Id<"reward">;
       _creationTime: number;
@@ -598,11 +669,44 @@ export type DataModel = {
       | "name"
       | "pointCost"
       | "stock"
+      | "totalReviews"
+      | "totalStars"
       | "updatedAt";
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
       by_isActive: ["isActive", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  rewardReview: {
+    document: {
+      comment?: null | string;
+      createdAt?: number;
+      redemptionId: Id<"redemption">;
+      rewardId: Id<"reward">;
+      stars: number;
+      userId: Id<"user">;
+      _id: Id<"rewardReview">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "comment"
+      | "createdAt"
+      | "_creationTime"
+      | "_id"
+      | "redemptionId"
+      | "rewardId"
+      | "stars"
+      | "userId";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_redemptionId: ["redemptionId", "_creationTime"];
+      by_rewardId: ["rewardId", "_creationTime"];
+      by_userId: ["userId", "_creationTime"];
+      by_userId_rewardId: ["userId", "rewardId", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};

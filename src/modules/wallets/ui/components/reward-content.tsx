@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 
 import { SearchInput } from "@/components/search-input";
 
-import { RewardCard } from "@/modules/rewards/ui/components/reward-card";
+import { Reward } from "@/modules/rewards/ui/components/reward";
 
 export const RewardContent = () => {
   const crpc = useCRPC();
@@ -41,7 +41,7 @@ export const RewardContent = () => {
       <div className="grid gap-4">
         {data.length > 0 ? (
           data.map((reward) => (
-            <RewardCard key={reward._id} reward={reward} />
+            <Reward key={reward._id} reward={reward} variant="list" />
           ))
         ) : (
           <Empty>

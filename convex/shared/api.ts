@@ -14,7 +14,10 @@ export const api = {
     search: createApiLeaf<"query", typeof import("../functions/employee").search>(convexApi["employee"]["search"], { auth: "required", type: "query" }),
   },
   reward: {
-    getMany: createApiLeaf<"query", typeof import("../functions/reward").getMany>(convexApi["reward"]["getMany"], { auth: "required", type: "query" }),
+    addToCart: createApiLeaf<"mutation", typeof import("../functions/reward").addToCart>(convexApi["reward"]["addToCart"], { auth: "required", type: "mutation" }),
+    getCart: createApiLeaf<"query", typeof import("../functions/reward").getCart>(convexApi["reward"]["getCart"], { auth: "required", type: "query" }),
+    getMany: createApiLeaf<"query", typeof import("../functions/reward").getMany>(convexApi["reward"]["getMany"], { auth: "required", limit: 10, type: "query" }),
+    getRecommend: createApiLeaf<"query", typeof import("../functions/reward").getRecommend>(convexApi["reward"]["getRecommend"], { auth: "required", type: "query" }),
     getTrending: createApiLeaf<"query", typeof import("../functions/reward").getTrending>(convexApi["reward"]["getTrending"], { auth: "required", type: "query" }),
   },
   seed: {

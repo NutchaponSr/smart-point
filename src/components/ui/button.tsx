@@ -17,7 +17,9 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         elevated: "bg-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[4px] hover:-translate-y-[4px] border-2 border-border",
-        rounded: "rounded-full bg-black text-white border border-transparent hover:border-white"
+        roundedElevated: "rounded-full bg-black text-white border border-transparent hover:border-white",
+        rounded: "border-2 no-underline rounded-full hover:border-border bg-background border-border",
+        roundedOutline: "border-2 no-underline shrink-0 rounded-full border-transparent px-3 py-2 hover:border-border"
       },
       size: {
         default: "h-12 px-4 py-2 has-[>svg]:px-3 text-lg",
@@ -26,6 +28,7 @@ const buttonVariants = cva(
         lg: "h-12 rounded-xs px-6 has-[>svg]:px-4",
         icon: "size-8",
         iconLg: "size-12",
+        smRounded: "h-10 rounded-full gap-1.5 px-3 has-[>svg]:px-2.5",
       },
     },
     defaultVariants: {
