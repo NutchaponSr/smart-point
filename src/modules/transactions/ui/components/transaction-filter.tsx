@@ -4,6 +4,7 @@ import {
   ListFilterIcon 
 } from "lucide-react";
 import { CurrencyInput } from "react-currency-input-field";
+import { useEffect, useState } from "react";
 
 import { 
   Popover, 
@@ -17,6 +18,16 @@ import { useFilter } from "@/modules/transactions/stores/use-filter";
 
 export const TransactionFilter = () => {
   const { status, setStatus, min, setMin, max, setMax } = useFilter();
+  const [minInput, setMinInput] = useState<string>(min ? min.toString() : "");
+  const [maxInput, setMaxInput] = useState<string>(max ? max.toString() : "");
+
+  useEffect(() => {
+    setMinInput(min ? min.toString() : "");
+  }, [min]);
+
+  useEffect(() => {
+    setMaxInput(max ? max.toString() : "");
+  }, [max]);
 
   const hasFilter = (status?.length && status.length > 0) || (min !== undefined && min > 0) || (max !== undefined && max > 0);
 
@@ -89,8 +100,32 @@ export const TransactionFilter = () => {
                   allowNegativeValue={false}
                   placeholder="ระบุจำนวน"
                   decimalScale={2}
-                  value={min}
-                  onValueChange={(val) => setMin(val ? parseFloat(val) : 0)}
+                  value={minInput}
+                  onValueChange={(value) => {
+                    const nextValue = value ?? "";
+                    setMinInput(nextValue);
+
+                    if (!nextValue) {
+                      setMin(0);
+                      return;
+                    }
+
+                    if (nextValue.endsWith(".")) return;
+
+                    const parsed = parseFloat(nextValue);
+                    if (!Number.isNaN(parsed)) {
+                      setMin(parsed);
+                    }
+                  }}
+                  onBlur={() => {
+                    const parsed = parseFloat(minInput);
+                    if (Number.isNaN(parsed)) {
+                      setMin(0);
+                      setMinInput("");
+                      return;
+                    }
+                    setMin(parsed);
+                  }}
                   className="font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-purple focus:border-purple focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3"
                 />
               </fieldset>
@@ -104,8 +139,32 @@ export const TransactionFilter = () => {
                   allowNegativeValue={false}
                   placeholder="ระบุจำนวน"
                   decimalScale={2}
-                  value={max}
-                  onValueChange={(val) => setMax(val ? parseFloat(val) : 0)}
+                  value={maxInput}
+                  onValueChange={(value) => {
+                    const nextValue = value ?? "";
+                    setMaxInput(nextValue);
+
+                    if (!nextValue) {
+                      setMax(0);
+                      return;
+                    }
+
+                    if (nextValue.endsWith(".")) return;
+
+                    const parsed = parseFloat(nextValue);
+                    if (!Number.isNaN(parsed)) {
+                      setMax(parsed);
+                    }
+                  }}
+                  onBlur={() => {
+                    const parsed = parseFloat(maxInput);
+                    if (Number.isNaN(parsed)) {
+                      setMax(0);
+                      setMaxInput("");
+                      return;
+                    }
+                    setMax(parsed);
+                  }}
                   className="font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-purple focus:border-purple focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3"
                 />
               </fieldset>

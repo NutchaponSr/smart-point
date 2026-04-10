@@ -24,18 +24,43 @@ export declare const api: {
     search: FunctionReference<"query", "public", { query: string }, any>;
   };
   reward: {
+    addToCart: FunctionReference<
+      "mutation",
+      "public",
+      { quantity?: number; rewardId: string },
+      any
+    >;
+    getCart: FunctionReference<"query", "public", {}, any>;
     getMany: FunctionReference<
       "query",
       "public",
       {
-        affordable?: boolean;
         cursor?: string | null;
-        maxCost?: number;
-        minCost?: number;
-        query?: string;
+        limit?: number;
+        maxCost?: number | null;
+        minCost?: number | null;
+        q?: string | null;
+        sort?: "curated" | "trending" | "hot_and_new" | null;
+        star?: number | null;
       },
-      any
+      {
+        continueCursor: string | null;
+        isDone: boolean;
+        page: Array<{
+          _creationTime: number;
+          _id: any;
+          description?: string | null;
+          image?: string | null;
+          isActive: boolean;
+          name: string;
+          pointCost: number;
+          stock: number;
+          totalReviews: number;
+          totalStars: number;
+        }>;
+      }
     >;
+    getRecommend: FunctionReference<"query", "public", {}, any>;
     getTrending: FunctionReference<"query", "public", { query?: string }, any>;
   };
   seed: {
@@ -299,6 +324,8 @@ export declare const internal: {
         name: string;
         pointCost: number;
         stock: number;
+        totalReviews: number;
+        totalStars: number;
       },
       any
     >;

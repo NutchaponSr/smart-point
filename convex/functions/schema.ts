@@ -115,10 +115,31 @@ export const reward = convexTable("reward", {
   pointCost: integer().notNull(),
   stock: integer().notNull(), // -1 = unlimited
   isActive: boolean().notNull(),
+  totalReviews: integer().notNull(),
+  totalStars: integer().notNull(), 
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().$onUpdate(() => new Date()),
 }, (t) => [
   index("by_isActive").on(t.isActive),
+]);
+
+export const cart = convexTable("cart", {
+  employeeId: id("employee").notNull(),
+  status: textEnum(["active", "checked_out", "abandoned"] as const).notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_employeeId").on(t.employeeId),
+  index("by_employeeId_status").on(t.employeeId, t.status),
+]);
+
+export const cartItem = convexTable("cartItem", {
+  cartId: id("cart").notNull(),
+  rewardId: id("reward").notNull(),
+  quantity: integer().notNull(),
+}, (t) => [
+  index("by_cartId").on(t.cartId),
+  index("by_cartId_rewardId").on(t.cartId, t.rewardId),
 ]);
 
 export const redemption = convexTable("redemption", {
@@ -135,6 +156,7 @@ export const redemption = convexTable("redemption", {
   index("by_employeeId").on(t.employeeId),
   index("by_rewardId").on(t.rewardId),
   index("by_status").on(t.status),
+  index("by_employeeId_status").on(t.employeeId, t.status),
 ]);
 
 export const activity = convexTable("activity", {
@@ -150,6 +172,30 @@ export const activity = convexTable("activity", {
 }, (t) => [
   index("by_isActive").on(t.isActive),
   index("by_startDate").on(t.startDate),
+]);
+
+export const redemptionItem = convexTable("redemptionItem", {
+  redemptionId: id("redemption").notNull(),
+  rewardId: id("reward").notNull(),
+  quantity: integer().notNull(),
+  pointCostPerItem: integer().notNull(), // snapshot ราคา ณ เวลาแลก
+}, (t) => [
+  index("by_redemptionId").on(t.redemptionId),
+  index("by_rewardId").on(t.rewardId),
+]);
+
+export const rewardReview = convexTable("rewardReview", {
+  rewardId: id("reward").notNull(),
+  userId: id("user").notNull(),
+  redemptionId: id("redemption").notNull(),
+  stars: integer().notNull(),           // 1-5
+  comment: text(),
+  createdAt: timestamp().notNull().defaultNow(),
+}, (t) => [
+  index("by_rewardId").on(t.rewardId),
+  index("by_userId").on(t.userId),
+  index("by_redemptionId").on(t.redemptionId),
+  uniqueIndex("by_userId_rewardId").on(t.userId, t.rewardId),
 ]);
 
 export const activityParticipant = convexTable("activityParticipant", {
@@ -195,6 +241,10 @@ export const tables = {
   activity,
   activityParticipant,
   pointLedger,
+  cart,
+  cartItem,
+  redemptionItem,
+  rewardReview,
 }
 
 export const relations = defineRelations(tables, (r) => ({

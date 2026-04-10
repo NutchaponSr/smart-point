@@ -19,7 +19,10 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
+  "addToCart": ["mutation", typedProcedureResolver(api["reward"]["addToCart"], () => (require("../reward") as Record<string, unknown>)["addToCart"])],
+  "getCart": ["query", typedProcedureResolver(api["reward"]["getCart"], () => (require("../reward") as Record<string, unknown>)["getCart"])],
   "getMany": ["query", typedProcedureResolver(api["reward"]["getMany"], () => (require("../reward") as Record<string, unknown>)["getMany"])],
+  "getRecommend": ["query", typedProcedureResolver(api["reward"]["getRecommend"], () => (require("../reward") as Record<string, unknown>)["getRecommend"])],
   "getTrending": ["query", typedProcedureResolver(api["reward"]["getTrending"], () => (require("../reward") as Record<string, unknown>)["getTrending"])],
 } as const;
 
