@@ -7,7 +7,7 @@ import { HiArrowLeft, HiArrowRight } from "react-icons/hi2";
 import { Reward } from "@/modules/rewards/ui/components/reward";
 
 interface Props {
-  rewards: ApiOutputs["reward"]["getMany"]["page"];
+  rewards: NonNullable<ApiOutputs["reward"]["getRecommend"]>;
 }
 
 export const RecommendContent = ({ rewards }: Props) => {

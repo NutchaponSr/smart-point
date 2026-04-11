@@ -24,7 +24,7 @@ export const Sidebar = () => {
         </section>
       </div>
       <footer className="mt-auto hidden lg:grid">
-        <div className="cursor-pointer outline-none all-unset focus-visible:outline-none group flex items-center justify-between overflow-hidden border-t border-white/50 px-6 py-4 all-unset hover:text-accent dark:border-foreground/50">
+        <div className="cursor-pointer outline-none all-unset focus-visible:outline-none group flex items-center justify-between overflow-hidden border-t-2 border-white/50 px-6 py-4 all-unset hover:text-accent dark:border-foreground/50">
           User Button
         </div>
       </footer>

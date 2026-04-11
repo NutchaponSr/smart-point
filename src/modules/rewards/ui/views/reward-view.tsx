@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { HiShoppingBag } from "react-icons/hi2";
 import { useInfiniteQuery } from "better-convex/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -30,10 +32,13 @@ export const RewardView = () => {
         <div className="flex flex-col gap-4">
           <div className="flex w-full items-center gap-4">
             <SearchInput value={filters.q} onChange={(q) => setFilters({ ...filters, q })} placeholder="ค้นหา" />
-            <Button variant="elevated" size="lg" className="hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <HiShoppingBag className="size-6" />
-              รถเข็น
-            </Button>
+              
+            <Link href="/checkout">
+              <Button variant="elevated" size="lg" className="hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <HiShoppingBag className="size-6" />
+                รถเข็น
+              </Button>
+            </Link>
           </div>
         </div>
       </header>

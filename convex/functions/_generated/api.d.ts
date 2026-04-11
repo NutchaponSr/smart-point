@@ -20,17 +20,71 @@ import type { GenericId as Id } from "convex/values";
  * ```
  */
 export declare const api: {
-  employee: {
-    search: FunctionReference<"query", "public", { query: string }, any>;
-  };
-  reward: {
-    addToCart: FunctionReference<
+  cart: {
+    addCart: FunctionReference<
       "mutation",
       "public",
       { quantity?: number; rewardId: string },
       any
     >;
     getCart: FunctionReference<"query", "public", {}, any>;
+    redeemCart: FunctionReference<"mutation", "public", {}, any>;
+    removeCartItem: FunctionReference<
+      "mutation",
+      "public",
+      { cartItemId: string },
+      any
+    >;
+    updateCartItemQuantity: FunctionReference<
+      "mutation",
+      "public",
+      { cartItemId: string; quantity: number },
+      any
+    >;
+  };
+  employee: {
+    search: FunctionReference<"query", "public", { query: string }, any>;
+  };
+  redemption: {
+    getMany: FunctionReference<
+      "query",
+      "public",
+      {
+        cursor?: string | null;
+        limit?: number;
+        q?: string | null;
+        sort?: "recently-updated" | "purchase-date" | null;
+      },
+      {
+        continueCursor: string | null;
+        isDone: boolean;
+        page: Array<{
+          redemption: {
+            _id: any;
+            createdAt: number;
+            employeeId: string;
+            pointSpent: number;
+            quantity: number;
+            status: "pending" | "fulfilled" | "cancelled";
+          };
+          review: {
+            _id: string;
+            comment: string | null;
+            createdAt: number;
+            stars: number;
+          } | null;
+          reward: { _id: any; image: string; name: string; pointCost: number };
+        }>;
+      }
+    >;
+    reviewRedemption: FunctionReference<
+      "mutation",
+      "public",
+      { comment?: string; redemptionId: string; stars: number },
+      any
+    >;
+  };
+  reward: {
     getMany: FunctionReference<
       "query",
       "public",
@@ -323,10 +377,9 @@ export declare const internal: {
         image?: string;
         isActive: boolean;
         name: string;
+        onePerOrder?: boolean;
         pointCost: number;
         stock: number;
-        totalReviews: number;
-        totalStars: number;
       },
       any
     >;

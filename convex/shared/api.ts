@@ -10,12 +10,21 @@ import type { InferInsertModel, InferSelectModel } from "better-convex/orm";
 import type { tables } from "../functions/schema";
 
 export const api = {
+  cart: {
+    addCart: createApiLeaf<"mutation", typeof import("../functions/cart").addCart>(convexApi["cart"]["addCart"], { auth: "required", type: "mutation" }),
+    getCart: createApiLeaf<"query", typeof import("../functions/cart").getCart>(convexApi["cart"]["getCart"], { auth: "required", type: "query" }),
+    redeemCart: createApiLeaf<"mutation", typeof import("../functions/cart").redeemCart>(convexApi["cart"]["redeemCart"], { auth: "required", type: "mutation" }),
+    removeCartItem: createApiLeaf<"mutation", typeof import("../functions/cart").removeCartItem>(convexApi["cart"]["removeCartItem"], { auth: "required", type: "mutation" }),
+    updateCartItemQuantity: createApiLeaf<"mutation", typeof import("../functions/cart").updateCartItemQuantity>(convexApi["cart"]["updateCartItemQuantity"], { auth: "required", type: "mutation" }),
+  },
   employee: {
     search: createApiLeaf<"query", typeof import("../functions/employee").search>(convexApi["employee"]["search"], { auth: "required", type: "query" }),
   },
+  redemption: {
+    getMany: createApiLeaf<"query", typeof import("../functions/redemption").getMany>(convexApi["redemption"]["getMany"], { auth: "required", limit: 20, type: "query" }),
+    reviewRedemption: createApiLeaf<"mutation", typeof import("../functions/redemption").reviewRedemption>(convexApi["redemption"]["reviewRedemption"], { auth: "required", type: "mutation" }),
+  },
   reward: {
-    addToCart: createApiLeaf<"mutation", typeof import("../functions/reward").addToCart>(convexApi["reward"]["addToCart"], { auth: "required", type: "mutation" }),
-    getCart: createApiLeaf<"query", typeof import("../functions/reward").getCart>(convexApi["reward"]["getCart"], { auth: "required", type: "query" }),
     getMany: createApiLeaf<"query", typeof import("../functions/reward").getMany>(convexApi["reward"]["getMany"], { auth: "required", limit: 10, type: "query" }),
     getOne: createApiLeaf<"query", typeof import("../functions/reward").getOne>(convexApi["reward"]["getOne"], { auth: "required", type: "query" }),
     getRecommend: createApiLeaf<"query", typeof import("../functions/reward").getRecommend>(convexApi["reward"]["getRecommend"], { auth: "required", type: "query" }),

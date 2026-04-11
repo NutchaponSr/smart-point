@@ -589,7 +589,9 @@ export type DataModel = {
       fulfilledAt?: null | number;
       fulfilledBy?: null | Id<"employee">;
       note?: null | string;
+      pointCostPerItem: number;
       pointSpent: number;
+      quantity: number;
       rewardId: Id<"reward">;
       status: "pending" | "fulfilled" | "cancelled";
       updatedAt?: null | number;
@@ -604,7 +606,9 @@ export type DataModel = {
       | "fulfilledBy"
       | "_id"
       | "note"
+      | "pointCostPerItem"
       | "pointSpent"
+      | "quantity"
       | "rewardId"
       | "status"
       | "updatedAt";
@@ -619,68 +623,7 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
-  redemptionItem: {
-    document: {
-      pointCostPerItem: number;
-      quantity: number;
-      redemptionId: Id<"redemption">;
-      rewardId: Id<"reward">;
-      _id: Id<"redemptionItem">;
-      _creationTime: number;
-    };
-    fieldPaths:
-      | "_creationTime"
-      | "_id"
-      | "pointCostPerItem"
-      | "quantity"
-      | "redemptionId"
-      | "rewardId";
-    indexes: {
-      by_id: ["_id"];
-      by_creation_time: ["_creationTime"];
-      by_redemptionId: ["redemptionId", "_creationTime"];
-      by_rewardId: ["rewardId", "_creationTime"];
-    };
-    searchIndexes: {};
-    vectorIndexes: {};
-  };
-  reward: {
-    document: {
-      createdAt?: number;
-      description?: null | string;
-      image?: null | string;
-      isActive: boolean;
-      name: string;
-      pointCost: number;
-      stock: number;
-      totalReviews: number;
-      totalStars: number;
-      updatedAt?: null | number;
-      _id: Id<"reward">;
-      _creationTime: number;
-    };
-    fieldPaths:
-      | "createdAt"
-      | "_creationTime"
-      | "description"
-      | "_id"
-      | "image"
-      | "isActive"
-      | "name"
-      | "pointCost"
-      | "stock"
-      | "totalReviews"
-      | "totalStars"
-      | "updatedAt";
-    indexes: {
-      by_id: ["_id"];
-      by_creation_time: ["_creationTime"];
-      by_isActive: ["isActive", "_creationTime"];
-    };
-    searchIndexes: {};
-    vectorIndexes: {};
-  };
-  rewardReview: {
+  review: {
     document: {
       comment?: null | string;
       createdAt?: number;
@@ -688,7 +631,7 @@ export type DataModel = {
       rewardId: Id<"reward">;
       stars: number;
       userId: Id<"user">;
-      _id: Id<"rewardReview">;
+      _id: Id<"review">;
       _creationTime: number;
     };
     fieldPaths:
@@ -706,7 +649,40 @@ export type DataModel = {
       by_redemptionId: ["redemptionId", "_creationTime"];
       by_rewardId: ["rewardId", "_creationTime"];
       by_userId: ["userId", "_creationTime"];
-      by_userId_rewardId: ["userId", "rewardId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  reward: {
+    document: {
+      createdAt?: number;
+      description?: null | string;
+      image?: null | string;
+      isActive: boolean;
+      name: string;
+      onePerOrder?: null | boolean;
+      pointCost: number;
+      stock: number;
+      updatedAt?: null | number;
+      _id: Id<"reward">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "description"
+      | "_id"
+      | "image"
+      | "isActive"
+      | "name"
+      | "onePerOrder"
+      | "pointCost"
+      | "stock"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_isActive: ["isActive", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};
