@@ -19,10 +19,11 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
-  "getMany": ["query", typedProcedureResolver(api["reward"]["getMany"], () => (require("../reward") as Record<string, unknown>)["getMany"])],
-  "getOne": ["query", typedProcedureResolver(api["reward"]["getOne"], () => (require("../reward") as Record<string, unknown>)["getOne"])],
-  "getRecommend": ["query", typedProcedureResolver(api["reward"]["getRecommend"], () => (require("../reward") as Record<string, unknown>)["getRecommend"])],
-  "getTrending": ["query", typedProcedureResolver(api["reward"]["getTrending"], () => (require("../reward") as Record<string, unknown>)["getTrending"])],
+  "addCart": ["mutation", typedProcedureResolver(api["cart"]["addCart"], () => (require("../cart") as Record<string, unknown>)["addCart"])],
+  "getCart": ["query", typedProcedureResolver(api["cart"]["getCart"], () => (require("../cart") as Record<string, unknown>)["getCart"])],
+  "redeemCart": ["mutation", typedProcedureResolver(api["cart"]["redeemCart"], () => (require("../cart") as Record<string, unknown>)["redeemCart"])],
+  "removeCartItem": ["mutation", typedProcedureResolver(api["cart"]["removeCartItem"], () => (require("../cart") as Record<string, unknown>)["removeCartItem"])],
+  "updateCartItemQuantity": ["mutation", typedProcedureResolver(api["cart"]["updateCartItemQuantity"], () => (require("../cart") as Record<string, unknown>)["updateCartItemQuantity"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
@@ -70,7 +71,7 @@ type GeneratedProcedureHandler<
 >;
 
 
-export function createRewardCaller<TCtx extends ProcedureCallerContext>(
+export function createCartCaller<TCtx extends ProcedureCallerContext>(
   ctx: TCtx
 ): GeneratedProcedureCaller<TCtx> {
   return generatedRuntime.getCallerFactory()(
@@ -78,7 +79,7 @@ export function createRewardCaller<TCtx extends ProcedureCallerContext>(
   ) as GeneratedProcedureCaller<TCtx>;
 }
 
-export function createRewardHandler<TCtx extends ProcedureHandlerContext>(
+export function createCartHandler<TCtx extends ProcedureHandlerContext>(
   ctx: TCtx
 ): GeneratedProcedureHandler<TCtx> {
   return generatedRuntime.getHandlerFactory()(ctx) as GeneratedProcedureHandler<TCtx>;

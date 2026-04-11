@@ -19,10 +19,8 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
-  "getMany": ["query", typedProcedureResolver(api["reward"]["getMany"], () => (require("../reward") as Record<string, unknown>)["getMany"])],
-  "getOne": ["query", typedProcedureResolver(api["reward"]["getOne"], () => (require("../reward") as Record<string, unknown>)["getOne"])],
-  "getRecommend": ["query", typedProcedureResolver(api["reward"]["getRecommend"], () => (require("../reward") as Record<string, unknown>)["getRecommend"])],
-  "getTrending": ["query", typedProcedureResolver(api["reward"]["getTrending"], () => (require("../reward") as Record<string, unknown>)["getTrending"])],
+  "getMany": ["query", typedProcedureResolver(api["redemption"]["getMany"], () => (require("../redemption") as Record<string, unknown>)["getMany"])],
+  "reviewRedemption": ["mutation", typedProcedureResolver(api["redemption"]["reviewRedemption"], () => (require("../redemption") as Record<string, unknown>)["reviewRedemption"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
@@ -70,7 +68,7 @@ type GeneratedProcedureHandler<
 >;
 
 
-export function createRewardCaller<TCtx extends ProcedureCallerContext>(
+export function createRedemptionCaller<TCtx extends ProcedureCallerContext>(
   ctx: TCtx
 ): GeneratedProcedureCaller<TCtx> {
   return generatedRuntime.getCallerFactory()(
@@ -78,7 +76,7 @@ export function createRewardCaller<TCtx extends ProcedureCallerContext>(
   ) as GeneratedProcedureCaller<TCtx>;
 }
 
-export function createRewardHandler<TCtx extends ProcedureHandlerContext>(
+export function createRedemptionHandler<TCtx extends ProcedureHandlerContext>(
   ctx: TCtx
 ): GeneratedProcedureHandler<TCtx> {
   return generatedRuntime.getHandlerFactory()(ctx) as GeneratedProcedureHandler<TCtx>;

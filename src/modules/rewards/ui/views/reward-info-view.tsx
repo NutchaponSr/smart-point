@@ -2,14 +2,20 @@
 
 import placeholder from "../../../../../public/placeholder.png";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { Fragment, useState } from "react";
+import { useRouter } from "next/navigation";
+import { GoStarFill } from "react-icons/go";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
-import { StarRating } from "@/components/star-rating";
+
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { GoStarFill } from "react-icons/go";
+import { Progress } from "@/components/ui/progress";
+
+import { StarRating } from "@/components/star-rating";
+
+import { Review } from "@/modules/rewards/ui/components/review";
 
 interface Props {
   rewardId: string;
@@ -17,10 +23,26 @@ interface Props {
 
 export const RewardInfoView = ({ rewardId }: Props) => {
   const crpc = useCRPC();
+  const router = useRouter();
 
   const [quantity, setQuantity] = useState(0);
 
   const { data: reward } = useSuspenseQuery(crpc.reward.getOne.queryOptions({ rewardId }));
+
+  const addCart = useMutation(crpc.cart.addCart.mutationOptions());
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    addCart.mutate({
+      rewardId,
+      quantity,
+    }, {
+      onSuccess: () => {
+        router.push("/checkout");
+      }
+    });
+  }
 
   return (
     <section className="mx-auto w-full max-w-product-page lg:py-16 p-4 lg:px-32">
@@ -46,7 +68,7 @@ export const RewardInfoView = ({ rewardId }: Props) => {
               </div>
             </div>
             <div className="flex items-center px-6 py-4 max-sm:col-span-full">
-              <StarRating rating={reward.totalStars} text={String(reward.totalReviews)} />
+              <StarRating rating={reward.reviewRating} text={String(reward.reviewCount)} />
             </div>
           </section>
           <section className="border-t-2 border-border p-6">
@@ -57,7 +79,7 @@ export const RewardInfoView = ({ rewardId }: Props) => {
         </section>
         
         <section>
-          <form className="grid gap-4 p-6 not-first:border-t-2">
+          <form onSubmit={onSubmit} className="grid gap-4 p-6 not-first:border-t-2">
             <fieldset className="flex flex-col border-none gap-2">
               <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
                 <label className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30">
@@ -94,12 +116,38 @@ export const RewardInfoView = ({ rewardId }: Props) => {
               </h3>
               <div className="flex shrink-0 items-center gap-1">
                 <GoStarFill className="size-4.5" />
-                <span className="text-base font-normal">{reward.totalStars}</span>
-                <span className="text-sm font-normal">({reward.totalReviews})</span>
+                <span className="text-base font-normal">{reward.reviewRating}</span>
+                <span className="text-sm font-normal">({reward.reviewCount})</span>
               </div>
             </header>
 
-            {/* TODO: Add rating distribution */}
+            <section className="grid grid-cols-[auto_1fr_auto] gap-3">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = reward.ratingDistribution[star];
+                const pct =
+                  reward.reviewCount > 0
+                    ? Math.round((count / reward.reviewCount) * 100)
+                    : 0;
+                return (
+                <Fragment key={star}>
+                  <div className="font-medium">{star} {star === 1 ? "ดาว" : "ดาว"}</div>
+                  <Progress 
+                    value={pct}
+                    className="h-lh"
+                  />
+                  <div className="font-medium">
+                    {pct}%
+                  </div>
+                </Fragment>
+                );
+              })}
+            </section>
+
+            <section className="flex flex-col gap-4 my-1">
+              {reward.reviewers.map((reviewer) => (
+                <Review key={reviewer.reviewId} reviewer={reviewer} />
+              ))}
+            </section>
           </section>
         </section>
       </article>

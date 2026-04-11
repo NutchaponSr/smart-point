@@ -54,8 +54,7 @@ export const insertReward = privateMutation
       pointCost: z.int().min(1),
       stock: z.int().min(-1),
       isActive: z.boolean(),
-      totalReviews: z.int(),
-      totalStars: z.int(),
+      onePerOrder: z.boolean().optional(),
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -66,10 +65,10 @@ export const insertReward = privateMutation
 
     if (existing) return null;
 
+    const { onePerOrder, ...rest } = input;
     return await ctx.db.insert("reward", {
-      ...input,
-      totalReviews: 0,
-      totalStars: 0,
+      ...rest,
+      ...(onePerOrder !== undefined ? { onePerOrder } : {}),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -141,8 +140,6 @@ export const seedReward = optionalAuthAction
         pointCost: 200,
         stock: 20,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
       },
       {
         name: "Gift Voucher Central 1,000฿",
@@ -150,8 +147,6 @@ export const seedReward = optionalAuthAction
         pointCost: 380,
         stock: 10,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
       },
       {
         name: "วันลาพิเศษ 1 วัน",
@@ -159,8 +154,7 @@ export const seedReward = optionalAuthAction
         pointCost: 500,
         stock: -1,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
+        onePerOrder: true,
       },
       {
         name: "ที่จอดรถพิเศษ 1 เดือน",
@@ -168,8 +162,6 @@ export const seedReward = optionalAuthAction
         pointCost: 150,
         stock: 5,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
       },
       {
         name: "เสื้อโปโลบริษัท",
@@ -177,8 +169,6 @@ export const seedReward = optionalAuthAction
         pointCost: 80,
         stock: 50,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
       },
       {
         name: "กระเป๋าผ้าบริษัท",
@@ -186,8 +176,6 @@ export const seedReward = optionalAuthAction
         pointCost: 50,
         stock: 100,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
       },
       {
         name: "Grab Food 200฿",
@@ -195,8 +183,6 @@ export const seedReward = optionalAuthAction
         pointCost: 90,
         stock: 30,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
       },
       {
         name: "คอร์สอบรม Online",
@@ -204,8 +190,7 @@ export const seedReward = optionalAuthAction
         pointCost: 300,
         stock: -1,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
+        onePerOrder: true,
       },
       {
         name: "ประกันสุขภาพเสริม 3 เดือน",
@@ -213,8 +198,6 @@ export const seedReward = optionalAuthAction
         pointCost: 600,
         stock: 10,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
       },
       {
         name: "ทำงาน Work From Home 5 วัน",
@@ -222,8 +205,7 @@ export const seedReward = optionalAuthAction
         pointCost: 250,
         stock: -1,
         isActive: true,
-        totalReviews: 0,
-        totalStars: 0,
+        onePerOrder: true,
       },
     ];
 

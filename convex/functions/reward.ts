@@ -2,7 +2,7 @@ import z from "zod/v4";
 
 import { CRPCError } from "better-convex/server";
 
-import { authMutation, authQuery } from "../lib/crpc";
+import { authQuery } from "../lib/crpc";
 
 import { Id } from "./_generated/dataModel";
 
@@ -71,29 +71,18 @@ export const getRecommend = authQuery
 
     if (redemptions.length === 0) return [];
 
-    const redemptionIds = new Set(redemptions.map((r) => r._id));
-    const redemptionItems = (
-      await Promise.all(
-        Array.from(redemptionIds).map((id) =>
-          ctx.db
-            .query("redemptionItem")
-            .withIndex("by_redemptionId", (q) => q.eq("redemptionId", id))
-            .collect()
-        )
-      )
-    ).flat();
+    const rewardStats = new Map<
+      string,
+      { redeemCount: number; totalQuantity: number }
+    >();
 
-    if (redemptionItems.length === 0) return [];
-
-    const rewardStats = new Map<string, { redeemCount: number, totalQuantity: number }>();
-
-    for (const item of redemptionItems) {
-      const key = item.rewardId.toString();
+    for (const redemption of redemptions) {
+      const key = redemption.rewardId.toString();
       const prev = rewardStats.get(key) ?? { redeemCount: 0, totalQuantity: 0 };
 
       rewardStats.set(key, {
         redeemCount: prev.redeemCount + 1,
-        totalQuantity: prev.totalQuantity + item.quantity,
+        totalQuantity: prev.totalQuantity + redemption.quantity,
       });
     }
 
@@ -102,11 +91,18 @@ export const getRecommend = authQuery
     const rewards = await Promise.all(
       [...rewardStats.entries()].map(async ([rewardIdStr, stats]) => {
         const reward = await ctx.db.get(rewardIdStr as Id<"reward">);
+        const reviews = await ctx.db
+          .query("review")
+          .withIndex("by_rewardId", (q) =>
+            q.eq("rewardId", rewardIdStr as Id<"reward">)
+          )
+          .collect();
+
         if (!reward || !reward.isActive) return null;
 
         const avgStars =
-          reward.totalReviews > 0
-            ? reward.totalStars / reward.totalReviews
+          reviews.length > 0
+            ? reviews.reduce((sum, review) => sum + review.stars, 0) / reviews.length
             : 0;
 
         // popularity score: weighted sum ของ quantity + bonus จาก rating
@@ -159,7 +155,31 @@ export const getMany = authQuery
       .query("reward")
       .withIndex("by_isActive", (q) => q.eq("isActive", true));
 
-    const allRewards = await rewardQuery.collect();
+    const [allRewards, allReviews] = await Promise.all([
+      rewardQuery.collect(),
+      ctx.db.query("review").collect(),
+    ]);
+
+    const reviewStatsByRewardId = new Map<
+      Id<"reward">,
+      { count: number; sumStars: number }
+    >();
+    for (const review of allReviews) {
+      const prev = reviewStatsByRewardId.get(review.rewardId) ?? {
+        count: 0,
+        sumStars: 0,
+      };
+      reviewStatsByRewardId.set(review.rewardId, {
+        count: prev.count + 1,
+        sumStars: prev.sumStars + review.stars,
+      });
+    }
+
+    const avgStarsForReward = (rewardId: Id<"reward">) => {
+      const stats = reviewStatsByRewardId.get(rewardId);
+      if (!stats || stats.count === 0) return 0;
+      return stats.sumStars / stats.count;
+    };
 
     const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
     const hasQuery = normalizedQuery.length > 0;
@@ -178,11 +198,7 @@ export const getMany = authQuery
       if (hasMinCost && reward.pointCost < input.minCost!) return false;
       if (hasMaxCost && reward.pointCost > input.maxCost!) return false;
 
-      if (hasStar) {
-        const avgStars =
-          reward.totalReviews > 0 ? reward.totalStars / reward.totalReviews : 0;
-        if (avgStars < input.star!) return false;
-      }
+      if (hasStar && avgStarsForReward(reward._id) < input.star!) return false;
 
       return true;
     });
@@ -193,8 +209,8 @@ export const getMany = authQuery
       }
 
       if (input.sort === "trending") {
-        const scoreA = a.totalReviews;
-        const scoreB = b.totalReviews;
+        const scoreA = avgStarsForReward(a._id);
+        const scoreB = avgStarsForReward(b._id);
         if (scoreA !== scoreB) return scoreB - scoreA;
       }
 
@@ -203,18 +219,22 @@ export const getMany = authQuery
 
     const startIndex = Math.max(0, Number.parseInt(input.cursor ?? "0", 10) || 0);
     const endIndex = startIndex + input.limit;
-    const page = sortedRewards.slice(startIndex, endIndex).map((reward) => ({
-      name: reward.name,
-      description: reward.description,
-      image: reward.image,
-      pointCost: reward.pointCost,
-      stock: reward.stock,
-      totalReviews: reward.totalReviews,
-      totalStars: reward.totalStars,
-      isActive: reward.isActive,
-      _creationTime: reward._creationTime,
-      _id: reward._id,
-    }));
+    const page = sortedRewards.slice(startIndex, endIndex).map((reward) => {
+      const stats = reviewStatsByRewardId.get(reward._id);
+      const totalReviews = stats?.count ?? 0;
+      return {
+        name: reward.name,
+        description: reward.description,
+        image: reward.image,
+        pointCost: reward.pointCost,
+        stock: reward.stock,
+        totalReviews,
+        totalStars: avgStarsForReward(reward._id),
+        isActive: reward.isActive,
+        _creationTime: reward._creationTime,
+        _id: reward._id,
+      };
+    });
 
     const continueCursor =
       endIndex >= sortedRewards.length ? null : String(endIndex);
@@ -226,37 +246,6 @@ export const getMany = authQuery
     };
   })
 
-export const getCart = authQuery
-  .query(async ({ ctx }) => {
-    const cart = await ctx.db
-      .query("cart")
-      .withIndex("by_employeeId_status", (q) =>
-        q.eq("employeeId", ctx.user.employeeId).eq("status", "active")
-      )
-      .first();
-
-      if (!cart) return { cart: null, items: [], totalPoints: 0 };
-
-      const cartItems = await ctx.db
-        .query("cartItem")
-        .withIndex("by_cartId", (q) => q.eq("cartId", cart._id))
-        .collect();
-  
-      const items = await Promise.all(
-        cartItems.map(async (item) => {
-          const reward = await ctx.db.get(item.rewardId);
-          return { ...item, reward };
-        })
-      );
-  
-      const totalPoints = items.reduce(
-        (sum, item) => sum + (item.reward?.pointCost ?? 0) * item.quantity,
-        0
-      );
-  
-      return { cart, items, totalPoints };
-  });
-
 export const getOne = authQuery
   .input(
     z.object({
@@ -264,7 +253,8 @@ export const getOne = authQuery
     })
   )
   .query(async ({ ctx, input }) => {
-    const reward = await ctx.db.get(input.rewardId as Id<"reward">);
+    const rewardId = input.rewardId as Id<"reward">;
+    const reward = await ctx.db.get(rewardId);
 
     if (!reward) {
       throw new CRPCError({
@@ -273,58 +263,71 @@ export const getOne = authQuery
       });
     }
 
-    return reward;
-  });
+    const reviews = await ctx.db
+      .query("review")
+      .withIndex("by_rewardId", (q) => q.eq("rewardId", rewardId))
+      .order("desc")
+      .collect();
 
-export const addToCart = authMutation
-  .input(z.object({
-    rewardId: z.string(),
-    quantity: z.number().int().min(1).default(1),
-  }))
-  .mutation(async ({ ctx, input }) => {
-    const reward = await ctx.db.get(input.rewardId as Id<"reward">);
-    if (!reward || !reward.isActive) throw new Error("Reward not available");
-    if (
-      reward.stock !== -1 &&
-      reward.stock < input.quantity
-    ) {
-      throw new Error("Insufficient stock");
-    }
+    const ratingDistribution: Record<number, number> = {
+      5: 0,
+      4: 0,
+      3: 0,
+      2: 0,
+      1: 0,
+    };
 
-    const cart = await ctx.db
-      .query("cart")
-      .withIndex("by_employeeId_status", (q) =>
-        q.eq("employeeId", ctx.user.employeeId).eq("status", "active")
-      )
-      .first();
-
-    const cartId =
-      cart?._id ??
-      (await ctx.db.insert("cart", {
-        employeeId: ctx.user.employeeId,
-        status: "active",
-      }));
-
-    const existing = await ctx.db
-      .query("cartItem")
-      .withIndex("by_cartId_rewardId", (q) =>
-        q.eq("cartId", cartId).eq("rewardId", input.rewardId as Id<"reward">)
-      )
-      .first();
-
-    if (existing) {
-      const nextQty = existing.quantity + input.quantity;
-      if (reward.stock !== -1 && nextQty > reward.stock) {
-        throw new Error("Insufficient stock");
+    let sumStars = 0;
+    for (const review of reviews) {
+      sumStars += review.stars;
+      const s = review.stars;
+      if (s >= 1 && s <= 5) {
+        ratingDistribution[s] = (ratingDistribution[s] ?? 0) + 1;
       }
-      await ctx.db.patch(existing._id, {
-        quantity: nextQty,
-      });
-    } else {
-      await ctx.db.insert("cartItem", {
-        cartId: cartId,
-        rewardId: input.rewardId as Id<"reward">,
-        quantity: input.quantity,
-      });
     }
+
+    const reviewCount = reviews.length;
+    const reviewRating =
+      reviewCount > 0 ? sumStars / reviewCount : 0;
+
+    const uniqueUserIds = [...new Set(reviews.map((review) => review.userId))];
+    const users = await Promise.all(uniqueUserIds.map((userId) => ctx.db.get(userId)));
+    const userById = new Map(uniqueUserIds.map((userId, index) => [userId, users[index]]));
+
+    const existingUsers = users.filter((user): user is NonNullable<typeof user> => user !== null);
+    const uniqueEmployeeIds = [
+      ...new Set(existingUsers.map((user) => user.employeeId)),
+    ];
+    const employees = await Promise.all(
+      uniqueEmployeeIds.map((employeeId) => ctx.db.get(employeeId))
+    );
+    const employeeById = new Map(
+      uniqueEmployeeIds.map((employeeId, index) => [employeeId, employees[index]])
+    );
+
+    const reviewers = reviews.map((review) => {
+      const user = userById.get(review.userId) ?? null;
+      const employee = user ? employeeById.get(user.employeeId) ?? null : null;
+
+      return {
+        reviewId: review._id,
+        stars: review.stars,
+        comment: review.comment ?? null,
+        createdAt: review.createdAt,
+        reviewer: {
+          userId: review.userId,
+          employeeId: user?.employeeId ?? null,
+          name: employee?.name ?? null,
+          image: user?.image ?? null,
+        },
+      };
+    }).slice(0, 5);
+
+    return {
+      ...reward,
+      ratingDistribution,
+      reviewRating,
+      reviewCount,
+      reviewers,
+    };
   });
