@@ -45,6 +45,18 @@ export declare const api: {
   employee: {
     search: FunctionReference<"query", "public", { query: string }, any>;
   };
+  leaderboard: {
+    getMany: FunctionReference<
+      "query",
+      "public",
+      {
+        cursor?: number | null;
+        limit: number;
+        period: "24hr" | "7d" | "30d" | "fullTime";
+      },
+      any
+    >;
+  };
   redemption: {
     getMany: FunctionReference<
       "query",
@@ -119,6 +131,7 @@ export declare const api: {
     getTrending: FunctionReference<"query", "public", { query?: string }, any>;
   };
   seed: {
+    seedActivity: FunctionReference<"action", "public", {}, any>;
     seedEmployee: FunctionReference<
       "action",
       "public",
@@ -355,6 +368,32 @@ export declare const internal: {
     };
   };
   seed: {
+    insertActivity: FunctionReference<
+      "mutation",
+      "internal",
+      {
+        description?: string;
+        endDate?: number;
+        isActive: boolean;
+        maxParticipants?: number;
+        name: string;
+        reward:
+          | { pointReward: number; type: "points" }
+          | { ticketDiscount: number; type: "ticket" };
+        startDate: number;
+      },
+      any
+    >;
+    insertActivityParticipant: FunctionReference<
+      "mutation",
+      "internal",
+      {
+        activityId: string;
+        employeeId: string;
+        status: "registered" | "attended" | "rewarded" | "cancelled";
+      },
+      any
+    >;
     insertEmployee: FunctionReference<
       "mutation",
       "internal",
@@ -381,6 +420,12 @@ export declare const internal: {
         pointCost: number;
         stock: number;
       },
+      any
+    >;
+    internalMarkParticipantAttended: FunctionReference<
+      "mutation",
+      "internal",
+      { participationId: string },
       any
     >;
   };

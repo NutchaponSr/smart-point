@@ -1,4 +1,5 @@
-import { arrayOf, boolean, convexTable, defineRelations, defineSchema, id, index, integer, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
+import { arrayOf, boolean, convexTable, custom, defineRelations, defineSchema, id, index, integer, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
+import { v } from "convex/values";
 
 export const user = convexTable("user", {
   name: text().notNull(),
@@ -163,7 +164,12 @@ export const redemption = convexTable("redemption", {
 export const activity = convexTable("activity", {
   name: text().notNull(),
   description: text(),
-  pointReward: integer().notNull(),
+  reward: custom(
+    v.union(
+      v.object({ type: v.literal("points"), pointReward: v.number() }),
+      v.object({ type: v.literal("ticket"), ticketDiscount: v.number() }),
+    ),
+  ).notNull(),
   startDate: timestamp().notNull(),
   endDate: timestamp(),
   maxParticipants: integer(), // null = unlimited
@@ -200,7 +206,7 @@ export const activityParticipant = convexTable("activityParticipant", {
 }, (t) => [
   index("by_activityId").on(t.activityId),
   index("by_employeeId").on(t.employeeId),
-  index("by_activityId_employeeId").on(t.activityId, t.employeeId),
+  uniqueIndex("by_activityId_employeeId").on(t.activityId, t.employeeId),
 ]);
 
 export const pointLedger = convexTable("pointLedger", {

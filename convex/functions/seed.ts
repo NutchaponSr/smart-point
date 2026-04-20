@@ -1,25 +1,27 @@
+import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { optionalAuthAction, privateMutation } from "../lib/crpc";
 
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 export const insertEmployee = privateMutation
-  .input(z.object({
-    employeeId: z.string(),
-    name: z.string(),
-    email: z.string().optional(),
-    department: z.string(),
-    position: z.string(),
-    rank: z.string(),
-    division: z.string(),
-  }))
+  .input(
+    z.object({
+      employeeId: z.string(),
+      name: z.string(),
+      email: z.string().optional(),
+      department: z.string(),
+      position: z.string(),
+      rank: z.string(),
+      division: z.string(),
+    }),
+  )
   .mutation(async ({ ctx, input }) => {
     const existing = await ctx.db
       .query("employee")
-      .withIndex("by_employeeId", (q) =>
-        q.eq("employeeId", input.employeeId)
-      )
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", input.employeeId))
       .first();
 
     if (existing) return null;
@@ -55,7 +57,7 @@ export const insertReward = privateMutation
       stock: z.int().min(-1),
       isActive: z.boolean(),
       onePerOrder: z.boolean().optional(),
-    })
+    }),
   )
   .mutation(async ({ ctx, input }) => {
     const existing = await ctx.db
@@ -74,36 +76,136 @@ export const insertReward = privateMutation
     });
   });
 
-export const seedEmployee = optionalAuthAction
-  .input(z.object({
-    employees: z.array(z.object({
-      employeeId: z.string(),
+const activityRewardSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("points"),
+    pointReward: z.number().int().min(1),
+  }),
+  z.object({
+    type: z.literal("ticket"),
+    /** ส่วนลดแต้มรับ (receiving points) จากยอดรวมตะกร้าเมื่อ checkout */
+    ticketDiscount: z.number().int().min(0),
+  }),
+]);
+
+export const insertActivity = privateMutation
+  .input(
+    z.object({
       name: z.string(),
-      email: z.string().optional(),
-      department: z.string(),
-      position: z.string(),
-      rank: z.string(),
-      division: z.string(),
-      password: z.string(),
-    })),
-  }))
+      description: z.string().optional(),
+      reward: activityRewardSchema,
+      startDate: z.number(),
+      endDate: z.number().optional(),
+      maxParticipants: z.number().int().positive().optional(),
+      isActive: z.boolean(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const existing = await ctx.db
+      .query("activity")
+      .filter((q) => q.eq(q.field("name"), input.name))
+      .first();
+
+    if (existing) return null;
+
+    return await ctx.db.insert("activity", {
+      name: input.name,
+      description: input.description,
+      reward: input.reward,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      maxParticipants: input.maxParticipants,
+      isActive: input.isActive,
+    });
+  });
+
+export const insertActivityParticipant = privateMutation
+  .input(
+    z.object({
+      activityId: z.string(),
+      employeeId: z.string(),
+      status: z.enum([
+        "registered",
+        "attended",
+        "rewarded",
+        "cancelled",
+      ] as const),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const activityId = input.activityId as Id<"activity">;
+    const employeeId = input.employeeId as Id<"employee">;
+
+    const existing = await ctx.db
+      .query("activityParticipant")
+      .withIndex("by_activityId_employeeId", (q) =>
+        q.eq("activityId", activityId).eq("employeeId", employeeId),
+      )
+      .first();
+
+    if (existing) return null;
+
+    return await ctx.db.insert("activityParticipant", {
+      activityId,
+      employeeId,
+      status: input.status,
+    });
+  });
+
+/** สำหรับ HR/seed: เปลี่ยน registered → attended เพื่อให้ใช้สิทธิ์ตั๋วส่วนลดแต้มตอน checkout ได้ */
+export const internalMarkParticipantAttended = privateMutation
+  .input(z.object({ participationId: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    const participationId = input.participationId as Id<"activityParticipant">;
+    const row = await ctx.db.get(participationId);
+    if (!row) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Participation not found",
+      });
+    }
+    if (row.status !== "registered") {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "Only registered participants can be marked attended",
+      });
+    }
+    await ctx.db.patch(participationId, {
+      status: "attended",
+    });
+  });
+
+export const seedEmployee = optionalAuthAction
+  .input(
+    z.object({
+      employees: z.array(
+        z.object({
+          employeeId: z.string(),
+          name: z.string(),
+          email: z.string().optional(),
+          department: z.string(),
+          position: z.string(),
+          rank: z.string(),
+          division: z.string(),
+          password: z.string(),
+        }),
+      ),
+    }),
+  )
   .action(async ({ ctx, input }) => {
     let created = 0;
     let skipped = 0;
 
     for (const emp of input.employees) {
-      const empId = await ctx.runMutation(
-        internal.seed.insertEmployee,
-        {
-          employeeId: emp.employeeId,
-          name: emp.name,
-          email: emp.email,
-          department: emp.department,
-          position: emp.position,
-          rank: emp.rank,
-          division: emp.division,
-        }
-      );
+      const empId = await ctx.runMutation(internal.seed.insertEmployee, {
+        employeeId: emp.employeeId,
+        name: emp.name,
+        email: emp.email,
+        department: emp.department,
+        position: emp.position,
+        rank: emp.rank,
+        division: emp.division,
+      });
 
       if (!empId) {
         skipped++;
@@ -131,93 +233,139 @@ export const seedEmployee = optionalAuthAction
     return { created, skipped };
   });
 
-export const seedReward = optionalAuthAction
-  .action(async ({ ctx }) => {
-    const rewards = [
-      {
-        name: "Gift Voucher Central 500฿",
-        description: "บัตรกำนัลห้างเซ็นทรัล มูลค่า 500 บาท",
-        pointCost: 200,
-        stock: 20,
-        isActive: true,
-      },
-      {
-        name: "Gift Voucher Central 1,000฿",
-        description: "บัตรกำนัลห้างเซ็นทรัล มูลค่า 1,000 บาท",
-        pointCost: 380,
-        stock: 10,
-        isActive: true,
-      },
-      {
-        name: "วันลาพิเศษ 1 วัน",
-        description: "วันหยุดพักผ่อนพิเศษนอกเหนือจากสิทธิ์ปกติ",
-        pointCost: 500,
-        stock: -1,
-        isActive: true,
-        onePerOrder: true,
-      },
-      {
-        name: "ที่จอดรถพิเศษ 1 เดือน",
-        description: "สิทธิ์จอดรถในที่จอดรถสำรองเป็นเวลา 1 เดือน",
-        pointCost: 150,
-        stock: 5,
-        isActive: true,
-      },
-      {
-        name: "เสื้อโปโลบริษัท",
-        description: "เสื้อโปโลสีกรมท่าปักโลโก้บริษัท",
-        pointCost: 80,
-        stock: 50,
-        isActive: true,
-      },
-      {
-        name: "กระเป๋าผ้าบริษัท",
-        description: "กระเป๋าผ้าดิบพิมพ์โลโก้ ใส่ของได้เยอะ",
-        pointCost: 50,
-        stock: 100,
-        isActive: true,
-      },
-      {
-        name: "Grab Food 200฿",
-        description: "Credit Grab Food มูลค่า 200 บาท",
-        pointCost: 90,
-        stock: 30,
-        isActive: true,
-      },
-      {
-        name: "คอร์สอบรม Online",
-        description: "สิทธิ์เรียน Online Course บน Coursera หรือ Udemy 1 คอร์ส",
-        pointCost: 300,
-        stock: -1,
-        isActive: true,
-        onePerOrder: true,
-      },
-      {
-        name: "ประกันสุขภาพเสริม 3 เดือน",
-        description: "ความคุ้มครองสุขภาพเสริมนอกเหนือจากประกันบริษัท",
-        pointCost: 600,
-        stock: 10,
-        isActive: true,
-      },
-      {
-        name: "ทำงาน Work From Home 5 วัน",
-        description: "สิทธิ์ Work From Home พิเศษ 5 วัน (ใช้ได้ภายใน 3 เดือน)",
-        pointCost: 250,
-        stock: -1,
-        isActive: true,
-        onePerOrder: true,
-      },
-    ];
+export const seedReward = optionalAuthAction.action(async ({ ctx }) => {
+  const rewards = [
+    {
+      name: "Gift Voucher Central 500฿",
+      description: "บัตรกำนัลห้างเซ็นทรัล มูลค่า 500 บาท",
+      pointCost: 200,
+      stock: 20,
+      isActive: true,
+    },
+    {
+      name: "Gift Voucher Central 1,000฿",
+      description: "บัตรกำนัลห้างเซ็นทรัล มูลค่า 1,000 บาท",
+      pointCost: 380,
+      stock: 10,
+      isActive: true,
+    },
+    {
+      name: "วันลาพิเศษ 1 วัน",
+      description: "วันหยุดพักผ่อนพิเศษนอกเหนือจากสิทธิ์ปกติ",
+      pointCost: 500,
+      stock: -1,
+      isActive: true,
+      onePerOrder: true,
+    },
+    {
+      name: "ที่จอดรถพิเศษ 1 เดือน",
+      description: "สิทธิ์จอดรถในที่จอดรถสำรองเป็นเวลา 1 เดือน",
+      pointCost: 150,
+      stock: 5,
+      isActive: true,
+    },
+    {
+      name: "เสื้อโปโลบริษัท",
+      description: "เสื้อโปโลสีกรมท่าปักโลโก้บริษัท",
+      pointCost: 80,
+      stock: 50,
+      isActive: true,
+    },
+    {
+      name: "กระเป๋าผ้าบริษัท",
+      description: "กระเป๋าผ้าดิบพิมพ์โลโก้ ใส่ของได้เยอะ",
+      pointCost: 50,
+      stock: 100,
+      isActive: true,
+    },
+    {
+      name: "Grab Food 200฿",
+      description: "Credit Grab Food มูลค่า 200 บาท",
+      pointCost: 90,
+      stock: 30,
+      isActive: true,
+    },
+    {
+      name: "คอร์สอบรม Online",
+      description: "สิทธิ์เรียน Online Course บน Coursera หรือ Udemy 1 คอร์ส",
+      pointCost: 300,
+      stock: -1,
+      isActive: true,
+      onePerOrder: true,
+    },
+    {
+      name: "ประกันสุขภาพเสริม 3 เดือน",
+      description: "ความคุ้มครองสุขภาพเสริมนอกเหนือจากประกันบริษัท",
+      pointCost: 600,
+      stock: 10,
+      isActive: true,
+    },
+    {
+      name: "ทำงาน Work From Home 5 วัน",
+      description: "สิทธิ์ Work From Home พิเศษ 5 วัน (ใช้ได้ภายใน 3 เดือน)",
+      pointCost: 250,
+      stock: -1,
+      isActive: true,
+      onePerOrder: true,
+    },
+  ];
 
-    let created = 0;
-    let skipped = 0;
+  let created = 0;
+  let skipped = 0;
 
-    for (const reward of rewards) {
-      const id = await ctx.runMutation(internal.seed.insertReward, reward);
-      if (id) created++;
-      else skipped++;
-    }
+  for (const reward of rewards) {
+    const id = await ctx.runMutation(internal.seed.insertReward, reward);
+    if (id) created++;
+    else skipped++;
+  }
 
-    console.log(`Seed rewards done: ${created} created, ${skipped} skipped`);
-    return { created, skipped };
-  });
+  console.log(`Seed rewards done: ${created} created, ${skipped} skipped`);
+  return { created, skipped };
+});
+
+export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
+  const now = Date.now();
+  const week = 7 * 24 * 60 * 60 * 1000;
+  const activities = [
+    {
+      name: "Town Hall Q2 — ร่วมฟังและรับแต้ม",
+      description: "เข้าร่วม Town Hall ครบตามเงื่อนไข HR",
+      reward: { type: "points" as const, pointReward: 50 },
+      startDate: now - week,
+      endDate: now + week * 4,
+      maxParticipants: 200,
+      isActive: true,
+    },
+    {
+      name: "Safety Walk ประจำเดือน",
+      description: "เดินตรวจความปลอดภัยกับทีมจป.",
+      reward: { type: "points" as const, pointReward: 30 },
+      startDate: now - week,
+      endDate: now + week * 2,
+      maxParticipants: 40,
+      isActive: true,
+    },
+    {
+      name: "Wellness Week — ส่วนลดแลกของรางวัล",
+      description:
+        "เข้าร่วมกิจกรรมครบแล้ว HR จะอัปเดตสถานะเป็นเข้าร่วม — ใช้สิทธิ์ส่วนลดแต้มเมื่อ checkout ตะกร้าได้ครั้งหนึ่ง",
+      reward: { type: "ticket" as const, ticketDiscount: 100 },
+      startDate: now - week,
+      endDate: now + week * 8,
+      maxParticipants: undefined,
+      isActive: true,
+    },
+  ];
+
+  let created = 0;
+  let skipped = 0;
+
+  for (const row of activities) {
+    const id = await ctx.runMutation(internal.seed.insertActivity, row);
+    if (id) created++;
+    else skipped++;
+  }
+
+  console.log(`Seed activities done: ${created} created, ${skipped} skipped`);
+  return { created, skipped };
+});
