@@ -20,6 +20,9 @@ export const api = {
   employee: {
     search: createApiLeaf<"query", typeof import("../functions/employee").search>(convexApi["employee"]["search"], { auth: "required", type: "query" }),
   },
+  leaderboard: {
+    getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", limit: 100, type: "query" }),
+  },
   redemption: {
     getMany: createApiLeaf<"query", typeof import("../functions/redemption").getMany>(convexApi["redemption"]["getMany"], { auth: "required", limit: 20, type: "query" }),
     reviewRedemption: createApiLeaf<"mutation", typeof import("../functions/redemption").reviewRedemption>(convexApi["redemption"]["reviewRedemption"], { auth: "required", type: "mutation" }),
@@ -31,6 +34,7 @@ export const api = {
     getTrending: createApiLeaf<"query", typeof import("../functions/reward").getTrending>(convexApi["reward"]["getTrending"], { auth: "required", type: "query" }),
   },
   seed: {
+    seedActivity: createApiLeaf<"action", typeof import("../functions/seed").seedActivity>(convexApi["seed"]["seedActivity"], { auth: "optional", type: "action" }),
     seedEmployee: createApiLeaf<"action", typeof import("../functions/seed").seedEmployee>(convexApi["seed"]["seedEmployee"], { auth: "optional", type: "action" }),
     seedReward: createApiLeaf<"action", typeof import("../functions/seed").seedReward>(convexApi["seed"]["seedReward"], { auth: "optional", type: "action" }),
   },

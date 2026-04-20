@@ -19,14 +19,7 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
-  "insertActivity": ["mutation", typedProcedureResolver(internal["seed"]["insertActivity"], () => (require("../seed") as Record<string, unknown>)["insertActivity"])],
-  "insertActivityParticipant": ["mutation", typedProcedureResolver(internal["seed"]["insertActivityParticipant"], () => (require("../seed") as Record<string, unknown>)["insertActivityParticipant"])],
-  "insertEmployee": ["mutation", typedProcedureResolver(internal["seed"]["insertEmployee"], () => (require("../seed") as Record<string, unknown>)["insertEmployee"])],
-  "insertReward": ["mutation", typedProcedureResolver(internal["seed"]["insertReward"], () => (require("../seed") as Record<string, unknown>)["insertReward"])],
-  "internalMarkParticipantAttended": ["mutation", typedProcedureResolver(internal["seed"]["internalMarkParticipantAttended"], () => (require("../seed") as Record<string, unknown>)["internalMarkParticipantAttended"])],
-  "seedActivity": ["action", typedProcedureResolver(api["seed"]["seedActivity"], () => (require("../seed") as Record<string, unknown>)["seedActivity"])],
-  "seedEmployee": ["action", typedProcedureResolver(api["seed"]["seedEmployee"], () => (require("../seed") as Record<string, unknown>)["seedEmployee"])],
-  "seedReward": ["action", typedProcedureResolver(api["seed"]["seedReward"], () => (require("../seed") as Record<string, unknown>)["seedReward"])],
+  "getMany": ["query", typedProcedureResolver(api["leaderboard"]["getMany"], () => (require("../leaderboard") as Record<string, unknown>)["getMany"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
@@ -74,7 +67,7 @@ type GeneratedProcedureHandler<
 >;
 
 
-export function createSeedCaller<TCtx extends ProcedureCallerContext>(
+export function createLeaderboardCaller<TCtx extends ProcedureCallerContext>(
   ctx: TCtx
 ): GeneratedProcedureCaller<TCtx> {
   return generatedRuntime.getCallerFactory()(
@@ -82,7 +75,7 @@ export function createSeedCaller<TCtx extends ProcedureCallerContext>(
   ) as GeneratedProcedureCaller<TCtx>;
 }
 
-export function createSeedHandler<TCtx extends ProcedureHandlerContext>(
+export function createLeaderboardHandler<TCtx extends ProcedureHandlerContext>(
   ctx: TCtx
 ): GeneratedProcedureHandler<TCtx> {
   return generatedRuntime.getHandlerFactory()(ctx) as GeneratedProcedureHandler<TCtx>;
