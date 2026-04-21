@@ -418,6 +418,38 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  comment: {
+    document: {
+      content: string;
+      createdAt?: number;
+      employeeId: Id<"employee">;
+      transactionId: Id<"transaction">;
+      updatedAt?: null | number;
+      _id: Id<"comment">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "content"
+      | "createdAt"
+      | "_creationTime"
+      | "employeeId"
+      | "_id"
+      | "transactionId"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_employeeId_transactionId: [
+        "employeeId",
+        "transactionId",
+        "_creationTime",
+      ];
+      by_transactionId: ["transactionId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   employee: {
     document: {
       department: string;
@@ -466,6 +498,34 @@ export type DataModel = {
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
+  like: {
+    document: {
+      createdAt?: number;
+      employeeId: Id<"employee">;
+      transactionId: Id<"transaction">;
+      _id: Id<"like">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "createdAt"
+      | "_creationTime"
+      | "employeeId"
+      | "_id"
+      | "transactionId";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_employeeId_transactionId: [
+        "employeeId",
+        "transactionId",
+        "_creationTime",
+      ];
+      by_transactionId: ["transactionId", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};

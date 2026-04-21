@@ -129,6 +129,14 @@ function DialogDescription({
   )
 }
 
+function DialogHidden() {
+  return (
+    <DialogHeader>
+      <DialogTitle className="sr-only"></DialogTitle>
+    </DialogHeader>
+  );
+}
+
 export {
   Dialog,
   DialogClose,
@@ -139,5 +147,6 @@ export {
   DialogOverlay,
   DialogPortal,
   DialogTitle,
+  DialogHidden,
   DialogTrigger,
 }

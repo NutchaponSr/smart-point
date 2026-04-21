@@ -109,6 +109,28 @@ export const transaction = convexTable("transaction", {
   index("by_status").on(t.status),
 ]);
 
+export const like = convexTable("like", {
+  employeeId: id("employee").notNull(),
+  transactionId: id("transaction").notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+}, (t) => [
+  index("by_employeeId").on(t.employeeId),
+  index("by_transactionId").on(t.transactionId),
+  uniqueIndex("by_employeeId_transactionId").on(t.employeeId, t.transactionId),
+]);
+
+export const comment = convexTable("comment", {
+  employeeId: id("employee").notNull(),
+  transactionId: id("transaction").notNull(),
+  content: text().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_employeeId").on(t.employeeId),
+  index("by_transactionId").on(t.transactionId),
+  uniqueIndex("by_employeeId_transactionId").on(t.employeeId, t.transactionId),
+]);
+
 export const reward = convexTable("reward", {
   name: text().notNull(),
   description: text(),
@@ -240,6 +262,8 @@ export const tables = {
   cart,
   cartItem,
   review,
+  like,
+  comment,
 }
 
 export const relations = defineRelations(tables, (r) => ({

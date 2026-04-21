@@ -21,7 +21,7 @@ export const api = {
     search: createApiLeaf<"query", typeof import("../functions/employee").search>(convexApi["employee"]["search"], { auth: "required", type: "query" }),
   },
   leaderboard: {
-    getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", limit: 100, type: "query" }),
+    getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", type: "query" }),
   },
   redemption: {
     getMany: createApiLeaf<"query", typeof import("../functions/redemption").getMany>(convexApi["redemption"]["getMany"], { auth: "required", limit: 20, type: "query" }),
@@ -40,7 +40,10 @@ export const api = {
   },
   transaction: {
     approve: createApiLeaf<"mutation", typeof import("../functions/transaction").approve>(convexApi["transaction"]["approve"], { auth: "required", type: "mutation" }),
+    comment: createApiLeaf<"mutation", typeof import("../functions/transaction").comment>(convexApi["transaction"]["comment"], { auth: "required", type: "mutation" }),
+    feeds: createApiLeaf<"query", typeof import("../functions/transaction").feeds>(convexApi["transaction"]["feeds"], { auth: "required", limit: 10, type: "query" }),
     getHistory: createApiLeaf<"query", typeof import("../functions/transaction").getHistory>(convexApi["transaction"]["getHistory"], { auth: "required", type: "query" }),
+    like: createApiLeaf<"mutation", typeof import("../functions/transaction").like>(convexApi["transaction"]["like"], { auth: "required", type: "mutation" }),
     send: createApiLeaf<"mutation", typeof import("../functions/transaction").send>(convexApi["transaction"]["send"], { auth: "required", type: "mutation" }),
   },
   user: {

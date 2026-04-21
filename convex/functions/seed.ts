@@ -76,24 +76,21 @@ export const insertReward = privateMutation
     });
   });
 
-const activityRewardSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("points"),
-    pointReward: z.number().int().min(1),
-  }),
-  z.object({
-    type: z.literal("ticket"),
-    /** ส่วนลดแต้มรับ (receiving points) จากยอดรวมตะกร้าเมื่อ checkout */
-    ticketDiscount: z.number().int().min(0),
-  }),
-]);
-
 export const insertActivity = privateMutation
   .input(
     z.object({
       name: z.string(),
       description: z.string().optional(),
-      reward: activityRewardSchema,
+      reward: z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("points"),
+          pointReward: z.number().int().min(1),
+        }),
+        z.object({
+          type: z.literal("ticket"),
+          ticketDiscount: z.number().int().min(0),
+        }),
+      ]),
       startDate: z.number(),
       endDate: z.number().optional(),
       maxParticipants: z.number().int().positive().optional(),
@@ -116,62 +113,6 @@ export const insertActivity = privateMutation
       endDate: input.endDate,
       maxParticipants: input.maxParticipants,
       isActive: input.isActive,
-    });
-  });
-
-export const insertActivityParticipant = privateMutation
-  .input(
-    z.object({
-      activityId: z.string(),
-      employeeId: z.string(),
-      status: z.enum([
-        "registered",
-        "attended",
-        "rewarded",
-        "cancelled",
-      ] as const),
-    }),
-  )
-  .mutation(async ({ ctx, input }) => {
-    const activityId = input.activityId as Id<"activity">;
-    const employeeId = input.employeeId as Id<"employee">;
-
-    const existing = await ctx.db
-      .query("activityParticipant")
-      .withIndex("by_activityId_employeeId", (q) =>
-        q.eq("activityId", activityId).eq("employeeId", employeeId),
-      )
-      .first();
-
-    if (existing) return null;
-
-    return await ctx.db.insert("activityParticipant", {
-      activityId,
-      employeeId,
-      status: input.status,
-    });
-  });
-
-/** สำหรับ HR/seed: เปลี่ยน registered → attended เพื่อให้ใช้สิทธิ์ตั๋วส่วนลดแต้มตอน checkout ได้ */
-export const internalMarkParticipantAttended = privateMutation
-  .input(z.object({ participationId: z.string() }))
-  .mutation(async ({ ctx, input }) => {
-    const participationId = input.participationId as Id<"activityParticipant">;
-    const row = await ctx.db.get(participationId);
-    if (!row) {
-      throw new CRPCError({
-        code: "NOT_FOUND",
-        message: "Participation not found",
-      });
-    }
-    if (row.status !== "registered") {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: "Only registered participants can be marked attended",
-      });
-    }
-    await ctx.db.patch(participationId, {
-      status: "attended",
     });
   });
 

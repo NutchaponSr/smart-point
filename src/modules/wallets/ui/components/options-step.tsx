@@ -110,7 +110,7 @@ export const OptionsStep = ({ user }: Props) => {
                   <div className="flex items-center gap-2">
                     <UserAvatar
                       name={name}
-                      src={image ?? null}
+                      src={image ?? undefined}
                       className={{
                         container: "size-5 after:border-[1.25px]",
                         fallback: "text-xs font-medium",
@@ -150,7 +150,7 @@ export const OptionsStep = ({ user }: Props) => {
         <div
           role="group"
           aria-labelledby="category-tags-legend"
-          className="grid md:auto-cols-fr gap-4 sm:grid-cols-2 md:grid-flow-row md:grid-cols-3 2xl:grid-cols-4"
+          className="grid md:auto-cols-fr gap-4 sm:grid-cols-2 md:grid-flow-rowt"
         >
           {tags.map((tag, index) => {
             const checked = selectedTags.includes(tag.name);
@@ -169,8 +169,8 @@ export const OptionsStep = ({ user }: Props) => {
                   onChange={() => toggleTag(tag.name)}
                   onBlur={tagsField.onBlur}
                 />
-                <div className={cn(iconTagVariants({ variant: tag.color }))}>
-                  <tag.icon className="size-4" />
+                <div className={cn(iconTagVariants({ variant: tag.color }), "text-primary")}>
+                  {tag.code}
                 </div>
                 <span className="text-[1rem] leading-[1.3] font-normal text-ellipsis overflow-hidden whitespace-nowrap">
                   {tag.name}

@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 interface Props {
   value: string;
   placeholder: string;
-  className?: string;
+  className?: {
+    container?: string;
+    input?: string;
+  };
   onChange: (value: string) => void;
 }
 
@@ -15,7 +18,7 @@ export default function ElementEditable({ value, placeholder, className, onChang
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <div className="relative p-6 border-2 border-border rounded-xs bg-background">
+    <div className={cn("relative p-6 border-2 border-border rounded-xs bg-background", className?.container)}>
       {!isEditing && !value && (
         <div className="absolute top-6 left-6 text-sm text-muted-foreground pointer-events-none select-none">
           {placeholder}
@@ -31,7 +34,7 @@ export default function ElementEditable({ value, placeholder, className, onChang
         onBlur={() => setIsEditing(false)}
         className={cn(
           "w-full min-h-16 outline-none focus:outline-none focus-visible:outline-none leading-relaxed text-sm transition-all duration-200",
-          className
+          className?.input
         )}
         suppressContentEditableWarning
         contentEditable
