@@ -60,9 +60,9 @@ export const SendStep = ({ points, user }: Props) => {
         <div className="flex items-center gap-2.5">
           <UserAvatar 
             name={user.name}
-            src={user.image || null}
+            src={user.image || undefined}
             className={{
-              container: "size-9",
+              container: "size-9 after:border-[1.5px]",
               fallback: "text-base font-medium",
             }}
           />
@@ -145,7 +145,7 @@ export const SendStep = ({ points, user }: Props) => {
             amountField.onChange(Number.isNaN(n) ? 0 : n);
           }}
           onBlur={amountField.onBlur}
-          className="font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-purple focus:border-purple focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3"
+          className="font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-pink focus:border-pink focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3"
         />
         <small className="text-destructive">{amountState.error?.message}</small>
       </fieldset>

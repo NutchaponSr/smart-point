@@ -20,10 +20,8 @@ function createProcedureRegistry() {
 
   const procedureRegistry = {
   "insertActivity": ["mutation", typedProcedureResolver(internal["seed"]["insertActivity"], () => (require("../seed") as Record<string, unknown>)["insertActivity"])],
-  "insertActivityParticipant": ["mutation", typedProcedureResolver(internal["seed"]["insertActivityParticipant"], () => (require("../seed") as Record<string, unknown>)["insertActivityParticipant"])],
   "insertEmployee": ["mutation", typedProcedureResolver(internal["seed"]["insertEmployee"], () => (require("../seed") as Record<string, unknown>)["insertEmployee"])],
   "insertReward": ["mutation", typedProcedureResolver(internal["seed"]["insertReward"], () => (require("../seed") as Record<string, unknown>)["insertReward"])],
-  "internalMarkParticipantAttended": ["mutation", typedProcedureResolver(internal["seed"]["internalMarkParticipantAttended"], () => (require("../seed") as Record<string, unknown>)["internalMarkParticipantAttended"])],
   "seedActivity": ["action", typedProcedureResolver(api["seed"]["seedActivity"], () => (require("../seed") as Record<string, unknown>)["seedActivity"])],
   "seedEmployee": ["action", typedProcedureResolver(api["seed"]["seedEmployee"], () => (require("../seed") as Record<string, unknown>)["seedEmployee"])],
   "seedReward": ["action", typedProcedureResolver(api["seed"]["seedReward"], () => (require("../seed") as Record<string, unknown>)["seedReward"])],

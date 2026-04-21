@@ -8,10 +8,8 @@ const Layout = (props: LayoutProps<"/[locale]">) => {
       <div className="flex-1 flex flex-col lg:h-screen overflow-y-auto">
         <div className="flex-1 flex flex-col">
           <Header />
-          <div className="overflow-hidden">
-            <div className="bg-[#f4f4f0] min-h-screen">
-              {props.children}
-            </div>
+          <div className="bg-[#f4f4f0] min-h-screen">
+            {props.children}
           </div>
         </div>
       </div>

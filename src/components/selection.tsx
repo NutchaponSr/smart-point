@@ -159,7 +159,7 @@ export const Selection = ({
     >
       <div
         className={cn(
-          "border-2 border-border min-h-10 w-full rounded-xs bg-background flex items-center px-4 gap-2 focus-within::outline-1 focus-within:outline-purple focus-within:border-purple focus-within:border-2",
+          "border-2 border-border min-h-10 w-full rounded-xs bg-background flex items-center px-4 gap-2 focus-within::outline-1 focus-within:outline-pink focus-within:border-pink focus-within:border-2",
         )}
         onClick={() => {
           if (disabled) return;
@@ -170,7 +170,7 @@ export const Selection = ({
           <div className="flex items-center gap-2 grow shrink">
             <UserAvatar 
               name={selected.label}
-              src={selected.image || null}
+              src={selected.image || undefined}
               className={{
                 container: "size-6 after:border-[1.5px]",
                 fallback: "text-xs font-normal",
@@ -263,7 +263,7 @@ export const Selection = ({
                       >
                         <UserAvatar 
                           name={option.label}
-                          src={option.image || null}
+                          src={option.image || undefined}
                           className={{
                             container: "size-6 after:border-[1.5px]",
                             fallback: "text-xs font-normal",

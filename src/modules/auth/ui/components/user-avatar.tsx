@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/avatar";
 
 interface Props {
-  src: string | null;
+  src?: string;
   name: string;
   className?: {
     container?: string;

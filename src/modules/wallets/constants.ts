@@ -1,27 +1,36 @@
-import { IconType } from "react-icons/lib";
 import { iconTagVariants } from "./ui/components/options-step";
 import { BsBasket2Fill } from "react-icons/bs";
 import { VariantProps } from "class-variance-authority";
 import { FaEllipsisH, FaUtensils } from "react-icons/fa";
 
 export const tags: Array<{
+  code: string;
   name: string;
-  icon: IconType;
   color: VariantProps<typeof iconTagVariants>["variant"]
 }> = [
   {
-    name: "ช๊อปปิ้ง",
-    icon: BsBasket2Fill,
+    code: "S",
+    name: "สัญญาโปร่งใส",
     color: "default",
   },
   {
-    name: "อาหาร",
-    icon: FaUtensils,
+    code: "M",
+    name: "ใส่ใจเรียนรู้",
     color: "green",
   },
   {
-    name: "อื่นๆ",
-    icon: FaEllipsisH,
+    code: "A",
+    name: "สู้การเปลี่ยนแปลง",
     color: "orange",
   },
+  {
+    code: "R",
+    name: "แสดงคสามยอมรับ",
+    color: "orange",
+  },
+  {
+    code: "T",
+    name: "สนับสนุนลูกค้า",
+    color: "default",
+  }
 ]

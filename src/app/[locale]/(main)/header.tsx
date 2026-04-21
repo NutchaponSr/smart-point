@@ -47,9 +47,11 @@ export const Header = () => {
       </div>
 
       <div className="hidden lg:flex lg:items-center gap-4">
-        <Button variant="elevated" size="iconLg" className="hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
-          <HiShoppingBag className="size-6" />
-        </Button>
+        <Link href="/checkout">
+          <Button variant="elevated" size="iconLg" className="hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+            <HiShoppingBag className="size-6" />
+          </Button>
+        </Link>
         <div className="flex flex-col lg:flex-row lg:h-full">
           <UserButton />
         </div>

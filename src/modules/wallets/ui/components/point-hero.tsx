@@ -14,7 +14,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 
-export const pointHeroVariants = cva("group/card flex flex-col gap-1 overflow-hidden rounded-xs bg-card py-4 text-sm ring-2 ring-ring has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xs *:[img:last-child]:rounded-b-xs h-max", {
+export const pointHeroVariants = cva("group/card flex flex-col gap-1 overflow-hidden rounded-xs bg-card py-4 border-2 border-border ring-0 h-max", {
   variants: {
     variant: {
       purple: "bg-purple",
@@ -31,12 +31,14 @@ export const pointHeroVariants = cva("group/card flex flex-col gap-1 overflow-hi
 interface Props extends VariantProps<typeof pointHeroVariants> {
   title: string;
   points: number;
+  footer?: React.ReactNode;
 }
 
 export const PointHero = ({ 
   variant,
   title,
   points,
+  footer,
 }: Props) => {
   return (
     <Card className={cn(pointHeroVariants({ variant }))}>
@@ -47,15 +49,11 @@ export const PointHero = ({
         <RiCopperCoinFill className="size-10" />
         <h2 className="text-4xl font-bold tracking-tight">{points}</h2>
       </CardContent>
-      <CardFooter>
-        <div className="flex flex-row items-center justify-between w-full">
-          <Link href="/wallets" className="hover:underline">View history</Link>
-          <div className="flex items-center gap-2">
-            <BsClock className="size-4 stroke-[0.2]" />
-            <span>Last updated 12 hours ago</span>
-          </div>
-        </div>
-      </CardFooter>
+      {footer && (
+        <CardFooter>
+          {footer}
+        </CardFooter>
+      )}
     </Card>
   );
 }

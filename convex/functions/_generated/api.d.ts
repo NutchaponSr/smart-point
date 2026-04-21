@@ -158,6 +158,18 @@ export declare const api: {
       { transactionId: string },
       any
     >;
+    comment: FunctionReference<
+      "mutation",
+      "public",
+      { content: string; transactionId: string },
+      any
+    >;
+    feeds: FunctionReference<
+      "query",
+      "public",
+      { cursor?: string | null; limit?: number },
+      any
+    >;
     getHistory: FunctionReference<
       "query",
       "public",
@@ -171,6 +183,12 @@ export declare const api: {
         status?: Array<"pending" | "completed" | "rejected" | "approved">;
         to?: number;
       },
+      any
+    >;
+    like: FunctionReference<
+      "mutation",
+      "public",
+      { transactionId: string },
       any
     >;
     send: FunctionReference<
@@ -384,16 +402,6 @@ export declare const internal: {
       },
       any
     >;
-    insertActivityParticipant: FunctionReference<
-      "mutation",
-      "internal",
-      {
-        activityId: string;
-        employeeId: string;
-        status: "registered" | "attended" | "rewarded" | "cancelled";
-      },
-      any
-    >;
     insertEmployee: FunctionReference<
       "mutation",
       "internal",
@@ -420,12 +428,6 @@ export declare const internal: {
         pointCost: number;
         stock: number;
       },
-      any
-    >;
-    internalMarkParticipantAttended: FunctionReference<
-      "mutation",
-      "internal",
-      { participationId: string },
       any
     >;
   };
