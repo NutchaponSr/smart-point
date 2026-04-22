@@ -56,6 +56,12 @@ export declare const api: {
       },
       any
     >;
+    getMyEntry: FunctionReference<
+      "query",
+      "public",
+      { period: "24hr" | "7d" | "30d" | "fullTime" },
+      any
+    >;
   };
   redemption: {
     getMany: FunctionReference<

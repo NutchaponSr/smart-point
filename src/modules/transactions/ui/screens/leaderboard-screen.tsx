@@ -14,17 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { CurrentUserRankBar } from "../components/current-user-rank-bar";
 import { LeaderCard } from "../components/leader-card";
 import { columns } from "../components/leaderboard-columns";
 
-const medalColors = {
-  1: "text-amber-400",
-  2: "text-gray-400",
-  3: "text-red-900",
-};
-
 interface Props {
   initialData: ApiOutputs["leaderboard"]["getMany"]["page"];
+  myEntry: ApiOutputs["leaderboard"]["getMyEntry"];
   currentCursor: number;
   limit: number;
   nextCursor: number | null;
@@ -33,6 +29,7 @@ interface Props {
 
 export const LeaderboardScreen = ({
   initialData,
+  myEntry,
   currentCursor,
   limit,
   nextCursor,
@@ -42,7 +39,7 @@ export const LeaderboardScreen = ({
   const hasNextPage = nextCursor !== null;
 
   const table = useReactTable({
-    data: initialData,
+    data: initialData.slice(3),
     columns: columns(),
     getCoreRowModel: getCoreRowModel(),
   });
@@ -50,22 +47,23 @@ export const LeaderboardScreen = ({
   return (
     <section className="grid gap-4 p-4 md:p-8">
       <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
-        {initialData.slice(0, 3).map((item) => (
+        {initialData.slice(0, 3).map((item, index) => (
           <LeaderCard
             key={item.employeeId}
             name={item.employeeName}
             src={item.employeeCode}
-            medalColor={medalColors[item.rank as keyof typeof medalColors]}
+            rank={item.rank}
+            podiumPlace={(index + 1) as 1 | 2 | 3}
             score={item.points}
           />
         ))}
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
         <Button
           type="button"
           variant="outline"
-          size="iconLg"
+          size="icon"
           disabled={!hasPrevPage}
           onClick={() => onChangeCursor(Math.max(0, currentCursor - limit))}
         >
@@ -74,7 +72,7 @@ export const LeaderboardScreen = ({
         <Button
           type="button"
           variant="outline"
-          size="iconLg"
+          size="icon"
           disabled={!hasNextPage}
           onClick={() => {
             if (nextCursor !== null) {
@@ -149,6 +147,22 @@ export const LeaderboardScreen = ({
             </tr>
           )}
         </tbody>
+        {myEntry ? (
+          <tfoot className="contents font-normal lg:table-footer-group">
+            <tr className="block rounded-xs border-2 border-border lg:table-row">
+              <td
+                colSpan={table.getAllColumns().length}
+                className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-sm lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-sm"
+              >
+                <CurrentUserRankBar
+                  rank={myEntry.rank}
+                  name={myEntry.employeeName}
+                  points={myEntry.points}
+                />
+              </td>
+            </tr>
+          </tfoot>
+        ) : null}
       </table>
     </section>
   );

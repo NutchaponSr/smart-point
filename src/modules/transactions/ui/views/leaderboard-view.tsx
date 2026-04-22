@@ -22,6 +22,12 @@ export const LeaderboardView = () => {
     }),
   );
 
+  const { data: myEntry } = useSuspenseQuery(
+    crpc.leaderboard.getMyEntry.queryOptions({
+      period: filters.period,
+    }),
+  );
+
   return (
     <>
       <header className="flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-0 sm:border-b-2 h-[142.5px]">
@@ -34,7 +40,7 @@ export const LeaderboardView = () => {
           {periodValues.map((period) => (
             <Button
               key={period}
-              variant="rounded"
+              variant={filters.period === period ? "rounded" : "roundedOutline"}
               size="smRounded"
               onClick={() => setFilters({ period, cursor: 0 })}
             >
@@ -46,6 +52,7 @@ export const LeaderboardView = () => {
 
       <LeaderboardScreen
         initialData={data.page}
+        myEntry={myEntry}
         currentCursor={filters.cursor}
         limit={filters.limit}
         nextCursor={data.continueCursor}

@@ -20,6 +20,7 @@ function createProcedureRegistry() {
 
   const procedureRegistry = {
   "getMany": ["query", typedProcedureResolver(api["leaderboard"]["getMany"], () => (require("../leaderboard") as Record<string, unknown>)["getMany"])],
+  "getMyEntry": ["query", typedProcedureResolver(api["leaderboard"]["getMyEntry"], () => (require("../leaderboard") as Record<string, unknown>)["getMyEntry"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
