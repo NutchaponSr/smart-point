@@ -20,6 +20,95 @@ import type { GenericId as Id } from "convex/values";
  * ```
  */
 export declare const api: {
+  activity: {
+    getMany: FunctionReference<
+      "query",
+      "public",
+      {
+        cursor?: string | null;
+        isJoined?: boolean;
+        limit?: number;
+        maxParticipants: number | null;
+        minParticipants: number | null;
+        q?: string;
+        view?:
+          | "external"
+          | "internal"
+          | "internal_bu"
+          | "specials_point"
+          | "all";
+      },
+      {
+        continueCursor: string | null;
+        isDone: boolean;
+        page: Array<{
+          _creationTime: number;
+          _id: any;
+          category: "external" | "internal" | "internal_bu" | "specials_point";
+          createdAt: number;
+          description?: string | null;
+          endDate?: number | null;
+          isActive: boolean;
+          isJoined: boolean;
+          maxParticipants?: number | null;
+          name: string;
+          participantCount: number;
+          point: number;
+          startDate: number;
+          updatedAt?: number | null;
+        }>;
+      }
+    >;
+    getOne: FunctionReference<
+      "query",
+      "public",
+      { activityId: string },
+      {
+        _creationTime: number;
+        _id: any;
+        createdAt: number;
+        description?: string | null;
+        endDate?: number | null;
+        isActive: boolean;
+        isJoined: boolean;
+        maxParticipants?: number | null;
+        name: string;
+        participantCount: number;
+        participants: Array<{
+          createdAt: number;
+          employee: {
+            department: string;
+            division: string;
+            email?: string | null;
+            employeeId: string;
+            id: any;
+            name: string;
+            position: string;
+            rank: string;
+          } | null;
+          employeeId: any;
+          participantId: any;
+          status: "registered" | "attended" | "rewarded" | "cancelled";
+          updatedAt?: number | null;
+        }>;
+        point: number;
+        startDate: number;
+        updatedAt?: number | null;
+      }
+    >;
+    join: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string },
+      { joined: boolean }
+    >;
+    leave: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string },
+      { left: boolean }
+    >;
+  };
   cart: {
     addCart: FunctionReference<
       "mutation",
@@ -399,6 +488,7 @@ export declare const internal: {
       "mutation",
       "internal",
       {
+        category: "external" | "internal" | "internal_bu" | "specials_point";
         description?: string;
         endDate?: number;
         isActive: boolean;

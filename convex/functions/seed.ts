@@ -86,6 +86,7 @@ export const insertActivity = privateMutation
       endDate: z.number().optional(),
       maxParticipants: z.number().int().positive().optional(),
       isActive: z.boolean(),
+      category: z.enum(["external", "internal", "internal_bu", "specials_point"]),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -97,13 +98,7 @@ export const insertActivity = privateMutation
     if (existing) return null;
 
     return await ctx.db.insert("activity", {
-      name: input.name,
-      description: input.description,
-      point: input.point,
-      startDate: input.startDate,
-      endDate: input.endDate,
-      maxParticipants: input.maxParticipants,
-      isActive: input.isActive,
+      ...input,
     });
   });
 
@@ -267,6 +262,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       endDate: now + week * 4,
       maxParticipants: 200,
       isActive: true,
+      category: "internal",
     },
     {
       name: "Safety Walk ประจำเดือน",
@@ -276,6 +272,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       endDate: now + week * 2,
       maxParticipants: 40,
       isActive: true,
+      category: "internal_bu",
     },
     {
       name: "Wellness Week — ส่วนลดแลกของรางวัล",
@@ -286,6 +283,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       endDate: now + week * 8,
       maxParticipants: undefined,
       isActive: true,
+      category: "specials_point",
     },
   ];
 
@@ -293,7 +291,10 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
   let skipped = 0;
 
   for (const row of activities) {
-    const id = await ctx.runMutation(internal.seed.insertActivity, row);
+    const id = await ctx.runMutation(internal.seed.insertActivity, {
+      ...row,
+      category: row.category as "external" | "internal" | "internal_bu" | "specials_point",
+    });
     if (id) created++;
     else skipped++;
   }
