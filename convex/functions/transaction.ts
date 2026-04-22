@@ -4,19 +4,74 @@ import { CRPCError } from "better-convex/server";
 
 import { authMutation, authQuery } from "../lib/crpc";
 
-import { Id } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
+import { QueryCtx } from "./_generated/server";
+
+function transactionTimestamp(t: Doc<"transaction">) {
+  return t.createdAt ?? t._creationTime;
+}
+
+function filterTransaction(
+  t: Doc<"transaction">,
+  input: {
+    query?: string;
+    status?: Array<"pending" | "completed" | "rejected" | "approved"> | null;
+    min: number | null;
+    max: number | null;
+    from?: number | null;
+    to?: number | null;
+  }
+) {
+  const ts = transactionTimestamp(t);
+  if (input.from != null && ts < input.from) return false;
+  if (input.to != null && ts > input.to) return false;
+  if (input.query && !t.message?.toLowerCase().includes(input.query.toLowerCase())) return false;
+  if (input.status?.length && !input.status.includes(t.status)) return false;
+  if (input.min != null && input.min > 0 && t.amount < input.min) return false;
+  if (input.max != null && input.max > 0 && t.amount > input.max) return false;
+  return true;
+};
+
+async function enrichTransaction(
+  ctx: QueryCtx,
+  t: Doc<"transaction">
+) {
+  const [senderEmployee, receiverEmployee] = await Promise.all([
+    ctx.db.get(t.senderId),
+    ctx.db.get(t.receiverId),
+  ]);
+
+  const [senderUser, receiverUser] = await Promise.all([
+    senderEmployee
+      ? ctx.db.query("user").withIndex("by_employeeId", (q) => q.eq("employeeId", senderEmployee._id)).first()
+      : null,
+    receiverEmployee
+      ? ctx.db.query("user").withIndex("by_employeeId", (q) => q.eq("employeeId", receiverEmployee._id)).first()
+      : null,
+  ]);
+
+  const toParty = (employee: typeof senderEmployee, user: typeof senderUser) =>
+    employee ? { name: employee.name, department: employee.department, image: user?.image ?? null } : null;
+
+  return {
+    ...t,
+    sender: toParty(senderEmployee, senderUser),
+    receiver: toParty(receiverEmployee, receiverUser),
+  };
+};
 
 export const getHistory = authQuery
   .input(
     z.object({
       query: z.string().optional(),
-      status: z.array(z.enum(["pending", "completed", "rejected", "approved"])).optional(),
-      min: z.number().optional(),
-      max: z.number().optional(),
-      from: z.number().optional(),
-      to: z.number().optional(),
-      cursor: z.number().nullish(),
-      limit: z.number()
+      status: z.array(z.enum(["pending", "completed", "rejected", "approved"])).optional().nullable(),
+      min: z.number().nullable(),
+      max: z.number().nullable(),
+      from: z.number().nullable().optional(),
+      to: z.number().nullable().optional(),
+      cursor: z.number().nullable(),
+      limit: z.number(),
+      view: z.enum(["sent", "received"]),
     })
   )
   .query(async ({ ctx, input }) => {
@@ -37,79 +92,19 @@ export const getHistory = authQuery
         .collect(),
     ]);
 
-    const merged = [
-      ...sent,
-      ...received,
-    ].sort((a, b) => b._creationTime - a._creationTime);
+    const source = input.view === "sent" ? sent : received;
 
-    const filtered = merged.filter((t) => {
-      if (input.query && !t.message?.toLowerCase().includes(input.query.toLowerCase())) return false;
-      if (input.status && input.status.length > 0 && !input.status.includes(t.status)) return false;
-      if (input.min !== undefined && input.min > 0 && t.amount < input.min) return false;
-      if (input.max !== undefined && input.max > 0 && t.amount > input.max) return false;
-      if (input.from !== undefined && t._creationTime < input.from) return false;
-      if (input.to !== undefined && t._creationTime > input.to) return false;
-      return true;
-    });
+    const filtered = source.filter((t) => filterTransaction(t, input));
 
     const offset = input.cursor ?? 0;
     const page = filtered.slice(offset, offset + input.limit);
-    const enriched = await Promise.all(
-      page.map(async (t) => {
-        const [senderEmployee, receiverEmployee] = await Promise.all([
-          ctx.db.get(t.senderId),
-          ctx.db.get(t.receiverId),
-        ]);
 
-        const [senderUser, receiverUser] = await Promise.all([
-          senderEmployee
-            ? ctx.db
-              .query("user")
-              .withIndex("by_employeeId", (q) =>
-                q.eq("employeeId", senderEmployee._id)
-              )
-              .first()
-            : null,
-          receiverEmployee
-            ? ctx.db
-              .query("user")
-              .withIndex("by_employeeId", (q) =>
-                q.eq("employeeId", receiverEmployee._id)
-              )
-              .first()
-            : null,
-        ]);
-
-        return {
-          ...t,
-          sender: senderEmployee
-            ? {
-              name: senderEmployee.name,
-              department: senderEmployee.department,
-              image: senderUser?.image ?? null,
-            }
-            : null,
-          receiver: receiverEmployee
-            ? {
-              name: receiverEmployee.name,
-              department: receiverEmployee.department,
-              image: receiverUser?.image ?? null,
-            }
-            : null,
-        };
-      })
-    );
+    const items = await Promise.all(page.map((t) => enrichTransaction(ctx, t)));
 
     return {
-      items: {
-        sent: enriched.filter((t) => t.senderId === ctx.user.employeeId),
-        received: enriched.filter((t) => t.receiverId === ctx.user.employeeId),
-      },
+      items,
       total: filtered.length,
-      nextCursor:
-        offset + input.limit < filtered.length
-          ? offset + input.limit
-          : undefined,
+      nextCursor: offset + input.limit < filtered.length ? offset + input.limit : undefined,
     };
   });
 

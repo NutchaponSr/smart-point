@@ -28,9 +28,10 @@ interface Props {
   showHeader?: boolean;
   givingBudget: number;
   receivingBudget: number;
+  className?: string;
 }
 
-export const TransactionContent = ({ showHeader = true, givingBudget }: Props) => {
+export const TransactionContent = ({ showHeader = true, givingBudget, className }: Props) => {
   const crpc = useCRPC();
 
   const { data: user } = useSuspenseQuery(crpc.user.getCurrentUser.queryOptions());
@@ -67,7 +68,7 @@ export const TransactionContent = ({ showHeader = true, givingBudget }: Props) =
   });
 
   return (
-    <section className="grid gap-4 border-t-2 border-border py-4 grid-cols-1 first:border-t-0 lg:gap-x-16 lg:gap-y-4">
+    <section className={cn("grid gap-4 border-t-2 border-border py-4 grid-cols-1 first:border-t-0 lg:gap-x-16 lg:gap-y-4", className)}>
       <header data-show={showHeader} className="data-[show=false]:hidden grid content-start gap-3 pb-3 mb-3 border-b-2 border-border">
         <div className="flex items-center gap-2 h-8">
           {step === "options" && (

@@ -1,78 +1,161 @@
 "use client";
 
+import {
+  getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { useState } from "react";
+import { useDebounce } from "@uidotdev/usehooks";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
-import { 
-  Tabs, 
-  TabsList, 
-  TabsTrigger, 
-  TabsContent 
-} from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 import { InfoCard } from "@/components/info-card";
+import { DataTable } from "@/components/data-table";
 
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
-import { TransactionHistory } from "@/modules/transactions/ui/components/transaction-history";
+import { TransactionFilter } from "@/modules/transactions/ui/components/transaction-filter";
+import { transactionColumns } from "@/modules/transactions/ui/components/transaction-columns";
 
-import { useFilter } from "@/modules/transactions/stores/use-filter";
+import { useTransactionFilters } from "@/modules/transactions/stores/use-transaction-filter";
+import { FeedTransactions } from "../components/feed-transactions";
+import { useInfiniteQuery } from "better-convex/react";
+
+const SORTS = ["sent", "received"];
 
 export const TransactionView = () => {
   const crpc = useCRPC();
-  const { debouncedQuery, status, debouncedMin, debouncedMax, from, to, limit, page } = useFilter();
+  
+  const [filters, setFilters] = useTransactionFilters();
+  
+  const debouncedQuery = useDebounce(filters.q, 400);
 
   const { data: wallet } = useSuspenseQuery(crpc.wallet.getOne.queryOptions());
-
   const { data: transactions } = useSuspenseQuery(
     crpc.transaction.getHistory.queryOptions({
-      limit,
-      query: debouncedQuery,
-      status: status ?? undefined,
-      min: debouncedMin,
-      max: debouncedMax,
-      from: from ?? undefined,
-      to: to ?? undefined,
-      cursor: page * limit,
+      query: debouncedQuery ?? "",
+      status: filters.status ?? null,
+      min: filters.min ?? 0,
+      max: filters.max ?? 0,
+      from: filters.from ?? null,
+      to: filters.to ?? null,
+      limit: filters.limit,
+      cursor: filters.page * filters.limit,
+      view: filters.view,
     })
   );
 
+  const [sorting, setSorting] = useState<SortingState>([])
+
+  const hasPrevPage = filters.page > 0;
+  const hasNextPage = (filters.page + 1) * filters.limit < transactions.total;
+
+  const table = useReactTable({
+    data: transactions.items,
+    columns: transactionColumns(),
+    getRowId: (row) => String(row._id),
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: {
+      sorting,
+    },
+  });
+
   return (
     <>
-      <header className="flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-0 sm:border-b-2 h-[82px]">
+      <header className="flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-0 sm:border-b-2 h-[81.25px]">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <h1 className="line-clamp-2 text-2xl hidden! sm:block!">ธุรกรรม</h1>
         </div>
       </header>
+
       <section className="grid gap-4 p-4 md:p-8 border-border border-b-2">
-        <div className="grid w-full grid-cols-1 gap-4 sm:gap-16 xl:grid-cols-4">
-          <div className="grid content-start gap-3 lg:col-span-1">
-            <div className="grid gap-6 py-4">
-              <InfoCard title="Point Sent" value={wallet.givingBudget} />
-              <InfoCard color="orange" title="Point Received" value={wallet.receivingBudget} />
+        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-8 lg:grid-cols-[3fr_1.5fr]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <InfoCard title="Point Sent" value={wallet.givingBudget} />
+            <InfoCard color="orange" title="Point Received" value={wallet.receivingBudget} />
+            <div className="col-span-1 md:col-span-2">
+              <FeedTransactions />
             </div>
           </div>
-          <div className="col-span-full xl:col-span-3">
-            <TransactionContent givingBudget={wallet.givingBudget} receivingBudget={wallet.receivingBudget} showHeader={false} />
+          <div className="grid divide-y divide-solid divide-border px-2 overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)]">
+            <TransactionContent 
+              className="p-0"
+              givingBudget={wallet.givingBudget} 
+              receivingBudget={wallet.receivingBudget} 
+              showHeader={false} 
+            />
           </div>
         </div>
       </section>
-      <Tabs>
-        <TabsList className="rounded-none border-border border-b-2">
-          <TabsTrigger value="sent" className="data-active:bg-pink">ส่ง</TabsTrigger>
-          <TabsTrigger value="received" className="data-active:bg-orange">รับ</TabsTrigger>
-        </TabsList>
-        <TabsContent value="sent">
-          <section className="p-4 md:p-8">
-            <TransactionHistory transactions={transactions.items.sent} total={transactions.total} />
-          </section>
-        </TabsContent>
-        <TabsContent value="received">
-          <section className="p-4 md:p-8">
-            <TransactionHistory transactions={transactions.items.received} total={transactions.total} />
-          </section>
-        </TabsContent>
-      </Tabs>
+
+      <section className="space-y-4 p-4 md:p-8">
+      <h2 className="text-xl">ประวัติธุรกรรม</h2>
+      <div className="grid grid-cols-1 items-start gap-x-16 gap-y-8 lg:grid-cols-[1fr_4fr]">
+        <TransactionFilter total={transactions.total} />
+        <div className="w-full">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2 grow">
+              <Button
+                variant="elevated"
+                size="icon"
+                disabled={!hasPrevPage}
+                onClick={() => {
+                  if (hasPrevPage) {
+                    void setFilters({ ...filters, page: filters.page - 1 });
+                  }
+                }}
+              >
+                <ChevronLeftIcon className="size-5" />
+              </Button>
+              <Button
+                variant="elevated"
+                size="icon"
+                disabled={!hasNextPage}
+                onClick={() => {
+                  if (hasNextPage) {
+                    void setFilters({ ...filters, page: filters.page + 1 });
+                  }
+                }}
+              >
+                <ChevronRightIcon className="size-5" />
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {SORTS.map((sort) => (
+                <Button
+                  variant={filters.view === sort ? "rounded" : "roundedOutline"}
+                  size="smRounded"
+                  key={sort}
+                  className="capitalize"
+                  onClick={() => {
+                    void setFilters({
+                      ...filters,
+                      view: sort as "sent" | "received",
+                      page: 0,
+                    });
+                  }}
+                >
+                  {sort}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <DataTable
+            key={transactions.items.map((transaction) => String(transaction._id)).join(",")}
+            table={table}
+          />
+        </div>
+      </div>
+    </section>
     </>
   );
 };

@@ -7,7 +7,7 @@ interface Props {
 
 export const Accordion = ({ title, children }: Props) => {
   return (
-    <details className="group/details flex-wrap items-center justify-between gap-4 p-4 block border-t-[1.5px]">
+    <details className="group/details flex-wrap items-center justify-between gap-4 p-4 block">
       <summary className="flex cursor-pointer items-center [&::-webkit-details-marker]:hidden [&::marker]:hidden grow group-open/details:mb-2">
         {title}
         <ChevronRightIcon className="col-start-2 ml-auto size-4.5 shrink-0 group-open/details:rotate-90" />

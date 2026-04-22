@@ -22,6 +22,7 @@ export const api = {
   },
   leaderboard: {
     getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", type: "query" }),
+    getMyEntry: createApiLeaf<"query", typeof import("../functions/leaderboard").getMyEntry>(convexApi["leaderboard"]["getMyEntry"], { auth: "required", type: "query" }),
   },
   redemption: {
     getMany: createApiLeaf<"query", typeof import("../functions/redemption").getMany>(convexApi["redemption"]["getMany"], { auth: "required", limit: 20, type: "query" }),

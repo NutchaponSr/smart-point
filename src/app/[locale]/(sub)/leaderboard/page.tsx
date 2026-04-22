@@ -16,6 +16,11 @@ const Page = async ({ searchParams }: Props) => {
     period,
     limit,
   }));
+  prefetch(
+    crpc.leaderboard.getMyEntry.queryOptions({
+      period,
+    }),
+  );
 
   return (
     <HydrateClient>
