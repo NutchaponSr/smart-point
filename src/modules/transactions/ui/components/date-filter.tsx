@@ -10,30 +10,39 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 
-import { useFilter } from "@/modules/transactions/stores/use-filter";
+import { useTransactionFilters } from "@/modules/transactions/stores/use-transaction-filter";
 
-export const DateFilter = () => {
-  const { from, to, setFrom, setTo } = useFilter();
+export const DateFilter = ({ children }: { children: React.ReactNode }) => {
+  const [filters, setFilters] = useTransactionFilters();
 
   const date: DateRange | undefined =
-    from || to
+    filters.from || filters.to
       ? {
-        from: from ? new Date(from) : undefined,
-        to: to ? new Date(to) : undefined,
+        from: filters.from ? new Date(filters.from) : undefined,
+        to: filters.to ? new Date(filters.to) : undefined,
       }
       : undefined;
 
   const onSelect = (range: DateRange | undefined) => {
-    setFrom(range?.from ? startOfDay(range.from).getTime() : null);
-    setTo(range?.to ? endOfDay(range.to).getTime() : null);
+    if (!range?.from) {
+      void setFilters({ ...filters, from: null, to: null, page: 0 });
+      return;
+    }
+    const fromMs = startOfDay(range.from).getTime();
+    const endDate = range.to ?? range.from;
+    const toMs = endOfDay(endDate).getTime();
+    void setFilters({
+      ...filters,
+      from: fromMs,
+      to: toMs,
+      page: 0,
+    });
   };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="elevated" size="iconLg">
-          <BsCalendar2Event className="size-5 stroke-[0.25]" />
-        </Button>
+        {children}
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={12} className="w-fit">
         <div className="flex items-center justify-end p-2 border-b-2 border-border border-dashed">

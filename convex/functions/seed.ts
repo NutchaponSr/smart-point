@@ -81,16 +81,7 @@ export const insertActivity = privateMutation
     z.object({
       name: z.string(),
       description: z.string().optional(),
-      reward: z.discriminatedUnion("type", [
-        z.object({
-          type: z.literal("points"),
-          pointReward: z.number().int().min(1),
-        }),
-        z.object({
-          type: z.literal("ticket"),
-          ticketDiscount: z.number().int().min(0),
-        }),
-      ]),
+      point: z.number().int().min(1),
       startDate: z.number(),
       endDate: z.number().optional(),
       maxParticipants: z.number().int().positive().optional(),
@@ -108,7 +99,7 @@ export const insertActivity = privateMutation
     return await ctx.db.insert("activity", {
       name: input.name,
       description: input.description,
-      reward: input.reward,
+      point: input.point,
       startDate: input.startDate,
       endDate: input.endDate,
       maxParticipants: input.maxParticipants,
@@ -271,7 +262,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
     {
       name: "Town Hall Q2 — ร่วมฟังและรับแต้ม",
       description: "เข้าร่วม Town Hall ครบตามเงื่อนไข HR",
-      reward: { type: "points" as const, pointReward: 50 },
+      point: 50,
       startDate: now - week,
       endDate: now + week * 4,
       maxParticipants: 200,
@@ -280,7 +271,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
     {
       name: "Safety Walk ประจำเดือน",
       description: "เดินตรวจความปลอดภัยกับทีมจป.",
-      reward: { type: "points" as const, pointReward: 30 },
+      point: 30,
       startDate: now - week,
       endDate: now + week * 2,
       maxParticipants: 40,
@@ -290,7 +281,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       name: "Wellness Week — ส่วนลดแลกของรางวัล",
       description:
         "เข้าร่วมกิจกรรมครบแล้ว HR จะอัปเดตสถานะเป็นเข้าร่วม — ใช้สิทธิ์ส่วนลดแต้มเมื่อ checkout ตะกร้าได้ครั้งหนึ่ง",
-      reward: { type: "ticket" as const, ticketDiscount: 100 },
+      point: 100,
       startDate: now - week,
       endDate: now + week * 8,
       maxParticipants: undefined,

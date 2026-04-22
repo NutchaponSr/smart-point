@@ -1,10 +1,25 @@
+"use client";
+
 import Link from "next/link";
+
+import { usePathname } from "next/navigation";
+
+import { cn } from "@/lib/utils";
 
 import { navigations } from "@/constants";
 
 import { Logo } from "@/components/logo";
 
 export const Sidebar = () => {
+  const pathname = usePathname();
+
+  /** Strip `/th` or `/en` locale segment; keep a leading `/` (replace was stripping it). */
+  const pathWithoutLocale =
+    pathname.replace(/^\/(th|en)(?=\/|$)/, "") || "/";
+  const isActive = (href: string) =>
+    pathWithoutLocale === href ||
+    (href !== "/" && pathWithoutLocale.startsWith(`${href}/`));
+
   return (
     <nav className="flex flex-col overflow-x-hidden overflow-y-auto bg-black text-white lg:static lg:w-52 dark:text-foreground">
       <div className="override grid grid-cols-[auto_1fr_auto] items-center gap-3 p-4 text-lg leading-6 lg:hidden">
@@ -16,7 +31,7 @@ export const Sidebar = () => {
       <div className="grow flex flex-col overflow-x-hidden overflow-y-auto">
         <section className="mb-12 hidden lg:grid">
           {navigations.map((navigation, index) => (
-            <Link key={index} href={navigation.href} className="flex items-center truncate border-y-2 border-white/50 border-b-transparent px-6 py-4 no-underline last:border-b-white/50 hover:text-pink dark:border-foreground/50 dark:border-b-transparent dark:last:border-b-foreground/50 min-h-15">
+            <Link key={index} href={navigation.href} className={cn("flex items-center truncate border-y-2 border-white/50 border-b-transparent px-6 py-4 no-underline last:border-b-white/50 hover:text-pink dark:border-foreground/50 dark:border-b-transparent dark:last:border-b-foreground/50 min-h-15", isActive(navigation.href) && "text-pink")}>
               <navigation.icon className="size-5" />
               <span className="ml-4">{navigation.label}</span>
             </Link>

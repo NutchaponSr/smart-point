@@ -3,8 +3,8 @@ import { PriceInput } from "@/components/price-input";
 interface Props {
   minCost?: number | null;
   maxCost?: number | null;
-  onMinCostChange: (value: number) => void;
-  onMaxCostChange: (value: number) => void;
+  onMinCostChange: (value: number | null) => void;
+  onMaxCostChange: (value: number | null) => void;
 }
 
 export const CostFilter = ({ minCost, maxCost, onMinCostChange, onMaxCostChange }: Props) => {

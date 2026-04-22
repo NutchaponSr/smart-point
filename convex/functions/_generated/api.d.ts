@@ -174,14 +174,17 @@ export declare const api: {
       "query",
       "public",
       {
-        cursor?: number | null;
-        from?: number;
+        cursor: number | null;
+        from?: number | null;
         limit: number;
-        max?: number;
-        min?: number;
+        max: number | null;
+        min: number | null;
         query?: string;
-        status?: Array<"pending" | "completed" | "rejected" | "approved">;
-        to?: number;
+        status?: Array<
+          "pending" | "completed" | "rejected" | "approved"
+        > | null;
+        to?: number | null;
+        view: "sent" | "received";
       },
       any
     >;
@@ -395,9 +398,7 @@ export declare const internal: {
         isActive: boolean;
         maxParticipants?: number;
         name: string;
-        reward:
-          | { pointReward: number; type: "points" }
-          | { ticketDiscount: number; type: "ticket" };
+        point: number;
         startDate: number;
       },
       any

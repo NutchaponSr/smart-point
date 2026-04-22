@@ -186,12 +186,7 @@ export const redemption = convexTable("redemption", {
 export const activity = convexTable("activity", {
   name: text().notNull(),
   description: text(),
-  reward: custom(
-    v.union(
-      v.object({ type: v.literal("points"), pointReward: v.number() }),
-      v.object({ type: v.literal("ticket"), ticketDiscount: v.number() }),
-    ),
-  ).notNull(),
+  point: integer().notNull(),
   startDate: timestamp().notNull(),
   endDate: timestamp(),
   maxParticipants: integer(), // null = unlimited

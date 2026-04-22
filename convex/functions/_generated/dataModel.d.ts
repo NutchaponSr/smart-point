@@ -78,9 +78,7 @@ export type DataModel = {
       isActive: boolean;
       maxParticipants?: null | number;
       name: string;
-      reward:
-        | { pointReward: number; type: "points" }
-        | { ticketDiscount: number; type: "ticket" };
+      point: number;
       startDate: number;
       updatedAt?: null | number;
       _id: Id<"activity">;
@@ -95,10 +93,7 @@ export type DataModel = {
       | "isActive"
       | "maxParticipants"
       | "name"
-      | "reward"
-      | "reward.pointReward"
-      | "reward.ticketDiscount"
-      | "reward.type"
+      | "point"
       | "startDate"
       | "updatedAt";
     indexes: {

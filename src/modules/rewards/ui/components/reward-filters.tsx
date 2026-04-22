@@ -21,7 +21,7 @@ export const RewardFilters = () => {
   }
 
   return (
-    <div aria-label="Filter" className="grid divide-y divide-solid divide-border rounded-xs border-2 border-border bg-background overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)]">
+    <div aria-label="Filter" className="grid divide-y-2 divide-solid divide-border rounded-xs border-2 border-border bg-background overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)]">
       <header className="flex flex-wrap items-center justify-between gap-4 p-4">
         ตัวกรอง
         {(filters.minCost > 0 || filters.maxCost > 0 || filters.star > 0) && (

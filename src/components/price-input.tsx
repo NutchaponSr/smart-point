@@ -9,16 +9,39 @@ interface Props {
   placeholder: string;
   decimalScale: number;
   value: number | null;
-  onValueChange: (value: number) => void;
+  onValueChange: (value: number | null) => void;
   className?: string;
 }
 
 export const PriceInput = (props: Props) => {
   const [inputValue, setInputValue] = useState<string>(props.value?.toString() ?? "");
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
-    setInputValue(props.value?.toString() ?? "");
-  }, [props.value]);
+    if (!isFocused) {
+      setInputValue(props.value?.toString() ?? "");
+    }
+  }, [props.value, isFocused]);
+
+  useEffect(() => {
+    if (!isFocused) return;
+
+    const timeoutId = setTimeout(() => {
+      if (!inputValue) {
+        props.onValueChange(null);
+        return;
+      }
+
+      if (inputValue.endsWith(".")) return;
+
+      const parsed = parseFloat(inputValue);
+      if (!Number.isNaN(parsed)) {
+        props.onValueChange(parsed);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [inputValue, isFocused, props]);
 
   return (
     <fieldset className="flex flex-col border-none gap-2">
@@ -31,26 +54,16 @@ export const PriceInput = (props: Props) => {
         {...props}
         allowNegativeValue={false}
         value={inputValue}
+        onFocus={() => setIsFocused(true)}
         onValueChange={(value) => {
           const nextValue = value ?? "";
           setInputValue(nextValue);
-
-          if (!nextValue) {
-            props.onValueChange(0);
-            return;
-          }
-
-          if (nextValue.endsWith(".")) return;
-
-          const parsed = parseFloat(nextValue);
-          if (!Number.isNaN(parsed)) {
-            props.onValueChange(parsed);
-          }
         }}
         onBlur={() => {
+          setIsFocused(false);
           const parsed = parseFloat(inputValue);
           if (Number.isNaN(parsed)) {
-            props.onValueChange(0);
+            props.onValueChange(null);
             setInputValue("");
             return;
           }

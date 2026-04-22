@@ -4,23 +4,23 @@ import {
   parseAsFloat,
   parseAsInteger,
   parseAsString,
-  parseAsStringEnum,
   parseAsStringLiteral,
 } from "nuqs/server";
 
-import { Status } from "@/modules/transactions/constants";
-
 const periodValues = ["24hr", "7d", "30d", "fullTime"] as const;
+const statusValues = ["pending", "completed", "rejected", "approved"] as const;
+const sortValues = ["sent", "received"] as const;
 
 export const filterSearchParams = {
   q: parseAsString.withDefault(""),
-  status: parseAsArrayOf(parseAsStringEnum<Status>(Object.values(Status))),
+  status: parseAsArrayOf(parseAsStringLiteral(statusValues)),
   min: parseAsFloat.withDefault(0),
   max: parseAsFloat.withDefault(0),
   from: parseAsInteger,
   to: parseAsInteger,
   limit: parseAsInteger.withDefault(10),
   page: parseAsInteger.withDefault(0),
+  view: parseAsStringLiteral(sortValues).withDefault("sent"),
 };
 
 export const loadFilterSearchParams = createLoader(filterSearchParams);

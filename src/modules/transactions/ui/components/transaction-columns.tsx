@@ -11,7 +11,7 @@ type Transaction = ApiOutputs["transaction"]["getHistory"]["items"]["sent"][0];
 export const transactionColumns = (): ColumnDef<Transaction>[] => {
   return [
     {
-      accessorKey: "receiver",
+      id: "employeeName",
       header: "พนักงาน",
       cell: ({ row }) => {
         return (
@@ -19,7 +19,7 @@ export const transactionColumns = (): ColumnDef<Transaction>[] => {
             {row.original.receiver && (
               <UserAvatar
                 name={row.original.receiver.name}
-                src={row.original.receiver.image}
+                src={row.original.receiver.image || undefined}
                 className={{
                   container: "size-9 after:border-[1.5px]",
                   fallback: "text-sm font-medium",

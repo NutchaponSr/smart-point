@@ -1,177 +1,129 @@
-import { 
-  CheckIcon, 
-  ChevronRightIcon, 
-  ListFilterIcon 
-} from "lucide-react";
-import { CurrencyInput } from "react-currency-input-field";
-import { useEffect, useState } from "react";
-
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
 import { Status, statuses } from "@/modules/transactions/constants";
-import { useFilter } from "@/modules/transactions/stores/use-filter";
+import { useTransactionFilters } from "@/modules/transactions/stores/use-transaction-filter";
+import { Accordion } from "@/components/accordion";
+import { CostFilter } from "@/components/cost-filter";
+import { SearchInput } from "@/components/search-input";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DateFilter } from "./date-filter";
+import { format, startOfDay } from "date-fns";
 
-export const TransactionFilter = () => {
-  const { status, setStatus, min, setMin, max, setMax } = useFilter();
-  const [minInput, setMinInput] = useState<string>(min ? min.toString() : "");
-  const [maxInput, setMaxInput] = useState<string>(max ? max.toString() : "");
+interface Props {
+  total: number;
+}
 
-  useEffect(() => {
-    setMinInput(min ? min.toString() : "");
-  }, [min]);
+export const TransactionFilter = ({ total }: Props) => {
+  const [filters, setFilters] = useTransactionFilters();
 
-  useEffect(() => {
-    setMaxInput(max ? max.toString() : "");
-  }, [max]);
-
-  const hasFilter = (status?.length && status.length > 0) || (min !== undefined && min > 0) || (max !== undefined && max > 0);
-
-  const onClear = () => {
-    setStatus(null);
-    setMin(0);
-    setMax(0);
+  const onCostChange = (key: "min" | "max", value: number | null) => {
+    void setFilters((prev) => ({ ...prev, [key]: value, page: 0 }));
   };
 
+  const dateRangeLabel = (() => {
+    if (filters.from == null) return "ช่วงเวลา";
+    const fromD = new Date(filters.from);
+    const toD = filters.to != null ? new Date(filters.to) : fromD;
+    const sameDay =
+      startOfDay(fromD).getTime() === startOfDay(toD).getTime();
+    const pattern = "dd/MM/yyyy";
+    if (sameDay) return format(fromD, pattern);
+    return `${format(fromD, pattern)} – ${format(toD, pattern)}`;
+  })();
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="elevated" size="iconLg">
-          <ListFilterIcon className="size-5" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={12}>
-        {hasFilter && (
-          <div className="flex items-center justify-end p-2 border-b-2 border-border border-dashed">
-            <Button variant="ghost" size="xs" onClick={onClear}>
-              Clear
-            </Button>
-          </div>
-        )}
+    <div className="grid divide-y-2 divide-solid divide-border rounded-xs border-2 border-border bg-background overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)]">
+      <header className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <div className="grow">แสดง 1-{total} จาก {total} รายการ</div>
+      </header>
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <SearchInput 
+          value={filters.q}
+          placeholder="Search transactions"
+          onChange={(q) => setFilters({ ...filters, q, page: 0 })}
+        />
+      </div>
+      <Accordion title="สถานะ">
+        {Object.entries(statuses).map(([key, value]) => (
+          <label key={key} className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 items-center">
+            <span className="relative inline-flex shrink-0 items-center justify-center">
+              <input
+                type="checkbox"
+                checked={filters.status?.includes(key as Status) ?? false}
+                onChange={(e) => {
+                  const currentStatus = filters.status || [];
+                  if (e.target.checked) {
+                    void setFilters({
+                      ...filters,
+                      status: [...currentStatus, key as Status],
+                      page: 0,
+                    });
+                  } else {
+                    const newStatus = currentStatus.filter(s => s !== key);
+                    void setFilters({
+                      ...filters,
+                      status: newStatus.length > 0 ? newStatus : null,
+                      page: 0,
+                    });
+                  }
+                }}
+                className="appearance-none size-[calc(1lh+0.125rem)] border-[1.5px] border-border bg-background text-base leading-snug shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 checked:bg-pink rounded-xs peer"
+              />
+              <CheckIcon className="pointer-events-none absolute hidden size-4.5 text-accent-foreground peer-checked:block group-open" />
+            </span>
+            {value}
+          </label>
+        ))}
+      </Accordion>
+      <Accordion title="จำนวนพอยต์">
+        <CostFilter
+          minCost={filters.min}
+          maxCost={filters.max}
+          onMinCostChange={(minCost) => onCostChange("min", minCost)}
+          onMaxCostChange={(maxCost) => onCostChange("max", maxCost)}
+        />
+      </Accordion>
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <DateFilter>
+          <button type="button" className="hover:underline w-full text-start flex">
+            {dateRangeLabel}
+          </button>
+        </DateFilter>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <fieldset className="flex flex-col border-none gap-2 grow basis-0">
+          <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
+            <label className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 filter-header">
+              จำนวนรายการ
+            </label>
+          </legend>
 
-        <div className="grid divide-y divide-solid divide-border rounded-xs bg-background overflow-y-auto">
-          <details className="group/details flex-wrap items-center justify-between gap-4 p-4 block">
-            <summary className="flex cursor-pointer items-center [&::-webkit-details-marker]:hidden [&::marker]:hidden grow group-open/details:mb-2">
-              สถานะ
-              <ChevronRightIcon className="col-start-2 ml-auto size-4.5 shrink-0 group-open/details:rotate-90" />
-            </summary>
-            <fieldset className="flex flex-col border-none gap-2 grow basis-0">
-              {Object.entries(statuses).map(([key, value]) => (
-                <label key={key} className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 items-center">
-                  <span className="relative inline-flex shrink-0 items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={status?.includes(key as Status) ?? false}
-                      onChange={(e) => {
-                        const currentStatus = status || [];
-                        if (e.target.checked) {
-                          setStatus([...currentStatus, key as Status]);
-                        } else {
-                          const newStatus = currentStatus.filter(s => s !== key);
-                          setStatus(newStatus.length > 0 ? newStatus : null);
-                        }
-                      }}
-                      className="appearance-none size-[calc(1lh+0.125rem)] border-[1.5px] border-border bg-background text-base leading-snug shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 checked:bg-pink rounded-xs peer"
-                    />
-                    <CheckIcon className="pointer-events-none absolute hidden size-4.5 text-accent-foreground peer-checked:block group-open" />
-                  </span>
-                  {value}
-                </label>
-              ))}
-            </fieldset>
-          </details>
-          <details className="group/details flex-wrap items-center justify-between gap-4 p-4 block border-t-[1.5px]">
-            <summary className="flex cursor-pointer items-center [&::-webkit-details-marker]:hidden [&::marker]:hidden grow group-open/details:mb-2">
-              จำนวนพอยนต์
-              <ChevronRightIcon className="col-start-2 ml-auto size-4.5 shrink-0 group-open/details:rotate-90" />
-            </summary>
-            <div className="grid gap-3">
-              <fieldset className="flex flex-col border-none gap-2">
-                <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
-                  <label className="inline-flex cursor-pointer text-sm gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 items-center">ขั้นต่ำ</label>
-                </legend>
-                <CurrencyInput
-                  id="min-amount"
-                  name="min-amount"
-                  allowNegativeValue={false}
-                  placeholder="ระบุจำนวน"
-                  decimalScale={2}
-                  value={minInput}
-                  onValueChange={(value) => {
-                    const nextValue = value ?? "";
-                    setMinInput(nextValue);
-
-                    if (!nextValue) {
-                      setMin(0);
-                      return;
-                    }
-
-                    if (nextValue.endsWith(".")) return;
-
-                    const parsed = parseFloat(nextValue);
-                    if (!Number.isNaN(parsed)) {
-                      setMin(parsed);
-                    }
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="lg" className="justify-between">
+                {filters.limit} 
+                <ChevronDownIcon className="size-4.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuGroup>
+                <DropdownMenuRadioGroup
+                  value={filters.limit.toString()}
+                  onValueChange={(limit) => {
+                    setFilters({ ...filters, limit: parseInt(limit) });
                   }}
-                  onBlur={() => {
-                    const parsed = parseFloat(minInput);
-                    if (Number.isNaN(parsed)) {
-                      setMin(0);
-                      setMinInput("");
-                      return;
-                    }
-                    setMin(parsed);
-                  }}
-                  className="font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-purple focus:border-purple focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3"
-                />
-              </fieldset>
-              <fieldset className="flex flex-col border-none gap-2">
-                <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
-                  <label className="inline-flex cursor-pointer text-sm gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 items-center">สูงสุด</label>
-                </legend>
-                <CurrencyInput
-                  id="max-amount"
-                  name="max-amount"
-                  allowNegativeValue={false}
-                  placeholder="ระบุจำนวน"
-                  decimalScale={2}
-                  value={maxInput}
-                  onValueChange={(value) => {
-                    const nextValue = value ?? "";
-                    setMaxInput(nextValue);
-
-                    if (!nextValue) {
-                      setMax(0);
-                      return;
-                    }
-
-                    if (nextValue.endsWith(".")) return;
-
-                    const parsed = parseFloat(nextValue);
-                    if (!Number.isNaN(parsed)) {
-                      setMax(parsed);
-                    }
-                  }}
-                  onBlur={() => {
-                    const parsed = parseFloat(maxInput);
-                    if (Number.isNaN(parsed)) {
-                      setMax(0);
-                      setMaxInput("");
-                      return;
-                    }
-                    setMax(parsed);
-                  }}
-                  className="font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-purple focus:border-purple focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3"
-                />
-              </fieldset>
-            </div>
-          </details>
-        </div>
-      </PopoverContent>
-    </Popover>
+                >
+                  <DropdownMenuRadioItem value="10">10</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="25">25</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="50">50</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="100">100</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </fieldset>
+      </div>
+    </div>
   );
 }

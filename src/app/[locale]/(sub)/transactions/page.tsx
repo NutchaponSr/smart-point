@@ -10,7 +10,8 @@ type Props = {
 };
 
 const Page = async ({ searchParams }: Props) => {
-  const { q, status, min, max, from, to, limit, page } = await loadFilterSearchParams(searchParams);
+  const { q, status, min, max, from, to, limit, page, view } =
+    await loadFilterSearchParams(searchParams);
 
   prefetch(crpc.wallet.getOne.queryOptions());
   prefetch(
@@ -23,6 +24,7 @@ const Page = async ({ searchParams }: Props) => {
       from: from ?? undefined,
       to: to ?? undefined,
       cursor: page * limit,
+      view,
     })
   );
 
