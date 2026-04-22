@@ -72,6 +72,7 @@ export type DataModel = {
   };
   activity: {
     document: {
+      category: "external" | "internal" | "internal_bu" | "specials_point";
       createdAt?: number;
       description?: null | string;
       endDate?: null | number;
@@ -85,6 +86,7 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "category"
       | "createdAt"
       | "_creationTime"
       | "description"

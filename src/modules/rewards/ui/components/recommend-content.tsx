@@ -68,7 +68,11 @@ export const RecommendContent = ({ rewards }: Props) => {
           {rewards.map((reward, index) => (
             <Reward
               key={reward._id}
-              reward={reward}
+              reward={{
+                ...reward,
+                totalReviews: 0,
+                totalStars: 0,
+              }}
               variant="grid"
               ref={(el) => {
                 itemRefs.current[index] = el;

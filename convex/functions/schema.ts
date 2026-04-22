@@ -187,6 +187,7 @@ export const activity = convexTable("activity", {
   name: text().notNull(),
   description: text(),
   point: integer().notNull(),
+  category: textEnum(["external", "internal", "internal_bu", "specials_point"] as const).notNull(),
   startDate: timestamp().notNull(),
   endDate: timestamp(),
   maxParticipants: integer(), // null = unlimited

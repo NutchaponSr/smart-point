@@ -5,11 +5,12 @@ import placeholder from "../../../../../public/placeholder.png";
 import { GoStarFill } from "react-icons/go";
 
 import { Doc } from "../../../../../convex/functions/_generated/dataModel";
+import { ApiOutputs } from "@convex/api";
 
 export type RewardCardVariant = "list" | "grid" | "card";
 
 type VariantProps = {
-  reward: Doc<"reward">;
+  reward: ApiOutputs["reward"]["getMany"]["page"][0];
   ref?: Ref<HTMLElement>;
 };
 
@@ -145,7 +146,7 @@ const VARIANTS = {
 } as const satisfies Record<RewardCardVariant, FC<VariantProps>>;
 
 interface Props {
-  reward: Doc<"reward">;
+  reward: ApiOutputs["reward"]["getMany"]["page"][0];
   ref?: Ref<HTMLElement>;
   variant: RewardCardVariant;
 }
