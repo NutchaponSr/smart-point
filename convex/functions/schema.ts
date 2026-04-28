@@ -1,5 +1,4 @@
 import { arrayOf, boolean, convexTable, custom, defineRelations, defineSchema, id, index, integer, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
-import { v } from "convex/values";
 
 export const user = convexTable("user", {
   name: text().notNull(),
@@ -77,9 +76,10 @@ export const employee = convexTable("employee", {
   position: text().notNull(),
   rank: text().notNull(),
   division: text().notNull(),
+  citizenId: text().notNull(),
 }, (t) => [
-  index("by_employeeId").on(t.employeeId),
   index("by_department").on(t.department),
+  uniqueIndex("by_employeeId").on(t.employeeId),
 ]);
 
 export const wallet = convexTable("wallet", {
@@ -96,8 +96,8 @@ export const transaction = convexTable("transaction", {
   receiverId: id("employee").notNull(),
   amount: integer().notNull(),
   message: text().notNull(),
-  tags: arrayOf(text()).notNull(),
-  status: textEnum(["pending", "approved", "rejected", "completed"] as const).notNull(),
+  tags: text().notNull(),
+  status: textEnum(["pending", "rejected", "completed"] as const).notNull(),
   reviewedBy: id("employee").notNull(),
   reviewedAt: timestamp().notNull(),
   rejectionReason: text(),
@@ -162,6 +162,7 @@ export const cartItem = convexTable("cartItem", {
 }, (t) => [
   index("by_cartId").on(t.cartId),
   index("by_cartId_rewardId").on(t.cartId, t.rewardId),
+  index("by_rewardId").on(t.rewardId),
 ]);
 
 export const redemption = convexTable("redemption", {
@@ -219,6 +220,13 @@ export const activityParticipant = convexTable("activityParticipant", {
   pointAwarded: integer(),
   awardedBy: id("user"),
   awardedAt: timestamp(),
+  evidenceStorageId: text(),
+  evidenceType: textEnum(["image", "pdf"] as const),
+  evidenceMimeType: text(),
+  evidenceFileName: text(),
+  evidenceSize: integer(),
+  evidenceUploadedAt: timestamp(),
+  evidenceUploadedBy: id("user"),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().$onUpdate(() => new Date()),
 }, (t) => [
@@ -262,12 +270,15 @@ export const tables = {
   comment,
 }
 
-export const relations = defineRelations(tables, (r) => ({
-  //TODO: Relations
-}));
-
-export default defineSchema(tables, {
+/** ต้องรัน `defineSchema` ก่อน `defineRelations` เพื่อให้ `tables` มี `OrmSchemaDefinition` (จำเป็นต่อ ORM select().filter()…​.paginate() ฯลฯ) */
+const convexSchema = defineSchema(tables, {
   defaults: {
     defaultLimit: 100,
   },
 });
+
+export const relations = defineRelations(tables, (r) => ({
+  // TODO: Relations
+}));
+
+export default convexSchema;

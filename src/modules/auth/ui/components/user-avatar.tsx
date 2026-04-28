@@ -22,12 +22,12 @@ export const UserAvatar = ({
 }: Props) => {
   return (
     <Avatar className={cn(className?.container)}>
-      {src && (
+      {/* {src && (
         <AvatarImage 
           src={src}
           alt={name}
         />
-      )}
+      )} */}
       <AvatarFallback className={cn(className?.fallback)}>
         {name.charAt(0).toUpperCase()}
       </AvatarFallback>

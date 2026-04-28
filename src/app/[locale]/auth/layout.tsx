@@ -1,6 +1,6 @@
 import { AuthLayout } from "@/modules/auth/ui/layouts/auth-layout";
 
-const Layout = (props: LayoutProps<"/auth">) => {
+const Layout = (props: LayoutProps<"/[locale]/auth">) => {
   return (
     <AuthLayout>
       {props.children}

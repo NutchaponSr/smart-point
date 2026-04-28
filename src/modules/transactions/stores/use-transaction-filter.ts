@@ -1,20 +1,34 @@
 import { parseAsArrayOf, parseAsFloat, parseAsInteger, parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 
 const sortValues = ["sent", "received"] as const;
-const statusValues = ["pending", "completed", "rejected", "approved"] as const;
+const statusValues = ["pending", "completed", "rejected"] as const;
 
-const params = {
+const baseParams = {
   q: parseAsString.withDefault(""),
-  status: parseAsArrayOf(parseAsStringLiteral(statusValues)),
   min: parseAsFloat.withDefault(0),
   max: parseAsFloat.withDefault(0),
-  from: parseAsInteger,
-  to: parseAsInteger,
-  limit: parseAsInteger.withDefault(10),
+  limit: parseAsInteger.withDefault(25),
   page: parseAsInteger.withDefault(0),
   view: parseAsStringLiteral(sortValues).withDefault("sent"),
-}
+  from: parseAsInteger,
+  to: parseAsInteger,
+  by: parseAsString,
+};
+
+const params = {
+  ...baseParams,
+  status: parseAsArrayOf(parseAsStringLiteral(statusValues)),
+};
+
+const analyticParams = {
+  ...baseParams,
+  status: parseAsArrayOf(parseAsStringLiteral(statusValues)).withDefault(["pending"]),
+};
 
 export const useTransactionFilters = () => {
   return useQueryStates(params);
-}
+};
+
+export const useAnalyticTransactionFilters = () => {
+  return useQueryStates(analyticParams);
+};

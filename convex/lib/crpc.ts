@@ -17,6 +17,7 @@ export const publicQuery = c.query;
 export const publicMutation = c.mutation;
 
 export const privateMutation = c.mutation.internal();
+export const privateAction = c.action.internal();
 
 function requireAuth<T>(user: T | null): T {
   if (!user) {
@@ -108,6 +109,22 @@ export const optionalAuthMutation = c.mutation
 /** Actions have no `db`/ORM; merge `getAuth(ctx)` and empty headers for unauthenticated `ctx.auth.api` (avoids `setTimeout` inside mutations). */
 export const optionalAuthAction = c.action
   .meta({ auth: "optional" })
+  .use(async ({ ctx, next }) => {
+    return next({
+      ctx: {
+        ...ctx,
+        auth: {
+          ...ctx.auth,
+          ...getAuth(ctx),
+          headers: new Headers(),
+        },
+      },
+    });
+  });
+
+/** Internal action that still needs auth helpers on `ctx.auth.api`. */
+export const privateAuthAction = c.action
+  .internal()
   .use(async ({ ctx, next }) => {
     return next({
       ctx: {

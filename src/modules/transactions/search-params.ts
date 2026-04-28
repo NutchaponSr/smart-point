@@ -8,22 +8,39 @@ import {
 } from "nuqs/server";
 
 const periodValues = ["24hr", "7d", "30d", "fullTime"] as const;
-const statusValues = ["pending", "completed", "rejected", "approved"] as const;
+const statusValues = ["pending", "completed", "rejected"] as const;
 const sortValues = ["sent", "received"] as const;
 
-export const filterSearchParams = {
+const baseFilterSearchParams = {
   q: parseAsString.withDefault(""),
-  status: parseAsArrayOf(parseAsStringLiteral(statusValues)),
   min: parseAsFloat.withDefault(0),
   max: parseAsFloat.withDefault(0),
-  from: parseAsInteger,
-  to: parseAsInteger,
-  limit: parseAsInteger.withDefault(10),
+  limit: parseAsInteger.withDefault(25),
   page: parseAsInteger.withDefault(0),
   view: parseAsStringLiteral(sortValues).withDefault("sent"),
+  by: parseAsString,
 };
 
-export const loadFilterSearchParams = createLoader(filterSearchParams);
+export const filterSearchParams = {
+  ...baseFilterSearchParams,
+  status: parseAsArrayOf(parseAsStringLiteral(statusValues)),
+  from: parseAsInteger,
+  to: parseAsInteger,
+};
+
+export const analyticFilterSearchParams = {
+  ...baseFilterSearchParams,
+  status: parseAsArrayOf(parseAsStringLiteral(statusValues)).withDefault([
+    "pending",
+  ]),
+  from: parseAsInteger,
+  to: parseAsInteger,
+};
+
+export const loadTransactionFilters = createLoader(filterSearchParams);
+export const loadAnalyticTransactionFilters = createLoader(
+  analyticFilterSearchParams,
+);
 
 const params = {
   period: parseAsStringLiteral(periodValues).withDefault("24hr"),

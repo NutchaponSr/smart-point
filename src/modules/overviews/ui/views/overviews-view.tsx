@@ -11,11 +11,12 @@ import { useCRPC } from "@/lib/convex/crpc";
 import { PointHero } from "@/modules/wallets/ui/components/point-hero";
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
 import { FeedTransactions } from "@/modules/transactions/ui/components/feed-transactions";
-import { Button } from "@/components/ui/button";
+import { EventCard } from "@/modules/events/ui/components/event-card";
 
 export const OverviewsView = () => {
   const crpc = useCRPC();
 
+  const { data: event } = useSuspenseQuery(crpc.activity.count.queryOptions());
   const { data: wallet } = useSuspenseQuery(crpc.wallet.getOne.queryOptions());
 
   return (
@@ -51,7 +52,8 @@ export const OverviewsView = () => {
               <FeedTransactions />
             </div>
           </div>
-          <div className="grid divide-y divide-solid divide-border px-2 overflow-y-auto lg:sticky lg:inset-y-24 lg:max-h-[calc(100vh-2rem)]">
+          <div className="grid overflow-y-auto lg:sticky lg:inset-y-24 lg:gap-8 lg:max-h-[calc(100vh-2rem)]">
+            <EventCard count={event.count} />
             <TransactionContent 
               givingBudget={wallet.givingBudget}
               receivingBudget={wallet.receivingBudget}

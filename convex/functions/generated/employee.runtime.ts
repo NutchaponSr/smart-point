@@ -19,7 +19,17 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
+  "bulkDelete": ["mutation", typedProcedureResolver(api["employee"]["bulkDelete"], () => (require("../employee") as Record<string, unknown>)["bulkDelete"])],
+  "bulkImport": ["mutation", typedProcedureResolver(api["employee"]["bulkImport"], () => (require("../employee") as Record<string, unknown>)["bulkImport"])],
+  "create": ["mutation", typedProcedureResolver(api["employee"]["create"], () => (require("../employee") as Record<string, unknown>)["create"])],
+  "exportList": ["query", typedProcedureResolver(api["employee"]["exportList"], () => (require("../employee") as Record<string, unknown>)["exportList"])],
+  "getMany": ["query", typedProcedureResolver(api["employee"]["getMany"], () => (require("../employee") as Record<string, unknown>)["getMany"])],
+  "getOne": ["query", typedProcedureResolver(api["employee"]["getOne"], () => (require("../employee") as Record<string, unknown>)["getOne"])],
+  "listForExport": ["query", typedProcedureResolver(api["employee"]["listForExport"], () => (require("../employee") as Record<string, unknown>)["listForExport"])],
+  "remove": ["mutation", typedProcedureResolver(api["employee"]["remove"], () => (require("../employee") as Record<string, unknown>)["remove"])],
   "search": ["query", typedProcedureResolver(api["employee"]["search"], () => (require("../employee") as Record<string, unknown>)["search"])],
+  "signUpEmployeeInternal": ["action", typedProcedureResolver(internal["employee"]["signUpEmployeeInternal"], () => (require("../employee") as Record<string, unknown>)["signUpEmployeeInternal"])],
+  "update": ["mutation", typedProcedureResolver(api["employee"]["update"], () => (require("../employee") as Record<string, unknown>)["update"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;

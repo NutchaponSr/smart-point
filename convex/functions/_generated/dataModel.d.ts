@@ -114,6 +114,13 @@ export type DataModel = {
       awardedBy?: null | Id<"user">;
       createdAt?: number;
       employeeId: Id<"employee">;
+      evidenceFileName?: null | string;
+      evidenceMimeType?: null | string;
+      evidenceSize?: null | number;
+      evidenceStorageId?: null | string;
+      evidenceType?: null | "image" | "pdf";
+      evidenceUploadedAt?: null | number;
+      evidenceUploadedBy?: null | Id<"user">;
       pointAwarded?: null | number;
       status: "registered" | "attended" | "rewarded" | "cancelled";
       updatedAt?: null | number;
@@ -127,6 +134,13 @@ export type DataModel = {
       | "createdAt"
       | "_creationTime"
       | "employeeId"
+      | "evidenceFileName"
+      | "evidenceMimeType"
+      | "evidenceSize"
+      | "evidenceStorageId"
+      | "evidenceType"
+      | "evidenceUploadedAt"
+      | "evidenceUploadedBy"
       | "_id"
       | "pointAwarded"
       | "status"
@@ -411,6 +425,7 @@ export type DataModel = {
       by_creation_time: ["_creationTime"];
       by_cartId: ["cartId", "_creationTime"];
       by_cartId_rewardId: ["cartId", "rewardId", "_creationTime"];
+      by_rewardId: ["rewardId", "_creationTime"];
     };
     searchIndexes: {};
     vectorIndexes: {};
@@ -449,6 +464,7 @@ export type DataModel = {
   };
   employee: {
     document: {
+      citizenId: string;
       department: string;
       division: string;
       email?: null | string;
@@ -460,6 +476,7 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "citizenId"
       | "_creationTime"
       | "department"
       | "division"
@@ -792,8 +809,8 @@ export type DataModel = {
       reviewedAt: number;
       reviewedBy: Id<"employee">;
       senderId: Id<"employee">;
-      status: "pending" | "approved" | "rejected" | "completed";
-      tags: Array<null | string>;
+      status: "pending" | "rejected" | "completed";
+      tags: string;
       updatedAt?: null | number;
       _id: Id<"transaction">;
       _creationTime: number;

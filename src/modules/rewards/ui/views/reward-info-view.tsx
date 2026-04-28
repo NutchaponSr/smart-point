@@ -48,7 +48,7 @@ export const RewardInfoView = ({ rewardId }: Props) => {
     <section className="mx-auto w-full max-w-product-page lg:py-16 p-4 lg:px-32">
       <article className="relative grid rounded-xs border-2 border-border bg-background lg:grid-cols-[2fr_1fr]">
         <figure className="group relative col-span-full overflow-hidden rounded-t-xs border-b-2 border-border bg-cover">
-          <img src={reward?.image || placeholder.src} alt={reward.name} loading="lazy" className="w-full" />
+          <img src={reward.image || placeholder.src} alt={reward.name} loading="lazy" className="w-full" />
         </figure>
 
         <section className="lg:border-r-2">

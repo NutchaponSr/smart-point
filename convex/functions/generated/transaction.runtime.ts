@@ -20,9 +20,11 @@ function createProcedureRegistry() {
 
   const procedureRegistry = {
   "approve": ["mutation", typedProcedureResolver(api["transaction"]["approve"], () => (require("../transaction") as Record<string, unknown>)["approve"])],
+  "bulkApprove": ["mutation", typedProcedureResolver(api["transaction"]["bulkApprove"], () => (require("../transaction") as Record<string, unknown>)["bulkApprove"])],
   "comment": ["mutation", typedProcedureResolver(api["transaction"]["comment"], () => (require("../transaction") as Record<string, unknown>)["comment"])],
   "feeds": ["query", typedProcedureResolver(api["transaction"]["feeds"], () => (require("../transaction") as Record<string, unknown>)["feeds"])],
   "getHistory": ["query", typedProcedureResolver(api["transaction"]["getHistory"], () => (require("../transaction") as Record<string, unknown>)["getHistory"])],
+  "getMany": ["query", typedProcedureResolver(api["transaction"]["getMany"], () => (require("../transaction") as Record<string, unknown>)["getMany"])],
   "like": ["mutation", typedProcedureResolver(api["transaction"]["like"], () => (require("../transaction") as Record<string, unknown>)["like"])],
   "send": ["mutation", typedProcedureResolver(api["transaction"]["send"], () => (require("../transaction") as Record<string, unknown>)["send"])],
 } as const;

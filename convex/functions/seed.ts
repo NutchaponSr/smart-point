@@ -16,6 +16,7 @@ export const insertEmployee = privateMutation
       position: z.string(),
       rank: z.string(),
       division: z.string(),
+      password: z.string(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -34,6 +35,7 @@ export const insertEmployee = privateMutation
       position: input.position,
       rank: input.rank,
       division: input.division,
+      citizenId: input.password,
     });
 
     // init wallet ทันที
@@ -132,6 +134,7 @@ export const seedEmployee = optionalAuthAction
         position: emp.position,
         rank: emp.rank,
         division: emp.division,
+        password: emp.password,
       });
 
       if (!empId) {
