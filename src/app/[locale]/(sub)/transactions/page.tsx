@@ -2,7 +2,7 @@ import { SearchParams } from "nuqs/server";
 
 import { crpc, HydrateClient, prefetch } from "@/lib/convex/rsc";
 
-import { loadFilterSearchParams } from "@/modules/transactions/search-params";
+import { loadTransactionFilters } from "@/modules/transactions/search-params";
 import { TransactionView } from "@/modules/transactions/ui/views/transaction-view";
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 
 const Page = async ({ searchParams }: Props) => {
   const { q, status, min, max, from, to, limit, page, view } =
-    await loadFilterSearchParams(searchParams);
+    await loadTransactionFilters(searchParams);
 
   prefetch(crpc.wallet.getOne.queryOptions());
   prefetch(

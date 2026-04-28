@@ -2,18 +2,21 @@ import {
   parseAsInteger,
   parseAsString,
   parseAsStringLiteral,
-  parseAsBoolean,
   useQueryStates,
+  parseAsArrayOf,
 } from "nuqs";
 
-const sortValues = ["external", "internal", "internal_bu", "specials_point", "all"] as const;
+const sortValues = ["external", "internal", "internal_bu", "specials_point"] as const;
+const statusValues = ["registered", "rewarded"] as const;
 
 const params = {
   q: parseAsString.withDefault(""),
-  view: parseAsStringLiteral(sortValues).withDefault("all"),
+  view: parseAsArrayOf(parseAsStringLiteral(sortValues)),
   minParticipants: parseAsInteger,
   maxParticipants: parseAsInteger,
-  isJoined: parseAsBoolean.withDefault(false),
+  limit: parseAsInteger.withDefault(25),
+  page: parseAsInteger.withDefault(1),
+  status: parseAsArrayOf(parseAsStringLiteral(statusValues)),
 };
 
 export const useEventFilters = () => {

@@ -19,14 +19,13 @@ import { InfoCard } from "@/components/info-card";
 import { DataTable } from "@/components/data-table";
 
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
-import { TransactionFilter } from "@/modules/transactions/ui/components/transaction-filter";
+import { TransactionFilters } from "@/modules/transactions/ui/components/transaction-filters";
 import { transactionColumns } from "@/modules/transactions/ui/components/transaction-columns";
 
 import { useTransactionFilters } from "@/modules/transactions/stores/use-transaction-filter";
 import { FeedTransactions } from "../components/feed-transactions";
-import { useInfiniteQuery } from "better-convex/react";
 
-const SORTS = ["sent", "received"];
+const SORTS = ["sent", "received"] as const;
 
 export const TransactionView = () => {
   const crpc = useCRPC();
@@ -96,66 +95,70 @@ export const TransactionView = () => {
       </section>
 
       <section className="space-y-4 p-4 md:p-8">
-      <h2 className="text-xl">ประวัติธุรกรรม</h2>
-      <div className="grid grid-cols-1 items-start gap-x-16 gap-y-8 lg:grid-cols-[1fr_4fr]">
-        <TransactionFilter total={transactions.total} />
-        <div className="w-full">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2 grow">
-              <Button
-                variant="elevated"
-                size="icon"
-                disabled={!hasPrevPage}
-                onClick={() => {
-                  if (hasPrevPage) {
-                    void setFilters({ ...filters, page: filters.page - 1 });
-                  }
-                }}
-              >
-                <ChevronLeftIcon className="size-5" />
-              </Button>
-              <Button
-                variant="elevated"
-                size="icon"
-                disabled={!hasNextPage}
-                onClick={() => {
-                  if (hasNextPage) {
-                    void setFilters({ ...filters, page: filters.page + 1 });
-                  }
-                }}
-              >
-                <ChevronRightIcon className="size-5" />
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {SORTS.map((sort) => (
+        <h2 className="text-xl">ประวัติธุรกรรม</h2>
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_4fr]">
+          <TransactionFilters
+            total={transactions.total}
+            filters={filters}
+            onChange={setFilters}
+          />
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2 grow">
                 <Button
-                  variant={filters.view === sort ? "rounded" : "roundedOutline"}
-                  size="smRounded"
-                  key={sort}
-                  className="capitalize"
+                  variant="elevated"
+                  size="icon"
+                  disabled={!hasPrevPage}
                   onClick={() => {
-                    void setFilters({
-                      ...filters,
-                      view: sort as "sent" | "received",
-                      page: 0,
-                    });
+                    if (hasPrevPage) {
+                      void setFilters({ ...filters, page: filters.page - 1 });
+                    }
                   }}
                 >
-                  {sort}
+                  <ChevronLeftIcon className="size-5" />
                 </Button>
-              ))}
+                <Button
+                  variant="elevated"
+                  size="icon"
+                  disabled={!hasNextPage}
+                  onClick={() => {
+                    if (hasNextPage) {
+                      void setFilters({ ...filters, page: filters.page + 1 });
+                    }
+                  }}
+                >
+                  <ChevronRightIcon className="size-5" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {SORTS.map((sort) => (
+                  <Button
+                    variant={filters.view === sort ? "rounded" : "roundedOutline"}
+                    size="smRounded"
+                    key={sort}
+                    className="capitalize"
+                    onClick={() => {
+                      void setFilters({
+                        ...filters,
+                        view: sort,
+                        page: 0,
+                      });
+                    }}
+                  >
+                    {sort}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <DataTable
-            key={transactions.items.map((transaction) => String(transaction._id)).join(",")}
-            table={table}
-          />
+            <DataTable
+              key={transactions.items.map((transaction) => String(transaction._id)).join(",")}
+              table={table}
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
     </>
   );
 };

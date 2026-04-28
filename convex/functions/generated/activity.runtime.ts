@@ -19,10 +19,22 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
+  "approve": ["mutation", typedProcedureResolver(api["activity"]["approve"], () => (require("../activity") as Record<string, unknown>)["approve"])],
+  "attachEvidence": ["mutation", typedProcedureResolver(api["activity"]["attachEvidence"], () => (require("../activity") as Record<string, unknown>)["attachEvidence"])],
+  "bulkAddParticipants": ["mutation", typedProcedureResolver(api["activity"]["bulkAddParticipants"], () => (require("../activity") as Record<string, unknown>)["bulkAddParticipants"])],
+  "bulkApprove": ["mutation", typedProcedureResolver(api["activity"]["bulkApprove"], () => (require("../activity") as Record<string, unknown>)["bulkApprove"])],
+  "bulkCreate": ["mutation", typedProcedureResolver(api["activity"]["bulkCreate"], () => (require("../activity") as Record<string, unknown>)["bulkCreate"])],
+  "bulkDelete": ["mutation", typedProcedureResolver(api["activity"]["bulkDelete"], () => (require("../activity") as Record<string, unknown>)["bulkDelete"])],
+  "bulkLeave": ["mutation", typedProcedureResolver(api["activity"]["bulkLeave"], () => (require("../activity") as Record<string, unknown>)["bulkLeave"])],
+  "count": ["query", typedProcedureResolver(api["activity"]["count"], () => (require("../activity") as Record<string, unknown>)["count"])],
+  "create": ["mutation", typedProcedureResolver(api["activity"]["create"], () => (require("../activity") as Record<string, unknown>)["create"])],
   "getMany": ["query", typedProcedureResolver(api["activity"]["getMany"], () => (require("../activity") as Record<string, unknown>)["getMany"])],
   "getOne": ["query", typedProcedureResolver(api["activity"]["getOne"], () => (require("../activity") as Record<string, unknown>)["getOne"])],
   "join": ["mutation", typedProcedureResolver(api["activity"]["join"], () => (require("../activity") as Record<string, unknown>)["join"])],
   "leave": ["mutation", typedProcedureResolver(api["activity"]["leave"], () => (require("../activity") as Record<string, unknown>)["leave"])],
+  "list": ["query", typedProcedureResolver(api["activity"]["list"], () => (require("../activity") as Record<string, unknown>)["list"])],
+  "remove": ["mutation", typedProcedureResolver(api["activity"]["remove"], () => (require("../activity") as Record<string, unknown>)["remove"])],
+  "update": ["mutation", typedProcedureResolver(api["activity"]["update"], () => (require("../activity") as Record<string, unknown>)["update"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;

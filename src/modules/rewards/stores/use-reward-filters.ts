@@ -8,6 +8,8 @@ const params = {
   minCost: parseAsFloat.withDefault(0),
   maxCost: parseAsFloat.withDefault(0),
   star: parseAsInteger.withDefault(0),
+  limit: parseAsInteger.withDefault(25),
+  page: parseAsInteger.withDefault(1),
 }
 
 export const useRewardFilters = () => {

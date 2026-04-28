@@ -7,7 +7,7 @@ import { routing } from "@/i18n/routing";
 
 const initMiddleware = createMiddleware(routing);
 
-const PROTECTED_PREFIX = ["/"];
+const PROTECTED_PREFIX = ["/", "/dashboard", "/rewards", "/leaderboard", "/events", "/transactions", "/purchases", "/checkout"];
 const PUBLIC_PREFIX = ["/auth"];
 
 function matchPrefix(pathname: string, prefixes: string[]) {

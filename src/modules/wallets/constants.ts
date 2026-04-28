@@ -1,12 +1,9 @@
-import { iconTagVariants } from "./ui/components/options-step";
-import { BsBasket2Fill } from "react-icons/bs";
-import { VariantProps } from "class-variance-authority";
-import { FaEllipsisH, FaUtensils } from "react-icons/fa";
+export type WalletTagColor = "default" | "green" | "orange";
 
 export const tags: Array<{
   code: string;
   name: string;
-  color: VariantProps<typeof iconTagVariants>["variant"]
+  color: WalletTagColor;
 }> = [
   {
     code: "S",
@@ -32,5 +29,5 @@ export const tags: Array<{
     code: "T",
     name: "สนับสนุนลูกค้า",
     color: "default",
-  }
+  },
 ]

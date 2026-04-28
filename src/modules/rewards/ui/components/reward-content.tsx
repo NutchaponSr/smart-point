@@ -9,7 +9,7 @@ import { RewardFilters } from "@/modules/rewards/ui/components/reward-filters";
 
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
 
-import { generateSort } from "@/modules/rewards/ui/utils";
+import { generateSort } from "@/modules/rewards/utils";
 
 interface Props {
   rewards: ApiOutputs["reward"]["getMany"]["page"];

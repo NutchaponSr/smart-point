@@ -6,7 +6,7 @@ import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 
 import { statuses } from "../../constants";
 
-type Transaction = ApiOutputs["transaction"]["getHistory"]["items"]["sent"][0];
+type Transaction = ApiOutputs["transaction"]["getHistory"]["items"][0];
 
 export const transactionColumns = (): ColumnDef<Transaction>[] => {
   return [

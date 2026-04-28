@@ -5,6 +5,7 @@ import { OverviewsView } from "@/modules/overviews/ui/views/overviews-view";
 const Page = async () => {
   prefetch(crpc.wallet.getOne.queryOptions());
   prefetch(crpc.reward.getMany.queryOptions());
+  prefetch(crpc.activity.count.queryOptions());
 
   return (
     <HydrateClient>

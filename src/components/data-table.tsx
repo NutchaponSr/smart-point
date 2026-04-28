@@ -41,7 +41,7 @@ export const DataTable = <TData, TValue>({ table }: Props<TData, TValue>) => {
       <tbody className="contents lg:table-row-group lg:rounded-xs">
         {table.getRowModel().rows.length > 0 ? 
           table.getRowModel().rows.map((row) => (
-          <tr key={row.id} className="block rounded-xs border-2 border-border lg:table-row bg-background">
+          <tr key={row.id} className="block rounded-xs border-2 border-border lg:table-row bg-background even:bg-muted">
             {row.getVisibleCells().map((cell) => (
               <td key={cell.id} className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs">
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { CurrencyInput } from "react-currency-input-field";
 
+import { cn } from "@/lib/utils";
 
 interface Props {
-  label: string;
+  label?: string;
   id: string;
   name: string;
   placeholder: string;
@@ -69,7 +70,7 @@ export const PriceInput = (props: Props) => {
           }
           props.onValueChange(parsed);
         }}
-        className="font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-purple focus:border-purple focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3"
+        className={cn("font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-pink focus:border-pink focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3", props.className)}
       />
     </fieldset>
   );

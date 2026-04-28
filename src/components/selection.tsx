@@ -71,9 +71,13 @@ export const Selection = ({
   selectedLabel,
   onClear,
 }: Props) => {
+  const log = (...args: unknown[]) => {
+    console.log("[Selection]", ...args);
+  };
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const onSearchRef = useRef<Props["onSearch"]>(onSearch);
   
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -88,33 +92,42 @@ export const Selection = ({
   const debouncedSearch = useDebounce(inputValue, 300);
 
   useEffect(() => {
-    if (!onSearch) return;
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  useEffect(() => {
+    if (!onSearchRef.current) return;
 
     const runSearch = async () => {
+      log("search:start", debouncedSearch);
       setIsLoading(true);
       try {
-        await onSearch(debouncedSearch);
+        await onSearchRef.current?.(debouncedSearch);
       } finally {
         setIsLoading(false);
+        log("search:end", debouncedSearch);
       }
     };
 
     void runSearch();
-  }, [debouncedSearch, onSearch]);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     if (selectedValue) {
+      log("sync:selected", { selectedValue, selectedLabel });
       setSelected({
         value: selectedValue,
         label: selectedLabel ?? selectedValue,
       });
       return;
     }
+    log("sync:clear");
     setSelected(null);
     setInputValue("");
   }, [selectedValue, selectedLabel]);
 
   const handleUnSelect = useCallback(() => {
+    log("unselect");
     setSelected(null);
     setInputValue("");
     setOpen(false);
@@ -153,7 +166,7 @@ export const Selection = ({
         handleKeyDown(e);
         commandProps?.onKeyDown?.(e);
       }}
-      className={cn("h-auto overflow-visible bg-transparent p-0", commandProps?.className)}
+      className={cn("h-auto overflow-visible bg-transparent p-0 z-999", commandProps?.className)}
       shouldFilter={commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch}
       filter={commandFilter()}
     >
@@ -185,10 +198,12 @@ export const Selection = ({
             value={inputValue}
             disabled={disabled}
             onValueChange={(value) => {
+              log("input:change", value);
               setInputValue(value);
               inputProps?.onValueChange?.(value);
             }}
             onBlur={(e) => {
+              log("input:blur", { onScrollbar });
               if (!onScrollbar) {
                 setOpen(false);
               }
@@ -196,9 +211,11 @@ export const Selection = ({
               inputProps?.onBlur?.(e);
             }}
             onFocus={(e) => {
+              log("input:focus -> open");
               setOpen(true);
 
               if (triggerSearchOnFocus) {
+                log("search:onFocus", debouncedSearch);
                 onSearch?.(debouncedSearch);
               }
 
@@ -255,6 +272,7 @@ export const Selection = ({
                         key={option.value}
                         value={option.label}
                         onSelect={() => {
+                          log("option:select", option);
                           setSelected(option);
                           setInputValue(option.label);
                           setOpen(false);

@@ -1,7 +1,10 @@
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
 import { Status, statuses } from "@/modules/transactions/constants";
-import { useTransactionFilters } from "@/modules/transactions/stores/use-transaction-filter";
+import {
+  useAnalyticTransactionFilters,
+  useTransactionFilters,
+} from "@/modules/transactions/stores/use-transaction-filter";
 import { Accordion } from "@/components/accordion";
 import { CostFilter } from "@/components/cost-filter";
 import { SearchInput } from "@/components/search-input";
@@ -10,19 +13,49 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuRadio
 import { DateFilter } from "./date-filter";
 import { format, startOfDay } from "date-fns";
 
+type TransactionFilterState = ReturnType<typeof useTransactionFilters>[0];
+type TransactionFilterSetter = ReturnType<typeof useTransactionFilters>[1];
+type AnalyticTransactionFilterState = ReturnType<
+  typeof useAnalyticTransactionFilters
+>[0];
+type AnalyticTransactionFilterSetter = ReturnType<
+  typeof useAnalyticTransactionFilters
+>[1];
+
+type StandardFilterProps = {
+  filters: TransactionFilterState;
+  onChange: TransactionFilterSetter;
+};
+
+type AnalyticFilterProps = {
+  filters: AnalyticTransactionFilterState;
+  onChange: AnalyticTransactionFilterSetter;
+};
+
 interface Props {
   total: number;
 }
 
-export const TransactionFilter = ({ total }: Props) => {
-  const [filters, setFilters] = useTransactionFilters();
+type TransactionFiltersProps = Props & (StandardFilterProps | AnalyticFilterProps);
+const LIMIT_OPTIONS = ["10", "25", "50", "100"] as const;
 
-  const onCostChange = (key: "min" | "max", value: number | null) => {
-    void setFilters((prev) => ({ ...prev, [key]: value, page: 0 }));
+export const TransactionFilters = ({ total, filters, onChange }: TransactionFiltersProps) => {
+  const setPageZeroWithPatch = (patch: Partial<typeof filters>) => {
+    void onChange({
+      ...filters,
+      ...patch,
+      page: 0,
+    });
   };
 
+  const onCostChange = (key: "min" | "max", value: number | null) => {
+    setPageZeroWithPatch({ [key]: value ?? 0 } as Partial<typeof filters>);
+  };
+
+  const isDateFilterEnabled = "from" in filters;
+
   const dateRangeLabel = (() => {
-    if (filters.from == null) return "ช่วงเวลา";
+    if (!isDateFilterEnabled || filters.from == null) return "ช่วงเวลา";
     const fromD = new Date(filters.from);
     const toD = filters.to != null ? new Date(filters.to) : fromD;
     const sameDay =
@@ -41,7 +74,7 @@ export const TransactionFilter = ({ total }: Props) => {
         <SearchInput 
           value={filters.q}
           placeholder="Search transactions"
-          onChange={(q) => setFilters({ ...filters, q, page: 0 })}
+          onChange={(q) => setPageZeroWithPatch({ q })}
         />
       </div>
       <Accordion title="สถานะ">
@@ -52,20 +85,16 @@ export const TransactionFilter = ({ total }: Props) => {
                 type="checkbox"
                 checked={filters.status?.includes(key as Status) ?? false}
                 onChange={(e) => {
-                  const currentStatus = filters.status || [];
+                  const currentStatus = filters.status ?? [];
                   if (e.target.checked) {
-                    void setFilters({
-                      ...filters,
+                    setPageZeroWithPatch({
                       status: [...currentStatus, key as Status],
-                      page: 0,
-                    });
+                    } as Partial<typeof filters>);
                   } else {
                     const newStatus = currentStatus.filter(s => s !== key);
-                    void setFilters({
-                      ...filters,
+                    setPageZeroWithPatch({
                       status: newStatus.length > 0 ? newStatus : null,
-                      page: 0,
-                    });
+                    } as Partial<typeof filters>);
                   }
                 }}
                 className="appearance-none size-[calc(1lh+0.125rem)] border-[1.5px] border-border bg-background text-base leading-snug shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 checked:bg-pink rounded-xs peer"
@@ -84,13 +113,15 @@ export const TransactionFilter = ({ total }: Props) => {
           onMaxCostChange={(maxCost) => onCostChange("max", maxCost)}
         />
       </Accordion>
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <DateFilter>
-          <button type="button" className="hover:underline w-full text-start flex">
-            {dateRangeLabel}
-          </button>
-        </DateFilter>
-      </div>
+      {"from" in filters ? (
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+          <DateFilter>
+            <button type="button" className="hover:underline w-full text-start flex">
+              {dateRangeLabel}
+            </button>
+          </DateFilter>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4">
         <fieldset className="flex flex-col border-none gap-2 grow basis-0">
           <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
@@ -111,13 +142,14 @@ export const TransactionFilter = ({ total }: Props) => {
                 <DropdownMenuRadioGroup
                   value={filters.limit.toString()}
                   onValueChange={(limit) => {
-                    setFilters({ ...filters, limit: parseInt(limit) });
+                    setPageZeroWithPatch({ limit: parseInt(limit, 10) });
                   }}
                 >
-                  <DropdownMenuRadioItem value="10">10</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="25">25</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="50">50</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="100">100</DropdownMenuRadioItem>
+                  {LIMIT_OPTIONS.map((option) => (
+                    <DropdownMenuRadioItem key={option} value={option}>
+                      {option}
+                    </DropdownMenuRadioItem>
+                  ))}
                 </DropdownMenuRadioGroup>
               </DropdownMenuGroup>
             </DropdownMenuContent>
@@ -126,4 +158,4 @@ export const TransactionFilter = ({ total }: Props) => {
       </div>
     </div>
   );
-}
+};

@@ -16,10 +16,9 @@ export const Review = ({ reviewer }: Props) => {
       <p className="text-base m-0">{reviewer.comment}</p>
       <section className="flex flex-wrap items-center gap-1">
         <div className="flex items-center gap-2">
-          {(reviewer.reviewer.name || reviewer.reviewer.image) && (
+          {reviewer.reviewer.name && (
             <UserAvatar 
               name={reviewer.reviewer.name || ""}
-              src={reviewer.reviewer.image || null}
               className={{
                 container: "size-5 after:border-[1.5px]",
                 fallback: "text-xs font-normal",

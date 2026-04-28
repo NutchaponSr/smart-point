@@ -1,0 +1,132 @@
+"use client";
+
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+import { useCRPC } from "@/lib/convex/crpc";
+import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
+import { employeeExportSchema } from "@/modules/employee/schema";
+import { employeeHeaderMapping, employeeHeaders } from "@/modules/employee/constants";
+import type { ValidationError } from "@/types/excel";
+
+export type ExcelOperationState =
+  | { status: "idle" }
+  | { status: "loading"; operation: "import" | "export" }
+  | { status: "error"; errors: ValidationError[] }
+  | { status: "success"; operation: "import" | "export" };
+
+export function useEmployeeExcel() {
+  const crpc = useCRPC();
+  const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
+
+  const bulkImport = useMutation(crpc.employee.bulkImport.mutationOptions());
+
+  // Only fetch export data when the export operation is triggered
+  const exportQuery = useQuery({
+    enabled: state.status === "loading" && (state as any).operation === "export",
+    ...crpc.employee.listForExport.queryOptions(),
+  });
+
+  const onImport = async (file: File) => {
+    setState({ status: "loading", operation: "import" });
+
+    try {
+      const result = await importExcelWithValidation(file, {
+        schema: employeeExportSchema,
+        headerMapping: employeeHeaderMapping,
+      });
+
+      if (result.errors.length > 0) {
+        setState({ status: "error", errors: result.errors });
+        return;
+      }
+
+      await bulkImport.mutateAsync({
+        rows: result.data.map((row) => ({
+          employeeId: String(row.employeeId),
+          name: row.name,
+          email: row.email ?? undefined,
+          department: row.department,
+          position: row.position,
+          rank: row.rank,
+          division: row.division,
+          password: String(row.citizenId),
+        })),
+      });
+
+      setState({ status: "success", operation: "import" });
+    } catch (error) {
+      setState({
+        status: "error",
+        errors: [
+          {
+            row: 0,
+            field: "file",
+            message:
+              error instanceof Error ? error.message : "Something went wrong",
+            value: null,
+          },
+        ],
+      });
+    }
+  };
+
+  const onExport = async () => {
+    setState({ status: "loading", operation: "export" });
+
+    try {
+      // Wait for query to resolve if not yet available
+      const data =
+        exportQuery.data ??
+        (await exportQuery.refetch().then((r) => r.data));
+
+      if (!data) throw new Error("Cannot fetch employee data");
+
+      exportToExcel(
+        data.map((e) => ({
+          employeeId: e.employeeId,
+          name: e.name,
+          email: e.email,
+          department: e.department,
+          position: e.position,
+          rank: e.rank,
+          division: e.division,
+          citizenId: e.citizenId,
+        })),
+        {
+          filename: "employee-export",
+          sheetName: "Employee Export",
+          headers: employeeHeaders as Record<string, string>,
+        }
+      );
+
+      setState({ status: "success", operation: "export" });
+    } catch (error) {
+      setState({
+        status: "error",
+        errors: [
+          {
+            row: 0,
+            field: "export",
+            message:
+              error instanceof Error ? error.message : "Something went wrong",
+            value: null,
+          },
+        ],
+      });
+      toast.error("Something went wrong");
+    }
+  };
+
+  const clearErrors = () => setState({ status: "idle" });
+
+  return {
+    state,
+    isLoading: state.status === "loading",
+    errors: state.status === "error" ? state.errors : [],
+    onImport,
+    onExport,
+    clearErrors,
+  };
+}

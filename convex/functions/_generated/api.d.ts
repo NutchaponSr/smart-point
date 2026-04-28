@@ -21,92 +21,136 @@ import type { GenericId as Id } from "convex/values";
  */
 export declare const api: {
   activity: {
+    approve: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; participantId: string },
+      { approved: boolean; skipped: boolean }
+    >;
+    attachEvidence: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; fileName: string; storageId: string },
+      { uploaded: boolean }
+    >;
+    bulkAddParticipants: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; rows: Array<{ employeeIds: Array<string> }> },
+      any
+    >;
+    bulkApprove: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; participantIds: Array<string> },
+      { approved: number; skipped: number }
+    >;
+    bulkCreate: FunctionReference<
+      "mutation",
+      "public",
+      {
+        rows: Array<{
+          category: "external" | "internal" | "internal_bu" | "specials_point";
+          description?: string | null;
+          endDate?: number | null;
+          maxParticipants?: number | null;
+          name: string;
+          point: number;
+          startDate: number;
+        }>;
+      },
+      any
+    >;
+    bulkDelete: FunctionReference<
+      "mutation",
+      "public",
+      { activityIds: Array<string> },
+      any
+    >;
+    bulkLeave: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; participantIds: Array<string> },
+      { left: number; skipped: number }
+    >;
+    count: FunctionReference<"query", "public", {}, any>;
+    create: FunctionReference<
+      "mutation",
+      "public",
+      {
+        category: "external" | "internal" | "internal_bu" | "specials_point";
+        description?: string | null;
+        endDate?: number | null;
+        maxParticipants?: number | null;
+        name: string;
+        point: number;
+        startDate: number;
+      },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",
       {
         cursor?: string | null;
-        isJoined?: boolean;
-        limit?: number;
-        maxParticipants: number | null;
-        minParticipants: number | null;
-        q?: string;
-        view?:
-          | "external"
-          | "internal"
-          | "internal_bu"
-          | "specials_point"
-          | "all";
-      },
-      {
-        continueCursor: string | null;
-        isDone: boolean;
-        page: Array<{
-          _creationTime: number;
-          _id: any;
-          category: "external" | "internal" | "internal_bu" | "specials_point";
-          createdAt: number;
-          description?: string | null;
-          endDate?: number | null;
-          isActive: boolean;
-          isJoined: boolean;
-          maxParticipants?: number | null;
-          name: string;
-          participantCount: number;
-          point: number;
-          startDate: number;
-          updatedAt?: number | null;
-        }>;
-      }
-    >;
-    getOne: FunctionReference<
-      "query",
-      "public",
-      { activityId: string },
-      {
-        _creationTime: number;
-        _id: any;
-        createdAt: number;
-        description?: string | null;
-        endDate?: number | null;
-        isActive: boolean;
-        isJoined: boolean;
+        limit: number;
         maxParticipants?: number | null;
-        name: string;
-        participantCount: number;
-        participants: Array<{
-          createdAt: number;
-          employee: {
-            department: string;
-            division: string;
-            email?: string | null;
-            employeeId: string;
-            id: any;
-            name: string;
-            position: string;
-            rank: string;
-          } | null;
-          employeeId: any;
-          participantId: any;
-          status: "registered" | "attended" | "rewarded" | "cancelled";
-          updatedAt?: number | null;
-        }>;
-        point: number;
-        startDate: number;
-        updatedAt?: number | null;
-      }
+        minParticipants?: number | null;
+        q?: string | null;
+        view?: Array<
+          "external" | "internal" | "internal_bu" | "specials_point"
+        > | null;
+      },
+      any
     >;
+    getOne: FunctionReference<"query", "public", { activityId: string }, any>;
     join: FunctionReference<
       "mutation",
       "public",
-      { activityId: string },
-      { joined: boolean }
+      { activityId: string; employeeId: string },
+      any
     >;
     leave: FunctionReference<
       "mutation",
       "public",
       { activityId: string },
       { left: boolean }
+    >;
+    list: FunctionReference<
+      "query",
+      "public",
+      {
+        cursor?: string | null;
+        limit: number;
+        q?: string | null;
+        status?: Array<"registered" | "rewarded"> | null;
+        view?: Array<
+          "external" | "internal" | "internal_bu" | "specials_point"
+        > | null;
+      },
+      any
+    >;
+    remove: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string },
+      any
+    >;
+    update: FunctionReference<
+      "mutation",
+      "public",
+      {
+        activityId: string;
+        category?: "external" | "internal" | "internal_bu" | "specials_point";
+        description?: string | null;
+        endDate?: number | null;
+        isActive?: boolean;
+        maxParticipants?: number | null;
+        name?: string;
+        point?: number;
+        startDate?: number;
+      },
+      any
     >;
   };
   cart: {
@@ -132,7 +176,78 @@ export declare const api: {
     >;
   };
   employee: {
-    search: FunctionReference<"query", "public", { query: string }, any>;
+    bulkDelete: FunctionReference<
+      "mutation",
+      "public",
+      { employeeIds: Array<string> },
+      any
+    >;
+    bulkImport: FunctionReference<
+      "mutation",
+      "public",
+      {
+        rows: Array<{
+          department: string;
+          division: string;
+          email?: string | null;
+          employeeId: string;
+          name: string;
+          password: string;
+          position: string;
+          rank: string;
+        }>;
+      },
+      any
+    >;
+    create: FunctionReference<
+      "mutation",
+      "public",
+      {
+        department: string;
+        division: string;
+        email?: string | null;
+        employeeId: string;
+        name: string;
+        password: string;
+        position: string;
+        rank: string;
+      },
+      any
+    >;
+    exportList: FunctionReference<"query", "public", {}, any>;
+    getMany: FunctionReference<
+      "query",
+      "public",
+      { cursor?: string | null; limit: number; query?: string | null },
+      any
+    >;
+    getOne: FunctionReference<"query", "public", { employeeId: string }, any>;
+    listForExport: FunctionReference<"query", "public", {}, any>;
+    remove: FunctionReference<
+      "mutation",
+      "public",
+      { employeeId: string },
+      any
+    >;
+    search: FunctionReference<
+      "query",
+      "public",
+      { query: string; self?: boolean },
+      any
+    >;
+    update: FunctionReference<
+      "mutation",
+      "public",
+      {
+        department: string;
+        division: string;
+        employeeId: string;
+        name: string;
+        position: string;
+        rank: string;
+      },
+      any
+    >;
   };
   leaderboard: {
     getMany: FunctionReference<
@@ -192,6 +307,55 @@ export declare const api: {
     >;
   };
   reward: {
+    bulkCreate: FunctionReference<
+      "mutation",
+      "public",
+      {
+        rows: Array<{
+          description: string | null;
+          isActive?: boolean;
+          name: string;
+          onePerOrder?: boolean;
+          pointCost: number;
+          stock: number;
+        }>;
+      },
+      any
+    >;
+    bulkDelete: FunctionReference<
+      "mutation",
+      "public",
+      { ids: Array<string> },
+      any
+    >;
+    create: FunctionReference<
+      "mutation",
+      "public",
+      {
+        description?: string | null;
+        image?: string | null;
+        isActive: boolean;
+        name: string;
+        onePerOrder?: boolean;
+        pointCost: number;
+        stock: number;
+      },
+      any
+    >;
+    exportExcel: FunctionReference<"query", "public", {}, any>;
+    getList: FunctionReference<
+      "query",
+      "public",
+      {
+        cursor?: string | null;
+        limit: number;
+        maxCost?: number | null;
+        minCost?: number | null;
+        q?: string | null;
+        star?: number | null;
+      },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",
@@ -224,6 +388,22 @@ export declare const api: {
     getOne: FunctionReference<"query", "public", { rewardId: string }, any>;
     getRecommend: FunctionReference<"query", "public", {}, any>;
     getTrending: FunctionReference<"query", "public", { query?: string }, any>;
+    remove: FunctionReference<"mutation", "public", { rewardId: string }, any>;
+    update: FunctionReference<
+      "mutation",
+      "public",
+      {
+        description?: string | null;
+        image?: string | null;
+        isActive?: boolean;
+        name?: string;
+        onePerOrder?: boolean | null;
+        pointCost?: number;
+        rewardId: string;
+        stock?: number;
+      },
+      any
+    >;
   };
   seed: {
     seedActivity: FunctionReference<"action", "public", {}, any>;
@@ -250,7 +430,13 @@ export declare const api: {
     approve: FunctionReference<
       "mutation",
       "public",
-      { transactionId: string },
+      { confirm: boolean; transactionId: string },
+      any
+    >;
+    bulkApprove: FunctionReference<
+      "mutation",
+      "public",
+      { confirm: boolean; transactionIds: Array<string> },
       any
     >;
     comment: FunctionReference<
@@ -263,7 +449,59 @@ export declare const api: {
       "query",
       "public",
       { cursor?: string | null; limit?: number },
-      any
+      {
+        continueCursor: string | null;
+        isDone: boolean;
+        page: Array<{
+          _creationTime: number;
+          _id: any;
+          amount: number;
+          comments: Array<{
+            _id: any;
+            author: {
+              _id: any;
+              department: string;
+              division: string;
+              image: string | null;
+              name: string;
+              position: string;
+              rank: string;
+            };
+            content: string;
+            createdAt: number;
+            updatedAt: number | null;
+          }>;
+          createdAt: number;
+          likes: { count: number; likedByCurrentUser: boolean };
+          message: string;
+          receiver: {
+            _id: any;
+            department: string;
+            division: string;
+            image: string | null;
+            name: string;
+            position: string;
+            rank: string;
+          };
+          receiverId: any;
+          rejectionReason: string | null;
+          reviewedAt: number;
+          reviewedBy: string;
+          sender: {
+            _id: any;
+            department: string;
+            division: string;
+            image: string | null;
+            name: string;
+            position: string;
+            rank: string;
+          };
+          senderId: any;
+          status: "pending" | "approved" | "rejected" | "completed";
+          tags?: string | null;
+          updatedAt: number | null;
+        }>;
+      }
     >;
     getHistory: FunctionReference<
       "query",
@@ -283,6 +521,22 @@ export declare const api: {
       },
       any
     >;
+    getMany: FunctionReference<
+      "query",
+      "public",
+      {
+        by?: "senderId" | "receiverId" | null;
+        cursor?: string | null;
+        from?: number | null;
+        limit: number;
+        max?: number | null;
+        min?: number | null;
+        q?: string | null;
+        status?: Array<"pending" | "completed" | "rejected"> | null;
+        to?: number | null;
+      },
+      any
+    >;
     like: FunctionReference<
       "mutation",
       "public",
@@ -292,12 +546,16 @@ export declare const api: {
     send: FunctionReference<
       "mutation",
       "public",
-      {
-        amount: number;
-        message: string;
-        receiverId: string;
-        tags: Array<string>;
-      },
+      { amount: number; message: string; receiverId: string; tags: string },
+      any
+    >;
+  };
+  upload: {
+    generateUploadUrl: FunctionReference<"mutation", "public", {}, any>;
+    getFileUrl: FunctionReference<
+      "query",
+      "public",
+      { storageId: string },
       any
     >;
   };
@@ -318,6 +576,20 @@ export declare const api: {
  * ```
  */
 export declare const internal: {
+  employee: {
+    signUpEmployeeInternal: FunctionReference<
+      "action",
+      "internal",
+      {
+        email: string;
+        employeeId: string;
+        name: string;
+        password: string;
+        username: string;
+      },
+      any
+    >;
+  };
   generated: {
     auth: {
       create: FunctionReference<
@@ -508,6 +780,7 @@ export declare const internal: {
         email?: string;
         employeeId: string;
         name: string;
+        password: string;
         position: string;
         rank: string;
       },

@@ -18,11 +18,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { pointHeroVariants } from "./point-hero";
 import { RiCopperCoinFill } from "react-icons/ri";
-import { BsBasket2Fill } from "react-icons/bs";
-import { FaEllipsisH, FaUtensils } from "react-icons/fa";
 import ElementEditable from "@/components/element-editable";
-import { cva } from "class-variance-authority";
-import { tags } from "../../constants";
+import { tags as smartTagLabels } from "@/modules/transactions/constants";
 
 type TimelinePartyRow = {
   step: number;
@@ -34,19 +31,6 @@ type TimelinePartyRow = {
   image: string | null | undefined;
 };
 
-export const iconTagVariants = cva("size-7 flex items-center justify-center shrink-0 rounded-full border-[1.5px]", {
-  variants: {
-    variant: {
-      default: "bg-purple",
-      green: "bg-green",
-      orange: "bg-orange",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
-});
-
 interface Props {
   user: ApiOutputs["user"]["getCurrentUser"];
 }
@@ -55,18 +39,9 @@ export const OptionsStep = ({ user }: Props) => {
   const { watch, control } = useFormContext<SendTransactionSchema>();
 
   const employee = watch("employee");
+  const tagId = watch("tags");
 
   const { field: messageField, fieldState: messageFieldState } = useController({ control, name: "message" });
-  const { field: tagsField, fieldState: tagsFieldState } = useController({ control, name: "tags" });
-
-  const selectedTags = tagsField.value ?? [];
-
-  const toggleTag = (tagId: string) => {
-    const next = selectedTags.includes(tagId)
-      ? selectedTags.filter((t) => t !== tagId)
-      : [...selectedTags, tagId];
-    tagsField.onChange(next);
-  };
 
   const timelineRows = useMemo<TimelinePartyRow[]>(
     () => [
@@ -139,49 +114,14 @@ export const OptionsStep = ({ user }: Props) => {
         </CardFooter>
       </Card>
 
-      <fieldset className="flex flex-col border-none gap-2">
-        <legend
-          id="category-tags-legend"
-          className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-medium [&_a]:font-normal"
-        >
-          เลือกหมวดหมู่
-        </legend>
-
-        <div
-          role="group"
-          aria-labelledby="category-tags-legend"
-          className="grid md:auto-cols-fr gap-4 sm:grid-cols-2 md:grid-flow-rowt"
-        >
-          {tags.map((tag, index) => {
-            const checked = selectedTags.includes(tag.name);
-            return (
-              <label
-                key={index}
-                className={cn(
-                  "relative cursor-pointer text-current font-[inherit] text-base leading-snug no-underline flex gap-3 rounded-xs px-4 py-3 text-left transition-all flex-row items-center bg-background border-2 border-border hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[4px] hover:-translate-y-[4px]",
-                  checked && "border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-[4px] -translate-y-[4px]"
-                )}
-              >
-                <input
-                  type="checkbox"
-                  className="peer sr-only"
-                  checked={checked}
-                  onChange={() => toggleTag(tag.name)}
-                  onBlur={tagsField.onBlur}
-                />
-                <div className={cn(iconTagVariants({ variant: tag.color }), "text-primary")}>
-                  {tag.code}
-                </div>
-                <span className="text-[1rem] leading-[1.3] font-normal text-ellipsis overflow-hidden whitespace-nowrap">
-                  {tag.name}
-                </span>
-              </label>
-            );
-          })}
+      {tagId && (
+        <div className="rounded-xs border-2 border-border bg-background px-4 py-3 text-sm">
+          <p className="text-xs text-muted-foreground font-medium leading-none mb-1">SMART Culture</p>
+          <p className="text-base font-medium leading-snug">
+            {smartTagLabels[tagId] ?? tagId}
+          </p>
         </div>
-
-        <small className="text-destructive">{tagsFieldState.error?.message}</small>
-      </fieldset>
+      )}
 
       <ElementEditable 
         value={messageField.value ?? ""}

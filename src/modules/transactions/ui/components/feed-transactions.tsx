@@ -46,7 +46,7 @@ export const FeedTransactions = () => {
       </header>
 
       <div className="flex flex-col gap-4">
-        {feeds.map((feed) => (
+        {feeds.length > 0 ? feeds.map((feed) => (
           <FeedItem 
             key={feed._id} 
             amount={feed.amount}
@@ -62,7 +62,17 @@ export const FeedTransactions = () => {
             likedByCurrentUser={feed.likes.likedByCurrentUser}
             onLike={() => like.mutate({ transactionId: feed._id })}
           />
-        ))}
+        )) : (
+          <div className="grid gap-8 p-4 md:p-8">
+            <div className="grid justify-items-center gap-3 rounded border-2 border-dashed border-border bg-background p-6 text-center [&>.icon]:text-xl">
+              <figure className="w-full">
+                <img src={checkoutImage.src} alt="Checkout" className="w-full rounded-xs" />
+              </figure>
+              <h3 className="text-lg font-normal leading-snug">คุณยังไม่ได้เพิ่มอะไรเลย...ในตอนนี้!</h3>
+              <p>เมื่อคุณทำแล้ว รายการจะแสดงขึ้นที่นี่เพื่อให้คุณดำเนินการสั่งซื้อให้เสร็จสมบูรณ์</p>
+            </div>
+          </div>
+        )}
 
         {hasNextPage && (
           <Button variant="outline" onClick={() => fetchNextPage()}>
@@ -98,7 +108,7 @@ const FeedItem = ({
   comments: ApiOutputs["transaction"]["feeds"]["page"][0]["comments"];
   createdAt: number;
   onLike: () => void; 
-  tags: (string | null | undefined)[];
+  tags?: string | null;
   likedByCurrentUser: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -119,12 +129,10 @@ const FeedItem = ({
             {senderName} <span className="font-normal text-muted-foreground mx-1">gave <u>{amount}</u> points to</span> <span className="text-blue">{receiverName}</span>
           </p>
           <div className="flex items-center gap-2">
-            {tags.map((tag) => (
-              <div key={tag} className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground rounded-lg bg-muted px-2 py-1">
-                <div className="size-2 rounded-full bg-orange shrink-0" />
-                {tag}
-              </div>
-            ))}
+            <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground rounded-lg bg-muted px-2 py-1">
+              <div className="size-2 rounded-full bg-orange shrink-0" />
+              {tags}
+            </div>
           </div>
         </div>
       </div>
@@ -195,7 +203,7 @@ export const FeedDialog = ({
   likes: number;
   comments: ApiOutputs["transaction"]["feeds"]["page"][0]["comments"];
   createdAt: number;
-  tags: (string | null | undefined)[];
+  tags?: string | null;
   onLike: () => void; 
   onOpenChange: (open: boolean) => void;
   transactionId: Id<"transaction">;
@@ -227,12 +235,10 @@ export const FeedDialog = ({
               {senderName} <span className="font-normal text-muted-foreground mx-1">gave <u>{amount}</u> points to</span> <span className="text-blue">{receiverName}</span>
             </p>
             <div className="flex items-center gap-2">
-              {tags.map((tag) => (
-                <div key={tag} className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground rounded-lg bg-muted px-2 py-1">
-                  <div className="size-2 rounded-full bg-orange shrink-0" />
-                  {tag}
-                </div>
-              ))}
+              <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground rounded-lg bg-muted px-2 py-1">
+                <div className="size-2 rounded-full bg-orange shrink-0" />
+                {tags}
+              </div>
             </div>
           </div>
         </div>

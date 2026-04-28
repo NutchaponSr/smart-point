@@ -19,10 +19,17 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
+  "bulkCreate": ["mutation", typedProcedureResolver(api["reward"]["bulkCreate"], () => (require("../reward") as Record<string, unknown>)["bulkCreate"])],
+  "bulkDelete": ["mutation", typedProcedureResolver(api["reward"]["bulkDelete"], () => (require("../reward") as Record<string, unknown>)["bulkDelete"])],
+  "create": ["mutation", typedProcedureResolver(api["reward"]["create"], () => (require("../reward") as Record<string, unknown>)["create"])],
+  "exportExcel": ["query", typedProcedureResolver(api["reward"]["exportExcel"], () => (require("../reward") as Record<string, unknown>)["exportExcel"])],
+  "getList": ["query", typedProcedureResolver(api["reward"]["getList"], () => (require("../reward") as Record<string, unknown>)["getList"])],
   "getMany": ["query", typedProcedureResolver(api["reward"]["getMany"], () => (require("../reward") as Record<string, unknown>)["getMany"])],
   "getOne": ["query", typedProcedureResolver(api["reward"]["getOne"], () => (require("../reward") as Record<string, unknown>)["getOne"])],
   "getRecommend": ["query", typedProcedureResolver(api["reward"]["getRecommend"], () => (require("../reward") as Record<string, unknown>)["getRecommend"])],
   "getTrending": ["query", typedProcedureResolver(api["reward"]["getTrending"], () => (require("../reward") as Record<string, unknown>)["getTrending"])],
+  "remove": ["mutation", typedProcedureResolver(api["reward"]["remove"], () => (require("../reward") as Record<string, unknown>)["remove"])],
+  "update": ["mutation", typedProcedureResolver(api["reward"]["update"], () => (require("../reward") as Record<string, unknown>)["update"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;

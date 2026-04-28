@@ -22,8 +22,16 @@ export const RewardView = () => {
   const [filters, setFilters] = useRewardFilters();
 
   const { data: recommends } = useSuspenseQuery(crpc.reward.getRecommend.queryOptions());
-  const { data: rewards, fetchNextPage, hasNextPage } = useInfiniteQuery(crpc.reward.getMany.infiniteQueryOptions({
-    ...filters,
+  const { 
+    data: rewards, 
+    fetchNextPage, 
+    hasNextPage 
+  } =  useInfiniteQuery(crpc.reward.getMany.infiniteQueryOptions({
+    q: filters.q,
+    sort: filters.sort,
+    minCost: filters.minCost,
+    maxCost: filters.maxCost,
+    star: filters.star,
   }));
 
   return (

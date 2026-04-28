@@ -11,10 +11,22 @@ import type { tables } from "../functions/schema";
 
 export const api = {
   activity: {
-    getMany: createApiLeaf<"query", typeof import("../functions/activity").getMany>(convexApi["activity"]["getMany"], { limit: 10, type: "query" }),
-    getOne: createApiLeaf<"query", typeof import("../functions/activity").getOne>(convexApi["activity"]["getOne"], { type: "query" }),
+    approve: createApiLeaf<"mutation", typeof import("../functions/activity").approve>(convexApi["activity"]["approve"], { auth: "required", type: "mutation" }),
+    attachEvidence: createApiLeaf<"mutation", typeof import("../functions/activity").attachEvidence>(convexApi["activity"]["attachEvidence"], { auth: "required", type: "mutation" }),
+    bulkAddParticipants: createApiLeaf<"mutation", typeof import("../functions/activity").bulkAddParticipants>(convexApi["activity"]["bulkAddParticipants"], { auth: "required", type: "mutation" }),
+    bulkApprove: createApiLeaf<"mutation", typeof import("../functions/activity").bulkApprove>(convexApi["activity"]["bulkApprove"], { auth: "required", type: "mutation" }),
+    bulkCreate: createApiLeaf<"mutation", typeof import("../functions/activity").bulkCreate>(convexApi["activity"]["bulkCreate"], { auth: "required", type: "mutation" }),
+    bulkDelete: createApiLeaf<"mutation", typeof import("../functions/activity").bulkDelete>(convexApi["activity"]["bulkDelete"], { auth: "required", type: "mutation" }),
+    bulkLeave: createApiLeaf<"mutation", typeof import("../functions/activity").bulkLeave>(convexApi["activity"]["bulkLeave"], { auth: "required", type: "mutation" }),
+    count: createApiLeaf<"query", typeof import("../functions/activity").count>(convexApi["activity"]["count"], { auth: "required", type: "query" }),
+    create: createApiLeaf<"mutation", typeof import("../functions/activity").create>(convexApi["activity"]["create"], { auth: "required", type: "mutation" }),
+    getMany: createApiLeaf<"query", typeof import("../functions/activity").getMany>(convexApi["activity"]["getMany"], { auth: "required", type: "query" }),
+    getOne: createApiLeaf<"query", typeof import("../functions/activity").getOne>(convexApi["activity"]["getOne"], { auth: "required", type: "query" }),
     join: createApiLeaf<"mutation", typeof import("../functions/activity").join>(convexApi["activity"]["join"], { auth: "required", type: "mutation" }),
     leave: createApiLeaf<"mutation", typeof import("../functions/activity").leave>(convexApi["activity"]["leave"], { auth: "required", type: "mutation" }),
+    list: createApiLeaf<"query", typeof import("../functions/activity").list>(convexApi["activity"]["list"], { auth: "required", type: "query" }),
+    remove: createApiLeaf<"mutation", typeof import("../functions/activity").remove>(convexApi["activity"]["remove"], { auth: "required", type: "mutation" }),
+    update: createApiLeaf<"mutation", typeof import("../functions/activity").update>(convexApi["activity"]["update"], { auth: "required", type: "mutation" }),
   },
   cart: {
     addCart: createApiLeaf<"mutation", typeof import("../functions/cart").addCart>(convexApi["cart"]["addCart"], { auth: "required", type: "mutation" }),
@@ -24,7 +36,16 @@ export const api = {
     updateCartItemQuantity: createApiLeaf<"mutation", typeof import("../functions/cart").updateCartItemQuantity>(convexApi["cart"]["updateCartItemQuantity"], { auth: "required", type: "mutation" }),
   },
   employee: {
+    bulkDelete: createApiLeaf<"mutation", typeof import("../functions/employee").bulkDelete>(convexApi["employee"]["bulkDelete"], { auth: "required", type: "mutation" }),
+    bulkImport: createApiLeaf<"mutation", typeof import("../functions/employee").bulkImport>(convexApi["employee"]["bulkImport"], { auth: "required", type: "mutation" }),
+    create: createApiLeaf<"mutation", typeof import("../functions/employee").create>(convexApi["employee"]["create"], { auth: "required", type: "mutation" }),
+    exportList: createApiLeaf<"query", typeof import("../functions/employee").exportList>(convexApi["employee"]["exportList"], { auth: "required", type: "query" }),
+    getMany: createApiLeaf<"query", typeof import("../functions/employee").getMany>(convexApi["employee"]["getMany"], { auth: "required", type: "query" }),
+    getOne: createApiLeaf<"query", typeof import("../functions/employee").getOne>(convexApi["employee"]["getOne"], { auth: "required", type: "query" }),
+    listForExport: createApiLeaf<"query", typeof import("../functions/employee").listForExport>(convexApi["employee"]["listForExport"], { auth: "required", type: "query" }),
+    remove: createApiLeaf<"mutation", typeof import("../functions/employee").remove>(convexApi["employee"]["remove"], { auth: "required", type: "mutation" }),
     search: createApiLeaf<"query", typeof import("../functions/employee").search>(convexApi["employee"]["search"], { auth: "required", type: "query" }),
+    update: createApiLeaf<"mutation", typeof import("../functions/employee").update>(convexApi["employee"]["update"], { auth: "required", type: "mutation" }),
   },
   leaderboard: {
     getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", type: "query" }),
@@ -35,10 +56,17 @@ export const api = {
     reviewRedemption: createApiLeaf<"mutation", typeof import("../functions/redemption").reviewRedemption>(convexApi["redemption"]["reviewRedemption"], { auth: "required", type: "mutation" }),
   },
   reward: {
+    bulkCreate: createApiLeaf<"mutation", typeof import("../functions/reward").bulkCreate>(convexApi["reward"]["bulkCreate"], { type: "mutation" }),
+    bulkDelete: createApiLeaf<"mutation", typeof import("../functions/reward").bulkDelete>(convexApi["reward"]["bulkDelete"], { auth: "required", type: "mutation" }),
+    create: createApiLeaf<"mutation", typeof import("../functions/reward").create>(convexApi["reward"]["create"], { auth: "required", type: "mutation" }),
+    exportExcel: createApiLeaf<"query", typeof import("../functions/reward").exportExcel>(convexApi["reward"]["exportExcel"], { type: "query" }),
+    getList: createApiLeaf<"query", typeof import("../functions/reward").getList>(convexApi["reward"]["getList"], { auth: "required", type: "query" }),
     getMany: createApiLeaf<"query", typeof import("../functions/reward").getMany>(convexApi["reward"]["getMany"], { auth: "required", limit: 10, type: "query" }),
     getOne: createApiLeaf<"query", typeof import("../functions/reward").getOne>(convexApi["reward"]["getOne"], { auth: "required", type: "query" }),
     getRecommend: createApiLeaf<"query", typeof import("../functions/reward").getRecommend>(convexApi["reward"]["getRecommend"], { auth: "required", type: "query" }),
     getTrending: createApiLeaf<"query", typeof import("../functions/reward").getTrending>(convexApi["reward"]["getTrending"], { auth: "required", type: "query" }),
+    remove: createApiLeaf<"mutation", typeof import("../functions/reward").remove>(convexApi["reward"]["remove"], { auth: "required", type: "mutation" }),
+    update: createApiLeaf<"mutation", typeof import("../functions/reward").update>(convexApi["reward"]["update"], { auth: "required", type: "mutation" }),
   },
   seed: {
     seedActivity: createApiLeaf<"action", typeof import("../functions/seed").seedActivity>(convexApi["seed"]["seedActivity"], { auth: "optional", type: "action" }),
@@ -47,11 +75,17 @@ export const api = {
   },
   transaction: {
     approve: createApiLeaf<"mutation", typeof import("../functions/transaction").approve>(convexApi["transaction"]["approve"], { auth: "required", type: "mutation" }),
+    bulkApprove: createApiLeaf<"mutation", typeof import("../functions/transaction").bulkApprove>(convexApi["transaction"]["bulkApprove"], { auth: "required", type: "mutation" }),
     comment: createApiLeaf<"mutation", typeof import("../functions/transaction").comment>(convexApi["transaction"]["comment"], { auth: "required", type: "mutation" }),
     feeds: createApiLeaf<"query", typeof import("../functions/transaction").feeds>(convexApi["transaction"]["feeds"], { auth: "required", limit: 10, type: "query" }),
     getHistory: createApiLeaf<"query", typeof import("../functions/transaction").getHistory>(convexApi["transaction"]["getHistory"], { auth: "required", type: "query" }),
+    getMany: createApiLeaf<"query", typeof import("../functions/transaction").getMany>(convexApi["transaction"]["getMany"], { auth: "required", type: "query" }),
     like: createApiLeaf<"mutation", typeof import("../functions/transaction").like>(convexApi["transaction"]["like"], { auth: "required", type: "mutation" }),
     send: createApiLeaf<"mutation", typeof import("../functions/transaction").send>(convexApi["transaction"]["send"], { auth: "required", type: "mutation" }),
+  },
+  upload: {
+    generateUploadUrl: createApiLeaf<"mutation", typeof import("../functions/upload").generateUploadUrl>(convexApi["upload"]["generateUploadUrl"], { auth: "required", type: "mutation" }),
+    getFileUrl: createApiLeaf<"query", typeof import("../functions/upload").getFileUrl>(convexApi["upload"]["getFileUrl"], { auth: "required", type: "query" }),
   },
   user: {
     getCurrentUser: createApiLeaf<"query", typeof import("../functions/user").getCurrentUser>(convexApi["user"]["getCurrentUser"], { auth: "required", type: "query" }),

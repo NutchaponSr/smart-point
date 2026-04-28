@@ -38,6 +38,16 @@ export const Header = () => {
               {t("leaderboard")}
             </Link>
           </Button>
+          <Button variant="rounded">
+            <Link href="/events">
+              {t("events")}
+            </Link>
+          </Button>
+          <Button variant="rounded">
+            <Link href="/leaderboard">
+              {t("leaderboard")}
+            </Link>
+          </Button>
           <Button variant="rounded" className="bg-white text-black hover:ring-1 hover:ring-white">
             <Link href="/dashboard">
               {t("dashboard")}
