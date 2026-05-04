@@ -2,17 +2,12 @@
 
 import Link from "next/link";
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { GoSearch } from "react-icons/go";
+
 import { SearchInput } from "./search-input";
 import { ExcelDropdown } from "./excel-dropdown";
-import { Navigations } from "./navigations";
-import { links } from "@/modules/dashboard/constants";
+
+import { cn } from "@/lib/utils";
 
 interface Props {
   title: string;
@@ -23,6 +18,7 @@ interface Props {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   newLink?: string;
+  menu?: React.ReactNode;
 }
 
 export const Main = ({
@@ -33,29 +29,22 @@ export const Main = ({
   filter,
   searchValue,
   onSearchChange,
-  newLink ,
+  newLink,
+  menu,
 }: Props) => {
   return (
     <>
-      <header className="flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-0 sm:border-b-2 h-[142.5px]">
+      <header className={cn("flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-0 sm:border-b-2 h-[82px]", !!menu && "h-[142px]")}>
         <div className="flex min-h-8 items-center justify-between gap-2">
-          <h1 className="line-clamp-2 text-2xl hidden! sm:block!">พนักงาน</h1>
+          <h1 className="line-clamp-2 text-2xl hidden! sm:block!">{title}</h1>
 
           <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-            {searchValue && onSearchChange && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="elevated" size="iconLg">
-                    <GoSearch className="size-5 stroke-[0.25]" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-4">
-                  <SearchInput
-                    value={searchValue}
-                    onChange={onSearchChange}
-                  />
-                </PopoverContent>
-              </Popover>
+            {searchValue !== undefined && onSearchChange && (
+              <SearchInput
+                variant="popover"
+                value={searchValue}
+                onChange={onSearchChange}
+              />
             )}
             {filter}
             {(onImport || onExport) && (
@@ -75,12 +64,7 @@ export const Main = ({
         </div>
 
         <div className="flex items-center gap-3 overflow-x-auto grow">
-          <Link href="/dashboard">
-            <Button variant="rounded" size="smRounded">
-              ภาพรวม
-            </Button>
-          </Link>
-          <Navigations links={links} />
+          {menu}
         </div>
       </header>
       

@@ -1,9 +1,36 @@
 {
   "nav": {
-      "transaction": "ธุรกรรม",
-      "reward": "รางวัล",
-      "leaderboard": "กระดานผู้นำ",
-      "dashboard": "แดชบอร์ด",
-      "events": "กิจกรรม"
+    "transaction": "ธุรกรรม",
+    "reward": "รางวัล",
+    "leaderboard": "กระดานผู้นำ",
+    "dashboard": "แดชบอร์ด",
+    "events": "กิจกรรม"
+  },
+  "purchases": {
+    "title": "ประวัติการแลก",
+    "filters": {
+      "search": "ค้นหา",
+      "show": "แสดง",
+      "from": "จาก",
+      "sort-by": "เรียงลำดับตาม",
+      "recently-updated": "ล่าสุด",
+      "purchase-date": "วันที่ซื้อ",
+      "limit": "จำนวนรายการ"
+    }
+  },
+  "events": {
+    "title": "กิจกรรม",
+    "my-events": {
+      "title": "กิจกรรมของฉัน"
+    },
+    "filters": {
+      "search": "ค้นหา",
+      "show": "แสดง",
+      "from": "จาก",
+      "sort-by": "เรียงลำดับตาม",
+      "recently-updated": "ล่าสุด",
+      "event-date": "วันที่กิจกรรม",
+      "limit": "จำนวนรายการ"
+    }
   }
 }

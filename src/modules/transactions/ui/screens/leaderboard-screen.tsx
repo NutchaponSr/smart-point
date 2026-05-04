@@ -1,53 +1,56 @@
-import type { ApiOutputs } from "@convex/api";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react";
+import { useDebounce } from "@uidotdev/usehooks";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useCRPC } from "@/lib/convex/crpc";
 
-import { CurrentUserRankBar } from "../components/current-user-rank-bar";
-import { LeaderCard } from "../components/leader-card";
-import { columns } from "../components/leaderboard-columns";
+import { usePagination } from "@/hooks/use-pagination";
 
-interface Props {
-  initialData: ApiOutputs["leaderboard"]["getMany"]["page"];
-  myEntry: ApiOutputs["leaderboard"]["getMyEntry"];
-  currentCursor: number;
-  limit: number;
-  nextCursor: number | null;
-  onChangeCursor: (cursor: number) => void;
-}
+import { DataTable } from "@/components/data-table";
+import { Pagination } from "@/components/pagniation";
+import { SearchInput } from "@/components/search-input";
 
-export const LeaderboardScreen = ({
-  initialData,
-  myEntry,
-  currentCursor,
-  limit,
-  nextCursor,
-  onChangeCursor,
-}: Props) => {
-  const hasPrevPage = currentCursor > 0;
-  const hasNextPage = nextCursor !== null;
+import { LeaderCard } from "@/modules/transactions/ui/components/leader-card";
+import { columns } from "@/modules/transactions/ui/components/leaderboard-columns";
+import { CurrentUserRankBar } from "@/modules/transactions/ui/components/current-user-rank-bar";
 
-  const table = useReactTable({
-    data: initialData.slice(3),
-    columns: columns(),
-    getCoreRowModel: getCoreRowModel(),
+import { useLeaderboardFilters } from "@/modules/transactions/stores/use-leaderboard-filters";
+
+export const LeaderboardScreen = () => {
+  const crpc = useCRPC();
+
+  const [filters, setFilters] = useLeaderboardFilters();
+
+  const debouncedQuery = useDebounce(filters.q, 400);
+
+  const {
+    requestCursor,
+    canGoBack,
+    goBack,
+    goForward,
+  } = usePagination({
+    debouncedQuery,
+    limit: filters.limit,
+    urlPage: filters.page,
+    onPageChange: (page) => setFilters({ ...filters, page }),
   });
+
+  const { data: leaderboard } = useSuspenseQuery(crpc.leaderboard.getMany.queryOptions({
+    period: filters.period,
+    limit: filters.limit,
+    cursor: requestCursor,
+    q: debouncedQuery,
+  }));
+
+  const { data: myEntry } = useSuspenseQuery(crpc.leaderboard.getMyEntry.queryOptions({
+    period: filters.period,
+  }));
+
+  const canGoForward = leaderboard.hasNextPage && leaderboard.continueCursor != null;
 
   return (
     <section className="grid gap-4 p-4 md:p-8">
       <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
-        {initialData.slice(0, 3).map((item, index) => (
+        {leaderboard.page.slice(0, 3).map((item, index) => (
           <LeaderCard
             key={item.employeeId}
             name={item.employeeName}
@@ -59,111 +62,38 @@ export const LeaderboardScreen = ({
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          disabled={!hasPrevPage}
-          onClick={() => onChangeCursor(Math.max(0, currentCursor - limit))}
-        >
-          <ChevronLeftIcon className="size-6" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          disabled={!hasNextPage}
-          onClick={() => {
-            if (nextCursor !== null) {
-              onChangeCursor(nextCursor);
-            }
-          }}
-        >
-          <ChevronRightIcon className="size-6" />
-        </Button>
-      </div>
-      <table className="grid w-full border-spacing-0 gap-4 lg:table lg:border-separate lg:rounded-xs lg:border-2 lg:border-border lg:overflow-hidden">
-        <thead className="hidden lg:table-header-group">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr
-              key={headerGroup.id}
-              className="block rounded-sm border-2 border-border lg:table-row"
-            >
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  onClick={header.column.getToggleSortingHandler()}
-                  className={cn(
-                    "px-4 py-3 text-left align-middle rounded-sm select-none",
-                    header.column.getCanSort() && "cursor-pointer",
-                  )}
-                >
-                  <span className="inline-flex items-center gap-2 text-base font-semibold">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                    {header.column.getIsSorted() &&
-                      (header.column.getIsSorted() === "asc" ? (
-                        <ArrowUpIcon className="size-4" />
-                      ) : (
-                        <ArrowDownIcon className="size-4" />
-                      ))}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 grow">
+          <Pagination 
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onBack={goBack}
+            onForward={() => {
+              const c = leaderboard.continueCursor;
+              if (c != null) goForward(c);
+            }}
+          />
+        </div>
 
-        <tbody className="contents lg:table-row-group lg:rounded-xs">
-          {table.getRowModel().rows.length > 0 ? (
-            table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="block rounded-xs border-2 border-border lg:table-row bg-background"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))
-          ) : (
-            <tr className="block rounded-xs border-2 border-border lg:table-row bg-background">
-              <td
-                colSpan={table.getAllColumns().length}
-                className="block p-4 text-left align-middle not-first:border-t not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs"
-              >
-                Nothing yet
-              </td>
-            </tr>
-          )}
-        </tbody>
-        {myEntry ? (
-          <tfoot className="contents font-normal lg:table-footer-group">
-            <tr className="block rounded-xs border-2 border-border lg:table-row">
-              <td
-                colSpan={table.getAllColumns().length}
-                className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-sm lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-sm"
-              >
-                <CurrentUserRankBar
-                  rank={myEntry.rank}
-                  name={myEntry.employeeName}
-                  points={myEntry.points}
-                />
-              </td>
-            </tr>
-          </tfoot>
+        <SearchInput
+          variant="popover"
+          value={filters.q}
+          onChange={(q) => setFilters({ ...filters, q })}
+          placeholder="ค้นหา"
+        />
+      </div>
+      
+      <DataTable 
+        data={leaderboard.page.slice(3)}
+        columns={columns()}
+        footer={myEntry ? (
+          <CurrentUserRankBar
+            rank={myEntry.rank}
+            name={myEntry.employeeName}
+            points={myEntry.points}
+          />
         ) : null}
-      </table>
+      />
     </section>
   );
 };

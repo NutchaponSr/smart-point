@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
-
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
-import { Button } from "@/components/ui/button";
+import { FormHeader } from "@/components/form-header";
 
 import {
   type RewardFormInput,
@@ -56,30 +54,14 @@ export const NewRewardView = () => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <header className="flex flex-col gap-4 border-b-2 border-border justify-center p-4 md:p-8 h-[82px]">
-          <div className="flex min-h-8 items-center justify-between gap-2">
-            <h1 className="line-clamp-2 text-2xl hidden! sm:block!">
-              เพิ่มรางวัล
-            </h1>
-            <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-              <Link href={`/dashboard/reward`}>
-                <Button variant="elevated" type="button">
-                  ยกเลิก
-                </Button>
-              </Link>
-              <Button variant="elevated" className="bg-pink" type="submit">
-                บันทึกข้อมูล
-              </Button>
-            </div>
-          </div>
-        </header>
+        <FormHeader title="เพิ่มรางวัล" />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <RewardForm />
           </div>
-          <aside className="sticky top-0 hidden h-screen flex-col gap-4 self-start overflow-y-auto bg-black p-6 lg:flex lg:border-l-2 lg:border-border">
+          <aside className="sticky top-0 hidden h-screen flex-col gap-4 self-start overflow-y-auto bg-background p-6 lg:flex lg:border-l-2 lg:border-border">
             <div className="flex items-start justify-between gap-4">
-              <h2 className="text-xl leading-snug text-white">ภาพรวม</h2>
+              <h2 className="text-xl leading-snug">ภาพรวม</h2>
             </div>
             <RewardPreview />
           </aside>

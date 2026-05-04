@@ -132,6 +132,236 @@ async function enrichTransaction(ctx: QueryCtx, t: Doc<"transaction">) {
   };
 }
 
+type TransactionListViewMode = "sent" | "received" | null;
+
+type TransactionListFilterBounds = {
+  query: string;
+  status: Array<"pending" | "completed" | "rejected"> | null;
+  min: number | null;
+  max: number | null;
+  from: number | null;
+  to: number | null;
+  view: TransactionListViewMode;
+  /** Resolved `by` employee document id when valid; omitted when unset. Invalid `by` is handled separately. */
+  counterpartyEmployeeDocId: Id<"employee"> | null;
+};
+
+type TransactionPaginateResult = {
+  page: Doc<"transaction">[];
+  isDone: boolean;
+  continueCursor: string | null;
+};
+
+type TransactionListBaseQuery = {
+  paginate(opts: {
+    cursor: string | null;
+    numItems: number;
+  }): Promise<TransactionPaginateResult>;
+};
+
+function assertTransactionListRanges(
+  min: number | null,
+  max: number | null,
+  from: number | null,
+  to: number | null,
+): void {
+  if (min != null && max != null && min > max) {
+    throw new CRPCError({
+      code: "BAD_REQUEST",
+      message: "Minimum amount cannot be greater than maximum amount",
+    });
+  }
+  if (from != null && to != null && from > to) {
+    throw new CRPCError({
+      code: "BAD_REQUEST",
+      message: "Start date cannot be greater than end date",
+    });
+  }
+}
+
+async function resolveCounterpartyEmployeeDocIdFromPublicEmployeeId(
+  ctx: QueryCtx,
+  employeePublicId: string,
+): Promise<Id<"employee"> | null> {
+  const trimmed = employeePublicId.trim();
+  if (trimmed === "") return null;
+
+  const employee = await ctx.db
+    .query("employee")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", trimmed))
+    .first();
+
+  return employee?._id ?? null;
+}
+
+function buildTransactionListBaseQuery(
+  ctx: QueryCtx,
+  myEmployeeDocId: Id<"employee">,
+  from: number | null,
+  to: number | null,
+  view: TransactionListViewMode,
+) {
+  if (view === "received") {
+    return ctx.db
+      .query("transaction")
+      .withIndex("by_receiverId", (q) => {
+        const receiverRange = q.eq("receiverId", myEmployeeDocId);
+        if (from != null && to != null) {
+          return receiverRange
+            .gte("_creationTime", from)
+            .lte("_creationTime", to);
+        }
+        if (from != null) {
+          return receiverRange.gte("_creationTime", from);
+        }
+        if (to != null) {
+          return receiverRange.lte("_creationTime", to);
+        }
+        return receiverRange;
+      })
+      .order("desc");
+  }
+
+  return ctx.db
+    .query("transaction")
+    .withIndex("by_senderId", (q) => {
+      const senderRange = q.eq("senderId", myEmployeeDocId);
+      if (from != null && to != null) {
+        return senderRange.gte("_creationTime", from).lte("_creationTime", to);
+      }
+      if (from != null) {
+        return senderRange.gte("_creationTime", from);
+      }
+      if (to != null) {
+        return senderRange.lte("_creationTime", to);
+      }
+      return senderRange;
+    })
+    .order("desc");
+}
+
+function transactionMatchesListFilters(
+  transaction: Doc<"transaction">,
+  bounds: TransactionListFilterBounds,
+  partyNames: TransactionPartyNames | undefined,
+): boolean {
+  const counterpartyId = bounds.counterpartyEmployeeDocId;
+  if (counterpartyId != null) {
+    const viewingReceived = bounds.view === "received";
+    if (viewingReceived) {
+      if (transaction.senderId !== counterpartyId) return false;
+    } else if (transaction.receiverId !== counterpartyId) {
+      return false;
+    }
+  }
+
+  return filterTransaction(transaction, {
+    query: bounds.query,
+    status: bounds.status,
+    min: bounds.min,
+    max: bounds.max,
+    from: bounds.from,
+    to: bounds.to,
+    senderName: partyNames?.senderName ?? null,
+    receiverName: partyNames?.receiverName ?? null,
+  });
+}
+
+async function collectFilteredEnrichedTransactionPage(
+  ctx: QueryCtx,
+  baseQuery: TransactionListBaseQuery,
+  bounds: TransactionListFilterBounds,
+  limit: number,
+  initialCursor: string | null,
+): Promise<{
+  page: Array<Awaited<ReturnType<typeof enrichTransaction>>>;
+  lastPageResult: TransactionPaginateResult;
+  exhausted: boolean;
+}> {
+  let cursor = initialCursor;
+  let pageResult = await baseQuery.paginate({
+    cursor,
+    numItems: limit,
+  });
+  const page: Array<Awaited<ReturnType<typeof enrichTransaction>>> = [];
+  let exhausted = false;
+
+  while (page.length < limit) {
+    const partyNamesById = await getPartyNamesByTransaction(
+      ctx,
+      pageResult.page,
+    );
+    const filteredRows = pageResult.page.filter((transaction) =>
+      transactionMatchesListFilters(
+        transaction,
+        bounds,
+        partyNamesById.get(transaction._id),
+      ),
+    );
+
+    const remain = limit - page.length;
+    const enrichedRows = await Promise.all(
+      filteredRows
+        .slice(0, remain)
+        .map((transaction) => enrichTransaction(ctx, transaction)),
+    );
+    page.push(...enrichedRows);
+
+    exhausted =
+      pageResult.isDone ||
+      pageResult.continueCursor == null ||
+      pageResult.page.length === 0;
+    if (exhausted || page.length >= limit) {
+      break;
+    }
+
+    cursor = pageResult.continueCursor;
+    pageResult = await baseQuery.paginate({
+      cursor,
+      numItems: limit,
+    });
+  }
+
+  return { page, lastPageResult: pageResult, exhausted };
+}
+
+async function hasNextFilteredTransactionPage(
+  ctx: QueryCtx,
+  baseQuery: TransactionListBaseQuery,
+  bounds: TransactionListFilterBounds,
+  startCursor: string | null,
+): Promise<boolean> {
+  let currentCursor = startCursor;
+  let done = currentCursor == null;
+
+  while (!done) {
+    const probeResult = await baseQuery.paginate({
+      cursor: currentCursor,
+      numItems: 1,
+    });
+    if (probeResult.page.length === 0) {
+      break;
+    }
+
+    const [probeItem] = probeResult.page;
+    const probePartyNames = await getPartyNamesByTransaction(ctx, [probeItem]);
+    if (
+      transactionMatchesListFilters(
+        probeItem,
+        bounds,
+        probePartyNames.get(probeItem._id),
+      )
+    ) {
+      return true;
+    }
+
+    done = probeResult.isDone || probeResult.continueCursor == null;
+    currentCursor = probeResult.continueCursor;
+  }
+
+  return false;
+}
+
 type ApproveTransactionResult =
   | {
       transactionId: Id<"transaction">;
@@ -252,105 +482,70 @@ export const getMany = authQuery
       max: z.number().optional().nullable(),
       from: z.number().optional().nullable(),
       to: z.number().optional().nullable(),
-      by: z.enum(["senderId", "receiverId"]).optional().nullable(),
+      by: z.string().optional().nullable(), //employee Id
       cursor: z.string().nullish(),
       limit: z.number().min(1).max(50),
+      view: z.enum(["sent", "received"]).optional().nullable(), // sent or received
+      self: z.boolean(), // show only own transactions
     }),
   )
   .query(async ({ ctx, input }) => {
-    const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
-    const min = input.min ?? null;
-    const max = input.max ?? null;
-    const from = input.from ?? null;
-    const to = input.to ?? null;
+    const trimmedBy = input.by?.trim() ?? "";
 
-    if (min != null && max != null && min > max) {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: "Minimum amount cannot be greater than maximum amount",
-      });
-    }
-    if (from != null && to != null && from > to) {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: "Start date cannot be greater than end date",
-      });
-    }
+    let counterpartyEmployeeDocId: Id<"employee"> | null = null;
 
-    const baseQuery = ctx.db
-      .query("transaction")
-      .withIndex("by_senderId", (q) => {
-        const senderRange = q.eq("senderId", ctx.user.employeeId);
-        if (from != null && to != null) {
-          return senderRange
-            .gte("_creationTime", from)
-            .lte("_creationTime", to);
-        }
-        if (from != null) {
-          return senderRange.gte("_creationTime", from);
-        }
-        if (to != null) {
-          return senderRange.lte("_creationTime", to);
-        }
-        return senderRange;
-      })
-      .order("desc");
+    if (trimmedBy !== "") {
+      const resolved =
+        await resolveCounterpartyEmployeeDocIdFromPublicEmployeeId(
+          ctx,
+          trimmedBy,
+        );
 
-    let cursor = input.cursor ?? null;
-    let isDone = false;
-    let pageResult = await baseQuery.paginate({
-      cursor,
-      numItems: input.limit,
-    });
-    const page: Array<Awaited<ReturnType<typeof enrichTransaction>>> = [];
-
-    while (page.length < input.limit) {
-      const partyNamesByTransactionId = await getPartyNamesByTransaction(
-        ctx,
-        pageResult.page,
-      );
-      const filteredRows = pageResult.page.filter((transaction) =>
-        filterTransaction(transaction, {
-          query: normalizedQuery,
-          status: input.status ?? null,
-          min,
-          max,
-          from,
-          to,
-          senderName:
-            partyNamesByTransactionId.get(transaction._id)?.senderName ?? null,
-          receiverName:
-            partyNamesByTransactionId.get(transaction._id)?.receiverName ??
-            null,
-        }),
-      );
-
-      const remain = input.limit - page.length;
-      const enrichedRows = await Promise.all(
-        filteredRows
-          .slice(0, remain)
-          .map((transaction) => enrichTransaction(ctx, transaction)),
-      );
-      page.push(...enrichedRows);
-
-      isDone =
-        pageResult.isDone ||
-        pageResult.continueCursor == null ||
-        pageResult.page.length === 0;
-      if (isDone || page.length >= input.limit) {
-        break;
+      if (resolved === null) {
+        return {
+          page: [] as Array<Awaited<ReturnType<typeof enrichTransaction>>>,
+          continueCursor: null,
+          hasNextPage: false,
+          isDone: true,
+        };
       }
 
-      cursor = pageResult.continueCursor;
-      pageResult = await baseQuery.paginate({
-        cursor,
-        numItems: input.limit,
-      });
+      counterpartyEmployeeDocId = resolved;
     }
 
-    if (isDone) {
+    const bounds: TransactionListFilterBounds = {
+      query: input.q?.trim().toLowerCase() ?? "",
+      status: input.status ?? null,
+      min: input.min ?? null,
+      max: input.max ?? null,
+      from: input.from ?? null,
+      to: input.to ?? null,
+      view: input.view ?? null,
+      counterpartyEmployeeDocId,
+    };
+
+    assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
+
+    const baseQuery = buildTransactionListBaseQuery(
+      ctx,
+      ctx.user.employeeId,
+      bounds.from,
+      bounds.to,
+      bounds.view,
+    );
+
+    const { page, lastPageResult, exhausted } =
+      await collectFilteredEnrichedTransactionPage(
+        ctx,
+        baseQuery,
+        bounds,
+        input.limit,
+        input.cursor ?? null,
+      );
+
+    if (exhausted) {
       return {
-        ...pageResult,
+        ...lastPageResult,
         page,
         continueCursor: null,
         hasNextPage: false,
@@ -358,107 +553,17 @@ export const getMany = authQuery
       };
     }
 
-    const probeCursor = pageResult.continueCursor;
-    let hasNextPage = false;
-    let probeIsDone = probeCursor == null;
-    let currentProbeCursor = probeCursor;
-
-    while (!probeIsDone && !hasNextPage) {
-      const probeResult = await baseQuery.paginate({
-        cursor: currentProbeCursor,
-        numItems: 1,
-      });
-      if (probeResult.page.length === 0) {
-        probeIsDone = true;
-        break;
-      }
-
-      const [probeItem] = probeResult.page;
-      const probePartyNames = await getPartyNamesByTransaction(ctx, [
-        probeItem,
-      ]);
-      hasNextPage = filterTransaction(probeItem, {
-        query: normalizedQuery,
-        status: input.status ?? null,
-        min,
-        max,
-        from,
-        to,
-        senderName: probePartyNames.get(probeItem._id)?.senderName ?? null,
-        receiverName: probePartyNames.get(probeItem._id)?.receiverName ?? null,
-      });
-
-      probeIsDone = probeResult.isDone || probeResult.continueCursor == null;
-      currentProbeCursor = probeResult.continueCursor;
-    }
+    const hasNextPage = await hasNextFilteredTransactionPage(
+      ctx,
+      baseQuery,
+      bounds,
+      lastPageResult.continueCursor,
+    );
 
     return {
-      ...pageResult,
+      ...lastPageResult,
       page,
       hasNextPage,
-    };
-  });
-
-export const getHistory = authQuery
-  .input(
-    z.object({
-      query: z.string().optional(),
-      status: z
-        .array(z.enum(["pending", "completed", "rejected", "approved"]))
-        .optional()
-        .nullable(),
-      min: z.number().nullable(),
-      max: z.number().nullable(),
-      from: z.number().nullable().optional(),
-      to: z.number().nullable().optional(),
-      cursor: z.number().nullable(),
-      limit: z.number(),
-      view: z.enum(["sent", "received"]),
-    }),
-  )
-  .query(async ({ ctx, input }) => {
-    const [sent, received] = await Promise.all([
-      ctx.db
-        .query("transaction")
-        .withIndex("by_senderId", (q) => q.eq("senderId", ctx.user.employeeId))
-        .order("desc")
-        .collect(),
-      ctx.db
-        .query("transaction")
-        .withIndex("by_receiverId", (q) =>
-          q.eq("receiverId", ctx.user.employeeId),
-        )
-        .order("desc")
-        .collect(),
-    ]);
-
-    const source = input.view === "sent" ? sent : received;
-    const partyNamesByTransactionId = await getPartyNamesByTransaction(
-      ctx,
-      source,
-    );
-
-    const filtered = source.filter((t) =>
-      filterTransaction(t, {
-        ...input,
-        senderName: partyNamesByTransactionId.get(t._id)?.senderName ?? null,
-        receiverName:
-          partyNamesByTransactionId.get(t._id)?.receiverName ?? null,
-      }),
-    );
-
-    const offset = input.cursor ?? 0;
-    const page = filtered.slice(offset, offset + input.limit);
-
-    const items = await Promise.all(page.map((t) => enrichTransaction(ctx, t)));
-
-    return {
-      items,
-      total: filtered.length,
-      nextCursor:
-        offset + input.limit < filtered.length
-          ? offset + input.limit
-          : undefined,
     };
   });
 
@@ -582,7 +687,11 @@ export const bulkApprove = authMutation
     const uniqueTransactionIds = Array.from(new Set(input.transactionIds));
     const results = await Promise.all(
       uniqueTransactionIds.map((transactionId) =>
-        approveTransactionById(ctx, transactionId as Id<"transaction">, input.confirm),
+        approveTransactionById(
+          ctx,
+          transactionId as Id<"transaction">,
+          input.confirm,
+        ),
       ),
     );
 

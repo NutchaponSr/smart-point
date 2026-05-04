@@ -10,21 +10,22 @@ type Props = {
 };
 
 const Page = async ({ searchParams }: Props) => {
-  const { q, status, min, max, from, to, limit, page, view } =
-    await loadTransactionFilters(searchParams);
+  const params = await loadTransactionFilters(searchParams);
 
   prefetch(crpc.wallet.getOne.queryOptions());
   prefetch(
-    crpc.transaction.getHistory.queryOptions({
-      limit,
-      query: q,
-      status: status ?? undefined,
-      min,
-      max,
-      from: from ?? undefined,
-      to: to ?? undefined,
-      cursor: page * limit,
-      view,
+    crpc.transaction.getMany.queryOptions({
+      q: params.q,
+      self: true,
+      limit: params.limit,
+      cursor: null,
+      status: params.status,
+      min: params.min,
+      max: params.max,
+      from: params.from,
+      to: params.to,
+      view: params.view,
+      by: params.by,
     })
   );
 

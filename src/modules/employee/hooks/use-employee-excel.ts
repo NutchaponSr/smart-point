@@ -9,6 +9,7 @@ import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 import { employeeExportSchema } from "@/modules/employee/schema";
 import { employeeHeaderMapping, employeeHeaders } from "@/modules/employee/constants";
 import type { ValidationError } from "@/types/excel";
+import { ApiOutputs } from "@convex/api";
 
 export type ExcelOperationState =
   | { status: "idle" }
@@ -16,17 +17,15 @@ export type ExcelOperationState =
   | { status: "error"; errors: ValidationError[] }
   | { status: "success"; operation: "import" | "export" };
 
-export function useEmployeeExcel() {
+interface Props {
+  data: ApiOutputs["employee"]["getMany"]["page"];
+}
+
+export function useEmployeeExcel({ data }: Props) {
   const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkImport = useMutation(crpc.employee.bulkImport.mutationOptions());
-
-  // Only fetch export data when the export operation is triggered
-  const exportQuery = useQuery({
-    enabled: state.status === "loading" && (state as any).operation === "export",
-    ...crpc.employee.listForExport.queryOptions(),
-  });
 
   const onImport = async (file: File) => {
     setState({ status: "loading", operation: "import" });
@@ -76,11 +75,6 @@ export function useEmployeeExcel() {
     setState({ status: "loading", operation: "export" });
 
     try {
-      // Wait for query to resolve if not yet available
-      const data =
-        exportQuery.data ??
-        (await exportQuery.refetch().then((r) => r.data));
-
       if (!data) throw new Error("Cannot fetch employee data");
 
       exportToExcel(

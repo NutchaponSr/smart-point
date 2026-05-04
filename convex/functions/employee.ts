@@ -4,7 +4,60 @@ import z from "zod/v4";
 import { authMutation, authQuery, privateAuthAction } from "../lib/crpc";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import type { MutationCtx, QueryCtx } from "./generated/server";
+import type { MutationCtx } from "./generated/server";
+
+const zEmployeeDocId = z.custom<Id<"employee">>(
+  (val): val is Id<"employee"> => typeof val === "string" && val.length > 0,
+);
+
+function normalizeOptionalEmail(email: string | null | undefined): string | undefined {
+  const t = email?.trim() ?? "";
+  return t.length > 0 ? t : undefined;
+}
+
+type NewEmployeePayload = {
+  businessEmployeeId: string;
+  name: string;
+  email: string | undefined;
+  department: string;
+  position: string;
+  rank: string;
+  division: string;
+  password: string;
+};
+
+async function insertEmployeeWalletAndScheduleSignup(
+  ctx: MutationCtx,
+  row: NewEmployeePayload,
+): Promise<Id<"employee">> {
+  const employeeDocId = await ctx.db.insert("employee", {
+    employeeId: row.businessEmployeeId,
+    name: row.name,
+    email: row.email,
+    department: row.department,
+    position: row.position,
+    rank: row.rank,
+    division: row.division,
+    citizenId: row.password,
+  });
+
+  await ctx.db.insert("wallet", {
+    employeeId: employeeDocId,
+    givingBudget: 100,
+    receivingBudget: 0,
+    lastBudgetUpdate: Date.now(),
+  });
+
+  await ctx.scheduler.runAfter(0, internal.employee.signUpEmployeeInternal, {
+    name: row.name,
+    email: row.email || "example@somboon.co.th",
+    password: row.password,
+    username: row.businessEmployeeId,
+    employeeId: employeeDocId,
+  });
+
+  return employeeDocId;
+}
 
 function matchesEmployeeSearch(
   row: {
@@ -88,13 +141,11 @@ export const getMany = authQuery
 export const getOne = authQuery
   .input(
     z.object({
-      employeeId: z.string(),
+      employeeId: zEmployeeDocId,
     }),
   )
   .query(async ({ ctx, input }) => {
-    const employeeId = input.employeeId as Id<"employee">;
-
-    const employee = await ctx.db.get(employeeId);
+    const employee = await ctx.db.get(input.employeeId);
 
     if (!employee) {
       throw new CRPCError({ code: "NOT_FOUND", message: "Employee not found" });
@@ -148,23 +199,6 @@ export const search = authQuery
     return results.slice(0, 10);
   });
 
-async function allEmployeesForExportTable(ctx: QueryCtx) {
-  return await ctx.db
-    .query("employee")
-    .withIndex("by_employeeId")
-    .order("asc")
-    .collect();
-}
-
-export const listForExport = authQuery
-  .input(z.object({}))
-  .query(async ({ ctx }) => allEmployeesForExportTable(ctx));
-
-/** ชุดเดียวกับ listForExport — ใช้ชื่อ export ตาม feature */
-export const exportList = authQuery
-  .input(z.object({}))
-  .query(async ({ ctx }) => allEmployeesForExportTable(ctx));
-
 export const bulkImport = authMutation
   .input(
     z.object({
@@ -187,8 +221,7 @@ export const bulkImport = authMutation
     let skipped = 0;
 
     for (const row of input.rows) {
-      const t = row.email?.trim() ?? "";
-      const email = t.length > 0 ? t : undefined;
+      const email = normalizeOptionalEmail(row.email);
       const existing = await ctx.db
         .query("employee")
         .withIndex("by_employeeId", (q) => q.eq("employeeId", row.employeeId))
@@ -199,30 +232,15 @@ export const bulkImport = authMutation
         continue;
       }
 
-      const employeeDocId = await ctx.db.insert("employee", {
-        employeeId: row.employeeId,
+      await insertEmployeeWalletAndScheduleSignup(ctx, {
+        businessEmployeeId: row.employeeId,
         name: row.name,
         email,
         department: row.department,
         position: row.position,
         rank: row.rank,
-        division: row.division, 
-        citizenId: row.password,
-      });
-
-      await ctx.db.insert("wallet", {
-        employeeId: employeeDocId,
-        givingBudget: 100,
-        receivingBudget: 0,
-        lastBudgetUpdate: Date.now(),
-      });
-
-      await ctx.scheduler.runAfter(0, internal.employee.signUpEmployeeInternal, {
-        name: row.name,
-        email: email || "example@somboon.co.th",
+        division: row.division,
         password: row.password,
-        username: row.employeeId,
-        employeeId: employeeDocId,
       });
 
       inserted += 1;
@@ -238,7 +256,7 @@ export const signUpEmployeeInternal = privateAuthAction
       email: z.string().trim().email(),
       password: z.string().trim().min(1),
       username: z.string().trim().min(1),
-      employeeId: z.string().min(1),
+      employeeId: zEmployeeDocId,
     }),
   )
   .action(async ({ ctx, input }) => {
@@ -248,7 +266,7 @@ export const signUpEmployeeInternal = privateAuthAction
         email: input.email,
         password: input.password,
         username: input.username,
-        employeeId: input.employeeId as Id<"employee">,
+        employeeId: input.employeeId,
       },
     });
   });
@@ -267,6 +285,7 @@ export const create = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    const email = normalizeOptionalEmail(input.email);
     const existing = await ctx.db
       .query("employee")
       .withIndex("by_employeeId", (q) => q.eq("employeeId", input.employeeId))
@@ -275,31 +294,16 @@ export const create = authMutation
     if (existing) {
       throw new CRPCError({ code: "CONFLICT", message: "Employee already exists" });
     }
-    
-    const employeeDocId = await ctx.db.insert("employee", {
-      employeeId: input.employeeId,
+
+    const employeeDocId = await insertEmployeeWalletAndScheduleSignup(ctx, {
+      businessEmployeeId: input.employeeId,
       name: input.name,
-      email: input.email,
+      email,
       department: input.department,
       position: input.position,
       rank: input.rank,
       division: input.division,
-      citizenId: input.password,
-    });
-
-    await ctx.db.insert("wallet", {
-      employeeId: employeeDocId,
-      givingBudget: 100,
-      receivingBudget: 0,
-      lastBudgetUpdate: Date.now(),
-    });
-
-    await ctx.scheduler.runAfter(0, internal.employee.signUpEmployeeInternal, {
-      name: input.name,
-      email: input.email || "example@somboon.co.th",
       password: input.password,
-      username: input.employeeId,
-      employeeId: employeeDocId,
     });
 
     return employeeDocId;
@@ -308,7 +312,7 @@ export const create = authMutation
 export const update = authMutation
   .input(
     z.object({
-      employeeId: z.string(),
+      employeeId: zEmployeeDocId,
       name: z.string().trim(),
       department: z.string().trim(),
       position: z.string().trim(),
@@ -317,14 +321,13 @@ export const update = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const eid = input.employeeId as Id<"employee">;
-    const employee = await ctx.db.get(eid);
+    const employee = await ctx.db.get(input.employeeId);
 
     if (!employee) {
       throw new CRPCError({ code: "NOT_FOUND", message: "Employee not found" });
     }
 
-    await ctx.db.patch(eid, {
+    await ctx.db.patch(input.employeeId, {
       name: input.name,
       department: input.department,
       position: input.position,
@@ -332,7 +335,7 @@ export const update = authMutation
       division: input.division,
     });
 
-    return eid;
+    return input.employeeId;
   });
 
 /** ล้างข้อมูลอ้างอิงทั้งหมดแล้วลบ employee (ใช้เมื่อ remove / bulkDelete) */
@@ -342,128 +345,128 @@ export async function deleteEmployeeCascade(
 ) {
   const transactionIds = new Set<Id<"transaction">>();
 
-    for (const t of await ctx.db
-      .query("transaction")
-      .withIndex("by_senderId", (q) => q.eq("senderId", eid))
-      .collect()) {
-      transactionIds.add(t._id);
-    }
-    for (const t of await ctx.db
-      .query("transaction")
-      .withIndex("by_receiverId", (q) => q.eq("receiverId", eid))
-      .collect()) {
-      transactionIds.add(t._id);
-    }
-    for (const t of await ctx.db
-      .query("transaction")
-      .filter((q) => q.eq(q.field("reviewedBy"), eid))
-      .collect()) {
-      transactionIds.add(t._id);
-    }
+  for (const t of await ctx.db
+    .query("transaction")
+    .withIndex("by_senderId", (q) => q.eq("senderId", eid))
+    .collect()) {
+    transactionIds.add(t._id);
+  }
+  for (const t of await ctx.db
+    .query("transaction")
+    .withIndex("by_receiverId", (q) => q.eq("receiverId", eid))
+    .collect()) {
+    transactionIds.add(t._id);
+  }
+  for (const t of await ctx.db
+    .query("transaction")
+    .filter((q) => q.eq(q.field("reviewedBy"), eid))
+    .collect()) {
+    transactionIds.add(t._id);
+  }
 
-    for (const transactionId of transactionIds) {
-      await deleteLikesAndCommentsForTransaction(ctx, transactionId);
-      await ctx.db.delete(transactionId);
-    }
+  for (const transactionId of transactionIds) {
+    await deleteLikesAndCommentsForTransaction(ctx, transactionId);
+    await ctx.db.delete(transactionId);
+  }
 
-    for (const row of await ctx.db
-      .query("like")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
-      .collect()) {
-      await ctx.db.delete(row._id);
-    }
-    for (const row of await ctx.db
-      .query("comment")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
-      .collect()) {
-      await ctx.db.delete(row._id);
-    }
+  for (const row of await ctx.db
+    .query("like")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .collect()) {
+    await ctx.db.delete(row._id);
+  }
+  for (const row of await ctx.db
+    .query("comment")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .collect()) {
+    await ctx.db.delete(row._id);
+  }
 
-    for (const row of await ctx.db
-      .query("redemption")
-      .filter((q) => q.eq(q.field("fulfilledBy"), eid))
-      .collect()) {
-      await ctx.db.patch(row._id, { fulfilledBy: undefined, fulfilledAt: undefined });
-    }
+  for (const row of await ctx.db
+    .query("redemption")
+    .filter((q) => q.eq(q.field("fulfilledBy"), eid))
+    .collect()) {
+    await ctx.db.patch(row._id, { fulfilledBy: undefined, fulfilledAt: undefined });
+  }
 
-    for (const redemption of await ctx.db
-      .query("redemption")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
-      .collect()) {
-      const review = await ctx.db
-        .query("review")
-        .withIndex("by_redemptionId", (q) => q.eq("redemptionId", redemption._id))
-        .first();
-      if (review) await ctx.db.delete(review._id);
-      await ctx.db.delete(redemption._id);
-    }
+  for (const redemption of await ctx.db
+    .query("redemption")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .collect()) {
+    const review = await ctx.db
+      .query("review")
+      .withIndex("by_redemptionId", (q) => q.eq("redemptionId", redemption._id))
+      .first();
+    if (review) await ctx.db.delete(review._id);
+    await ctx.db.delete(redemption._id);
+  }
 
+  for (const row of await ctx.db
+    .query("activityParticipant")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .collect()) {
+    await ctx.db.delete(row._id);
+  }
+
+  const userRow = await ctx.db
+    .query("user")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .first();
+
+  if (userRow) {
     for (const row of await ctx.db
       .query("activityParticipant")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+      .filter((q) => q.eq(q.field("awardedBy"), userRow._id))
       .collect()) {
-      await ctx.db.delete(row._id);
+      await ctx.db.patch(row._id, { awardedBy: undefined, awardedAt: undefined });
     }
-
-    const userRow = await ctx.db
-      .query("user")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
-      .first();
-
-    if (userRow) {
-      for (const row of await ctx.db
-        .query("activityParticipant")
-        .filter((q) => q.eq(q.field("awardedBy"), userRow._id))
-        .collect()) {
-        await ctx.db.patch(row._id, { awardedBy: undefined, awardedAt: undefined });
-      }
-      for (const row of await ctx.db
-        .query("review")
-        .withIndex("by_userId", (q) => q.eq("userId", userRow._id))
-        .collect()) {
-        await ctx.db.delete(row._id);
-      }
-      for (const row of await ctx.db
-        .query("session")
-        .withIndex("by_userId", (q) => q.eq("userId", userRow._id))
-        .collect()) {
-        await ctx.db.delete(row._id);
-      }
-      for (const row of await ctx.db
-        .query("account")
-        .withIndex("by_userId", (q) => q.eq("userId", userRow._id))
-        .collect()) {
-        await ctx.db.delete(row._id);
-      }
-      await ctx.db.delete(userRow._id);
-    }
-
     for (const row of await ctx.db
-      .query("pointLedger")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+      .query("review")
+      .withIndex("by_userId", (q) => q.eq("userId", userRow._id))
       .collect()) {
       await ctx.db.delete(row._id);
     }
-
-    for (const cart of await ctx.db
-      .query("cart")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
-      .collect()) {
-      for (const item of await ctx.db
-        .query("cartItem")
-        .withIndex("by_cartId", (q) => q.eq("cartId", cart._id))
-        .collect()) {
-        await ctx.db.delete(item._id);
-      }
-      await ctx.db.delete(cart._id);
-    }
-
     for (const row of await ctx.db
-      .query("wallet")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+      .query("session")
+      .withIndex("by_userId", (q) => q.eq("userId", userRow._id))
       .collect()) {
       await ctx.db.delete(row._id);
     }
+    for (const row of await ctx.db
+      .query("account")
+      .withIndex("by_userId", (q) => q.eq("userId", userRow._id))
+      .collect()) {
+      await ctx.db.delete(row._id);
+    }
+    await ctx.db.delete(userRow._id);
+  }
+
+  for (const row of await ctx.db
+    .query("pointLedger")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .collect()) {
+    await ctx.db.delete(row._id);
+  }
+
+  for (const cart of await ctx.db
+    .query("cart")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .collect()) {
+    for (const item of await ctx.db
+      .query("cartItem")
+      .withIndex("by_cartId", (q) => q.eq("cartId", cart._id))
+      .collect()) {
+      await ctx.db.delete(item._id);
+    }
+    await ctx.db.delete(cart._id);
+  }
+
+  for (const row of await ctx.db
+    .query("wallet")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", eid))
+    .collect()) {
+    await ctx.db.delete(row._id);
+  }
 
   await ctx.db.delete(eid);
 }
@@ -471,11 +474,11 @@ export async function deleteEmployeeCascade(
 export const remove = authMutation
   .input(
     z.object({
-      employeeId: z.string(),
+      employeeId: zEmployeeDocId,
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const eid = input.employeeId as Id<"employee">;
+    const eid = input.employeeId;
     const employee = await ctx.db.get(eid);
 
     if (!employee) {
@@ -495,12 +498,12 @@ export const remove = authMutation
 export const bulkDelete = authMutation
   .input(
     z.object({
-      employeeIds: z.array(z.string().min(1)),
+      employeeIds: z.array(zEmployeeDocId).min(1),
     }),
   )
   .mutation(async ({ ctx, input }) => {
     const me = ctx.user.employeeId;
-    const unique = [...new Set(input.employeeIds.map((id) => id as Id<"employee">))];
+    const unique = [...new Set(input.employeeIds)];
     let deleted = 0;
     let skipped = 0;
 

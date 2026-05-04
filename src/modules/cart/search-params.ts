@@ -1,22 +1,13 @@
-import { 
-  parseAsFloat,
-  parseAsInteger,
-  parseAsString, 
-  parseAsStringLiteral, 
-  useQueryStates 
-} from "nuqs";
+import { createLoader, parseAsInteger, parseAsString, parseAsStringLiteral } from "nuqs/server";
 
 const sortValues = ["recently-updated", "purchase-date"] as const;
 
 const params = {
   q: parseAsString.withDefault(""),
   limit: parseAsInteger.withDefault(25),
-  page: parseAsInteger.withDefault(0),
   sort: parseAsStringLiteral(sortValues).withDefault("purchase-date"),
   from: parseAsInteger,
   to: parseAsInteger,
 }
 
-export const usePurchaseFilters = () => {
-  return useQueryStates(params);
-}
+export const loadPurchaseFilters = createLoader(params);

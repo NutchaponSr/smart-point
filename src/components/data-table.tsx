@@ -1,24 +1,63 @@
-import { flexRender, Table } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  OnChangeFn,
+  RowSelectionState,
+  useReactTable,
+} from "@tanstack/react-table";
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
-interface Props<TData, TValue> {
-  table: Table<TData>;
+interface Props<T> {
+  data: T[];
+  columns: ColumnDef<T>[];
+  footer?: React.ReactNode;
+  enableRowSelection?: boolean;
+  getRowId?: (originalRow: T, index: number) => string;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 }
 
-export const DataTable = <TData, TValue>({ table }: Props<TData, TValue>) => {
+export const DataTable = <T,>({
+  data,
+  columns,
+  footer,
+  enableRowSelection = false,
+  getRowId,
+  rowSelection: rowSelectionControlled,
+  onRowSelectionChange: onRowSelectionChangeControlled,
+}: Props<T>) => {
+  const [rowSelectionInternal, setRowSelectionInternal] = useState<RowSelectionState>({});
+
+  const controlled =
+    rowSelectionControlled !== undefined && onRowSelectionChangeControlled !== undefined;
+  const rowSelection = controlled ? rowSelectionControlled : rowSelectionInternal;
+  const onRowSelectionChange = controlled ? onRowSelectionChangeControlled : setRowSelectionInternal;
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    enableRowSelection,
+    ...(getRowId ? { getRowId } : {}),
+    onRowSelectionChange,
+    state: { rowSelection },
+  });
+
   return (
     <table className="grid w-full border-spacing-0 gap-4 lg:table lg:border-separate lg:rounded-xs lg:border-2 lg:border-border lg:overflow-hidden">
       <thead className="hidden lg:table-header-group">
         {table.getHeaderGroups().map((headerGroup) => (
-          <tr key={headerGroup.id} className="block rounded-sm border-2 border-border lg:table-row">
+          <tr key={headerGroup.id} className="block border-2 border-border lg:table-row">
             {headerGroup.headers.map((header) => (
               <th 
                 key={header.id} 
                 onClick={header.column.getToggleSortingHandler()}
                 className={cn(
-                  "px-4 py-3 text-left align-middle rounded-sm select-none",
+                  "px-4 py-3 text-left align-middle select-none has-[input[type=checkbox]]:border-r-2 has-[input[type=checkbox]]:border-border has-data-[slot=checkbox]:border-r-2 has-data-[slot=checkbox]:border-border has-[input[type=checkbox]]:w-[48px]! has-data-[slot=checkbox]:w-[48px]!",
                   header.column.getCanSort() && "cursor-pointer"
                 )}
               >
@@ -43,7 +82,10 @@ export const DataTable = <TData, TValue>({ table }: Props<TData, TValue>) => {
           table.getRowModel().rows.map((row) => (
           <tr key={row.id} className="block rounded-xs border-2 border-border lg:table-row bg-background even:bg-muted">
             {row.getVisibleCells().map((cell) => (
-              <td key={cell.id} className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs">
+              <td
+                key={cell.id}
+                className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border has-[input[type=checkbox]]:border-r-2 has-[input[type=checkbox]]:border-border has-data-[slot=checkbox]:border-r-2 has-data-[slot=checkbox]:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs has-[input[type=checkbox]]:w-[48px]! has-data-[slot=checkbox]:w-[48px]!"
+              >
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </td>
             ))}
@@ -56,6 +98,19 @@ export const DataTable = <TData, TValue>({ table }: Props<TData, TValue>) => {
           </tr>
         )}
       </tbody>
+
+      {footer && (
+        <tfoot className="contents font-normal lg:table-footer-group">
+          <tr className="block rounded-xs border-2 border-border lg:table-row">
+            <td
+              colSpan={table.getAllColumns().length}
+              className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-sm lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-sm"
+            >
+              {footer}
+            </td>
+          </tr>
+        </tfoot>
+      )}
     </table>
   );
 }

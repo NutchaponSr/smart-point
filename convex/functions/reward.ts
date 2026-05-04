@@ -29,6 +29,60 @@ type RewardFilterState = {
 };
 
 type ReviewStatsMap = Map<Id<"reward">, { count: number; sumStars: number }>;
+type RewardPatch = Partial<
+  Pick<
+    Doc<"reward">,
+    | "name"
+    | "description"
+    | "image"
+    | "pointCost"
+    | "stock"
+    | "onePerOrder"
+    | "isActive"
+  >
+>;
+type RewardSort = "curated" | "trending" | "hot_and_new" | null | undefined;
+
+const resolveStorageImageUrl = async (
+  storage: QueryCtx["storage"],
+  image: string | null | undefined,
+) => {
+  if (image == null || String(image).trim() === "") return null;
+  return await storage.getUrl(image as Id<"_storage">);
+};
+
+const parseCursorOffset = (cursor: string | null | undefined): number =>
+  Math.max(0, Number.parseInt(cursor ?? "0", 10) || 0);
+
+const toRewardId = (rewardId: string): Id<"reward"> => rewardId as Id<"reward">;
+
+const isNonNullable = <T>(value: T): value is NonNullable<T> =>
+  value !== null && value !== undefined;
+
+const buildRatingDistribution = (reviews: Doc<"review">[]) => {
+  const ratingDistribution: Record<number, number> = {
+    5: 0,
+    4: 0,
+    3: 0,
+    2: 0,
+    1: 0,
+  };
+  let sumStars = 0;
+
+  for (const review of reviews) {
+    sumStars += review.stars;
+    if (review.stars >= 1 && review.stars <= 5) {
+      ratingDistribution[review.stars] =
+        (ratingDistribution[review.stars] ?? 0) + 1;
+    }
+  }
+
+  return {
+    ratingDistribution,
+    reviewCount: reviews.length,
+    reviewRating: reviews.length > 0 ? sumStars / reviews.length : 0,
+  };
+};
 
 const buildRewardListFilterState = (
   input: RewardListInput,
@@ -91,7 +145,7 @@ async function buildReviewStatsForRewardIds(
 
 const sortCatalogRewards = (params: {
   rewards: Doc<"reward">[];
-  sort: "curated" | "trending" | "hot_and_new" | null | undefined;
+  sort: RewardSort;
   avgStarsForReward: (rewardId: Id<"reward">) => number;
 }): Doc<"reward">[] => {
   const { rewards, sort, avgStarsForReward } = params;
@@ -175,10 +229,27 @@ const matchesRewardFilters = (params: {
     if (!nameMatch && !descriptionMatch) return false;
   }
 
-  if (filter.hasMinCost && reward.pointCost < input.minCost!) return false;
-  if (filter.hasMaxCost && reward.pointCost > input.maxCost!) return false;
-  if (filter.hasStar && avgStarsForReward(reward._id) < input.star!)
+  if (
+    filter.hasMinCost &&
+    input.minCost != null &&
+    reward.pointCost < input.minCost
+  ) {
     return false;
+  }
+  if (
+    filter.hasMaxCost &&
+    input.maxCost != null &&
+    reward.pointCost > input.maxCost
+  ) {
+    return false;
+  }
+  if (
+    filter.hasStar &&
+    input.star != null &&
+    avgStarsForReward(reward._id) < input.star
+  ) {
+    return false;
+  }
 
   return true;
 };
@@ -204,7 +275,7 @@ const filterSortAndPaginateRewards = (params: {
     (a, b) => a._creationTime - b._creationTime,
   );
 
-  const startIndex = Math.max(0, Number.parseInt(input.cursor ?? "0", 10) || 0);
+  const startIndex = parseCursorOffset(input.cursor);
   const endIndex = startIndex + input.limit;
   const page = sortedRewards.slice(startIndex, endIndex);
   const continueCursor =
@@ -218,46 +289,31 @@ const filterSortAndPaginateRewards = (params: {
   };
 };
 
-export const getTrending = authQuery
-  .input(
-    z.object({
-      query: z.string().optional(),
-    }),
-  )
-  .query(async ({ ctx, input }) => {
-    const redemptions = await ctx.db.query("redemption").collect();
-
-    const countMap = new Map<string, number>();
-    for (const r of redemptions) {
-      countMap.set(r.rewardId, (countMap.get(r.rewardId) ?? 0) + 1);
-    }
-
-    const rewards = await ctx.db
-      .query("reward")
-      .withIndex("by_isActive", (q) => q.eq("isActive", true))
-      .take(10)
-      .then((rewards) => {
-        return rewards.filter((r) => {
-          if (input.query) {
-            const q = input.query.toLowerCase();
-            const match = r.name.toLowerCase().includes(q);
-            if (!match) return false;
-          }
-          return true;
-        });
-      });
-
-    const filtered = rewards.map((r) => ({
-      ...r,
-      redemptionCount: countMap.get(r._id) ?? 0,
-    }));
-
-    const trending = [...filtered]
-      .sort((a, b) => b.redemptionCount - a.redemptionCount)
-      .slice(0, 10);
-
-    return trending;
-  });
+const buildRewardPatch = async (
+  ctx: Pick<MutationCtx, "storage">,
+  input: {
+    name?: string;
+    description?: string | null;
+    image?: string | null;
+    pointCost?: number;
+    stock?: number;
+    onePerOrder?: boolean | null;
+    isActive?: boolean;
+  },
+): Promise<RewardPatch> => {
+  const patch: RewardPatch = {};
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.description !== undefined) patch.description = input.description;
+  if (input.image !== undefined) {
+    await assertRewardImageUnderLimit(ctx, input.image);
+    patch.image = input.image;
+  }
+  if (input.pointCost !== undefined) patch.pointCost = input.pointCost;
+  if (input.stock !== undefined) patch.stock = input.stock;
+  if (input.onePerOrder !== undefined) patch.onePerOrder = input.onePerOrder;
+  if (input.isActive !== undefined) patch.isActive = input.isActive;
+  return patch;
+};
 
 export const getRecommend = authQuery.query(async ({ ctx }) => {
   const employees = await ctx.db
@@ -284,14 +340,13 @@ export const getRecommend = authQuery.query(async ({ ctx }) => {
   if (redemptions.length === 0) return [];
 
   const rewardStats = new Map<
-    string,
+    Id<"reward">,
     { redeemCount: number; totalQuantity: number }
   >();
 
   for (const redemption of redemptions) {
-    const key = redemption.rewardId.toString();
+    const key = redemption.rewardId;
     const prev = rewardStats.get(key) ?? { redeemCount: 0, totalQuantity: 0 };
-
     rewardStats.set(key, {
       redeemCount: prev.redeemCount + 1,
       totalQuantity: prev.totalQuantity + redemption.quantity,
@@ -301,13 +356,11 @@ export const getRecommend = authQuery.query(async ({ ctx }) => {
   if (rewardStats.size === 0) return [];
 
   const rewards = await Promise.all(
-    [...rewardStats.entries()].map(async ([rewardIdStr, stats]) => {
-      const reward = await ctx.db.get(rewardIdStr as Id<"reward">);
+    [...rewardStats.entries()].map(async ([rewardId, stats]) => {
+      const reward = await ctx.db.get(rewardId);
       const reviews = await ctx.db
         .query("review")
-        .withIndex("by_rewardId", (q) =>
-          q.eq("rewardId", rewardIdStr as Id<"reward">),
-        )
+        .withIndex("by_rewardId", (q) => q.eq("rewardId", rewardId))
         .collect();
 
       if (!reward || !reward.isActive) return null;
@@ -318,24 +371,25 @@ export const getRecommend = authQuery.query(async ({ ctx }) => {
             reviews.length
           : 0;
 
-      // popularity score: weighted sum ของ quantity + bonus จาก rating
-      const popularityScore =
-        stats.totalQuantity * 1.0 + avgStars * stats.redeemCount * 0.5;
-
       return {
         ...reward,
         avgStars,
         redeemCount: stats.redeemCount,
         totalQuantity: stats.totalQuantity,
-        popularityScore,
       };
     }),
   );
 
   return rewards
-    .filter(Boolean)
-    .sort((a, b) => b!.popularityScore - a!.popularityScore)
-    .slice(0, 8) as NonNullable<(typeof rewards)[number]>[];
+    .filter(isNonNullable)
+    .sort((a, b) => {
+      if (b.redeemCount !== a.redeemCount) return b.redeemCount - a.redeemCount;
+      if (b.totalQuantity !== a.totalQuantity) {
+        return b.totalQuantity - a.totalQuantity;
+      }
+      return b.avgStars - a.avgStars;
+    })
+    .slice(0, 10);
 });
 
 export const getMany = authQuery
@@ -400,10 +454,7 @@ export const getMany = authQuery
       avgStarsForReward,
     });
 
-    const startIndex = Math.max(
-      0,
-      Number.parseInt(input.cursor ?? "0", 10) || 0,
-    );
+    const startIndex = parseCursorOffset(input.cursor);
     const endIndex = startIndex + input.limit;
     const pageRewards = sortedRewards.slice(startIndex, endIndex);
 
@@ -421,10 +472,7 @@ export const getMany = authQuery
         return {
           name: reward.name,
           description: reward.description,
-          image:
-            reward.image != null && String(reward.image).trim() !== ""
-              ? await ctx.storage.getUrl(reward.image as Id<"_storage">)
-              : null,
+          image: await resolveStorageImageUrl(ctx.storage, reward.image),
           pointCost: reward.pointCost,
           stock: reward.stock,
           totalReviews,
@@ -453,7 +501,7 @@ export const getOne = authQuery
     }),
   )
   .query(async ({ ctx, input }) => {
-    const rewardId = input.rewardId as Id<"reward">;
+    const rewardId = toRewardId(input.rewardId);
     const reward = await ctx.db.get(rewardId);
 
     if (!reward) {
@@ -469,25 +517,8 @@ export const getOne = authQuery
       .order("desc")
       .collect();
 
-    const ratingDistribution: Record<number, number> = {
-      5: 0,
-      4: 0,
-      3: 0,
-      2: 0,
-      1: 0,
-    };
-
-    let sumStars = 0;
-    for (const review of reviews) {
-      sumStars += review.stars;
-      const s = review.stars;
-      if (s >= 1 && s <= 5) {
-        ratingDistribution[s] = (ratingDistribution[s] ?? 0) + 1;
-      }
-    }
-
-    const reviewCount = reviews.length;
-    const reviewRating = reviewCount > 0 ? sumStars / reviewCount : 0;
+    const { ratingDistribution, reviewCount, reviewRating } =
+      buildRatingDistribution(reviews);
 
     const recentReviews = reviews.slice(0, 5);
     const uniqueUserIds = [
@@ -536,11 +567,7 @@ export const getOne = authQuery
       };
     });
 
-    const rawImage = reward.image;
-    const image =
-      rawImage != null && String(rawImage).trim() !== ""
-        ? await ctx.storage.getUrl(rawImage as Id<"_storage">)
-        : null;
+    const image = await resolveStorageImageUrl(ctx.storage, reward.image);
 
     return {
       ...reward,
@@ -589,16 +616,11 @@ export const getList = authQuery
     const pageWithStats = await Promise.all(
       page.map(async (reward) => {
         const stats = reviewStatsByRewardId.get(reward._id);
-        const raw = reward.image;
-        const imageUrl =
-          raw != null && String(raw).trim() !== ""
-            ? await ctx.storage.getUrl(raw as Id<"_storage">)
-            : null;
         return {
           ...reward,
           totalReview: stats?.count ?? 0,
           totalStar: stats?.sumStars ?? 0,
-          imageUrl,
+          imageUrl: await resolveStorageImageUrl(ctx.storage, reward.image),
         };
       }),
     );
@@ -661,7 +683,7 @@ export const update = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const rewardId = input.rewardId as Id<"reward">;
+    const rewardId = toRewardId(input.rewardId);
     const reward = await ctx.db.get(rewardId);
     if (!reward) {
       throw new CRPCError({
@@ -669,25 +691,15 @@ export const update = authMutation
         message: "Reward not found",
       });
     }
-    const patch: {
-      name?: string;
-      description?: string | null;
-      image?: string | null;
-      pointCost?: number;
-      stock?: number;
-      onePerOrder?: boolean | null;
-      isActive?: boolean;
-    } = {};
-    if (input.name !== undefined) patch.name = input.name;
-    if (input.description !== undefined) patch.description = input.description;
-    if (input.image !== undefined) {
-      await assertRewardImageUnderLimit(ctx, input.image);
-      patch.image = input.image;
-    }
-    if (input.pointCost !== undefined) patch.pointCost = input.pointCost;
-    if (input.stock !== undefined) patch.stock = input.stock;
-    if (input.onePerOrder !== undefined) patch.onePerOrder = input.onePerOrder;
-    if (input.isActive !== undefined) patch.isActive = input.isActive;
+    const patch = await buildRewardPatch(ctx, {
+      name: input.name,
+      description: input.description,
+      image: input.image,
+      pointCost: input.pointCost,
+      stock: input.stock,
+      onePerOrder: input.onePerOrder,
+      isActive: input.isActive,
+    });
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(rewardId, patch);
     }
@@ -697,7 +709,7 @@ export const update = authMutation
 export const remove = authMutation
   .input(z.object({ rewardId: z.string().min(1) }))
   .mutation(async ({ ctx, input }) => {
-    const rewardId = input.rewardId as Id<"reward">;
+    const rewardId = toRewardId(input.rewardId);
     const reward = await ctx.db.get(rewardId);
     if (!reward) {
       throw new CRPCError({
@@ -707,15 +719,6 @@ export const remove = authMutation
     }
     await deleteRewardAndDependents(ctx, rewardId);
     return rewardId;
-  });
-
-export const exportExcel = publicQuery
-  .input(z.object({}))
-  .query(async ({ ctx }) => {
-    return await ctx.db
-      .query("reward")
-      .withIndex("by_isActive", (q) => q.eq("isActive", true))
-      .collect();
   });
 
 export const bulkCreate = publicMutation
@@ -759,7 +762,7 @@ export const bulkDelete = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const unique = [...new Set(input.ids.map((id) => id as Id<"reward">))];
+    const unique = [...new Set(input.ids.map(toRewardId))];
     let deleted = 0;
     for (const rewardId of unique) {
       const reward = await ctx.db.get(rewardId);

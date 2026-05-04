@@ -10,17 +10,17 @@ interface Props {
 }
 
 const Page = async ({ searchParams }: Props) => {
-  const { period, limit } = await loadLeaderboardSearchParams(searchParams);
+  const { period, limit, q } = await loadLeaderboardSearchParams(searchParams);
 
   prefetch(crpc.leaderboard.getMany.queryOptions({
     period,
     limit,
+    cursor: null,
+    q: q.trim() || undefined,
   }));
-  prefetch(
-    crpc.leaderboard.getMyEntry.queryOptions({
-      period,
-    }),
-  );
+  prefetch(crpc.leaderboard.getMyEntry.queryOptions({
+    period,
+  }));
 
   return (
     <HydrateClient>

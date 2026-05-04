@@ -1,24 +1,17 @@
 "use client";
 
-import Link from "next/link";
-
-import { Geist_Mono } from "next/font/google";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
-import { Button } from "@/components/ui/button";
+import { FormHeader } from "@/components/form-header";
 
 import { EmployeeForm } from "@/modules/employee/ui/components/employee-form";
+import { EmployeePreview } from "@/modules/employee/ui/components/employee-preview";
 
 import { employeeSchema, EmployeeSchema } from "@/modules/employee/schema";
-
-const font = Geist_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export const NewEmployeeView = () => {
   const crpc = useCRPC();
@@ -60,21 +53,7 @@ export const NewEmployeeView = () => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <header className="flex flex-col gap-4 border-b-2 border-border justify-center p-4 md:p-8 h-[82px]">
-          <div className="flex min-h-8 items-center justify-between gap-2">
-            <h1 className="line-clamp-2 text-2xl hidden! sm:block!">เพิ่มพนักงาน</h1>
-            <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-              <Link href={`/dashboard/employee`}>
-                <Button variant="elevated" type="button">
-                  ยกเลิก
-                </Button>
-              </Link>
-              <Button variant="elevated" className="bg-pink" type="submit">
-                บันทึกข้อมูล
-              </Button>
-            </div>
-          </div>
-        </header>
+        <FormHeader title="เพิ่มพนักงาน" />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <EmployeeForm />
@@ -86,11 +65,7 @@ export const NewEmployeeView = () => {
               </h2>
             </div>
 
-            <div className="h-[350px] overflow-auto rounded-xs bg-[#f4f4f0] p-4 font-mono text-sm text-muted-foreground border-2 border-border">
-              <pre className={font.className}>
-                {JSON.stringify(previewData, null, 2)}
-              </pre>
-            </div>
+            <EmployeePreview />
           </aside>
         </div>
       </form>

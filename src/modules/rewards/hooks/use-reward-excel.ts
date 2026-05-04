@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useState } from "react";
+import type { ApiOutputs } from "@convex/api";
+import { useMutation } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
@@ -18,17 +19,15 @@ export type ExcelOperationState =
   | { status: "error"; errors: ValidationError[] }
   | { status: "success"; operation: "import" | "export" };
 
-export function useRewardExcel() {
+interface Props {
+  data: ApiOutputs["reward"]["getList"]["page"];
+}
+
+export function useRewardExcel({ data }: Props) {
   const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkCreate = useMutation(crpc.reward.bulkCreate.mutationOptions());
-
-  // Only fetch export data when the export operation is triggered
-  const exportQuery = useQuery({
-    enabled: state.status === "loading" && (state as any).operation === "export",
-    ...crpc.reward.exportExcel.queryOptions(),
-  });
 
   const onImport = async (file: File) => {
     setState({ status: "loading", operation: "import" });
@@ -76,10 +75,7 @@ export function useRewardExcel() {
     setState({ status: "loading", operation: "export" });
 
     try {
-      // Wait for query to resolve if not yet available
-      const data =
-        exportQuery.data ??
-        (await exportQuery.refetch().then((r) => r.data));
+      
 
       if (!data) throw new Error("Cannot fetch reward data");
 
