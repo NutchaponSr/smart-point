@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
-import { BsDatabaseFill } from "react-icons/bs";
+import { BsDatabaseFill, BsList } from "react-icons/bs";
 
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,8 @@ import {
 import { Logo } from "@/components/logo";
 
 import { UserButtonDropdown } from "@/modules/auth/ui/components/user-button";
+import { SheetTrigger } from "@/components/ui/sheet";
+import { MobileNavigations } from "../(main)/mobile-navigations";
 
 
 export const Sidebar = () => {
@@ -33,8 +35,13 @@ export const Sidebar = () => {
 
   return (
     <nav className="flex flex-col overflow-x-hidden overflow-y-auto bg-black text-white lg:static lg:w-52 dark:text-foreground">
-      <div className="override grid grid-cols-[auto_1fr_auto] items-center gap-3 p-4 text-lg leading-6 lg:hidden">
+      <div className="override flex items-center gap-3 p-4 text-lg leading-6 lg:hidden justify-between">
         <Logo />
+        <MobileNavigations>
+          <SheetTrigger className="w-fit">
+            <BsList className="size-5" />
+          </SheetTrigger>
+        </MobileNavigations>
       </div>
       <header className="hidden lg:grid p-6">
         <Logo className="lg:px-0" />
@@ -66,7 +73,7 @@ export const Sidebar = () => {
         </section>
       </div>
       <footer className="mt-auto hidden lg:grid">
-        <div className="cursor-pointer outline-none all-unset focus-visible:outline-none group flex items-center justify-between overflow-hidden border-t-2 border-white/50 px-6 py-4 all-unset hover:text-accent dark:border-foreground/50">
+        <div className="cursor-pointer outline-none all-unset focus-visible:outline-none group flex items-center justify-between overflow-hidden border-t-2 border-white/50 all-unset hover:text-accent dark:border-foreground/50">
           <UserButtonDropdown />
         </div>
       </footer>

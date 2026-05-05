@@ -23,6 +23,7 @@ export const CartScreen = () => {
 
   const checkout = useMutation(crpc.cart.redeemCart.mutationOptions());
   const remove = useMutation(crpc.cart.removeCartItem.mutationOptions());
+  const updateQty = useMutation(crpc.cart.updateCartItemQuantity.mutationOptions());
 
   if (!cart.items.length) {
     return (
@@ -50,10 +51,28 @@ export const CartScreen = () => {
         <div className="grid gap-6">
           <div role="list" className="rounded-xs border-2 border-border bg-background">
             {cart.items.map((item) => (
-              <CheckoutItem 
-                key={item._id} 
-                item={item} 
+              <CheckoutItem
+                key={item._id}
+                item={item}
                 onRemove={() => remove.mutate({ cartItemId: item._id })}
+                onUpdateQuantity={(quantity) =>
+                  updateQty.mutate(
+                    { cartItemId: item._id, quantity },
+                    {
+                      onError: (err) => {
+                        const msg =
+                          err instanceof Error
+                            ? err.message
+                            : "อัปเดตจำนวนไม่สำเร็จ";
+                        toast.error(msg);
+                      },
+                    },
+                  )
+                }
+                isUpdating={
+                  updateQty.isPending &&
+                  updateQty.variables?.cartItemId === item._id
+                }
               />
             ))}
           </div>
@@ -61,7 +80,7 @@ export const CartScreen = () => {
           <CheckoutSummary totalPoints={cart.totalPoints} />
         </div>
 
-        <div className="flex flex-col gap-6 undefined">
+        <div className="flex flex-col gap-6">
           <PointHero 
             title="ยอดพอยต์คงเหลือ"
             points={wallet.receivingBudget}

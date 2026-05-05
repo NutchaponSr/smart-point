@@ -118,7 +118,6 @@ const FeedItem = ({
       <div className="flex items-center px-4">
         <UserAvatar 
           name={senderName}
-          src={senderImage || undefined}
           className={{
             container: "size-12 after:border-2! after:rounded-full!",
             fallback: "text-xl font-medium rounded-full!",
@@ -302,7 +301,6 @@ export const FeedDialog = ({
             <div className="shrink-0 grow-0 me-2.5 self-start my-1">
               <UserAvatar
                 name={currentUser.name}
-                src={currentUser.image || undefined}
                 className={{
                   container: "size-8 after:border-2 after:rounded-full!",
                   fallback: "text-sm font-medium rounded-full!",

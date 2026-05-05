@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 
 import { UserButton } from "@/modules/auth/ui/components/user-button";
+import { SheetTrigger } from "@/components/ui/sheet";
+
+import { MobileNavigations } from "./mobile-navigations";
 
 export const Header = () => {
   const t = useTranslations("nav");
@@ -23,36 +26,26 @@ export const Header = () => {
 
       <div className="hidden lg:flex lg:items-center">
         <div className="flex flex-col justify-center items-center lg:flex-row lg:gap-1 lg:px-6">
-          <Button variant="rounded">
-            <Link href="/transactions">
+          <Link href="/transactions">
+            <Button variant="rounded">
               {t("transaction")}
-            </Link>
-          </Button>
-          <Button variant="rounded">
-            <Link href="/rewards">
+            </Button>
+          </Link>
+          <Link href="/rewards">
+            <Button variant="rounded">
               {t("reward")}
-            </Link>
-          </Button>
-          <Button variant="rounded">
-            <Link href="/leaderboard">
-              {t("leaderboard")}
-            </Link>
-          </Button>
-          <Button variant="rounded">
-            <Link href="/events">
+            </Button>
+          </Link>
+          <Link href="/events">
+            <Button variant="rounded">
               {t("events")}
-            </Link>
-          </Button>
-          <Button variant="rounded">
-            <Link href="/leaderboard">
-              {t("leaderboard")}
-            </Link>
-          </Button>
-          <Button variant="rounded" className="bg-white text-black hover:ring-1 hover:ring-white">
-            <Link href="/dashboard">
+            </Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button variant="rounded" className="bg-white text-black hover:ring-1 hover:ring-white">
               {t("dashboard")}
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -67,10 +60,17 @@ export const Header = () => {
         </div>
       </div>
 
-      <div className="lg:hidden flex lg:flex-col flex-row h-full">
-        <button className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-pink p-4 text-lg lg:hover:text-white no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20 border-l-2">
-          <BsList className="size-6" />
-        </button>
+      <div className="lg:hidden flex items-center gap-2 lg:flex-col flex-row h-full">
+        <Link href="/checkout">
+          <Button variant="elevated" size="iconLg" className="hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+            <HiShoppingBag className="size-6" />
+          </Button>
+        </Link>
+        <MobileNavigations>
+          <SheetTrigger className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-pink p-4 text-lg lg:hover:text-white no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20 border-l-2">
+            <BsList className="size-8" />
+          </SheetTrigger>
+        </MobileNavigations>
       </div>
     </header>
   );
