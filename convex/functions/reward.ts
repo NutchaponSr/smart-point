@@ -633,6 +633,72 @@ export const getList = authQuery
     };
   });
 
+const MAX_EXPORT_ROWS = 10_000;
+
+/** ส่งออกรายการรางวัลทั้งหมดที่ตรง filter เดียวกับ getList */
+export const exportAll = authMutation
+  .input(
+    z.object({
+      q: z.string().optional().nullable(),
+      minCost: z.number().min(0).optional().nullable(),
+      maxCost: z.number().min(0).optional().nullable(),
+      star: z.number().min(0).max(5).optional().nullable(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const listInput: RewardListInput = {
+      q: input.q,
+      minCost: input.minCost,
+      maxCost: input.maxCost,
+      star: input.star,
+      limit: MAX_EXPORT_ROWS + 1,
+      cursor: "0",
+    };
+    const filter = buildRewardListFilterState(listInput);
+
+    const [allRewards, allReviews] = await Promise.all([
+      ctx.db
+        .query("reward")
+        .withIndex("by_isActive", (q) => q.eq("isActive", true))
+        .collect(),
+      ctx.db.query("review").collect(),
+    ]);
+
+    const reviewStatsByRewardId = buildReviewStatsByRewardId(allReviews);
+    const avgStarsForReward = (rewardId: Id<"reward">) =>
+      getAverageStars(reviewStatsByRewardId, rewardId);
+
+    const filteredSorted = allRewards
+      .filter((reward) =>
+        matchesRewardFilters({
+          reward,
+          input: listInput,
+          filter,
+          avgStarsForReward,
+        }),
+      )
+      .sort((a, b) => a._creationTime - b._creationTime);
+
+    if (filteredSorted.length > MAX_EXPORT_ROWS) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: `พบข้อมูลมากเกิน ${MAX_EXPORT_ROWS} รายการ กรุณาใช้ตัวกรองให้แคบลง`,
+      });
+    }
+
+    return await Promise.all(
+      filteredSorted.map(async (reward) => {
+        const stats = reviewStatsByRewardId.get(reward._id);
+        return {
+          ...reward,
+          totalReview: stats?.count ?? 0,
+          totalStar: stats?.sumStars ?? 0,
+          imageUrl: await resolveStorageImageUrl(ctx.storage, reward.image),
+        };
+      }),
+    );
+  });
+
 export const create = authMutation
   .input(
     z.object({

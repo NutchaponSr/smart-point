@@ -75,7 +75,7 @@ export const EditRewardView = ({ rewardId }: Props) => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormHeader title={reward.name} />
+        <FormHeader title={reward.name} backHref="/meta/rewards" />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <RewardForm />

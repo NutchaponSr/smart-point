@@ -15,6 +15,8 @@ import { columns } from "@/modules/employee/ui/components/employee-columns";
 
 import { useEmployeeExcel } from "@/modules/employee/hooks/use-employee-excel";
 import { useEmployeeFilters } from "@/modules/employee/stores/use-employee-filters";
+import { Navigations } from "@/components/navigations";
+import { links } from "@/modules/dashboard/constants";
 
 export const EmployeeAnalyticView = () => {
   const crpc = useCRPC();
@@ -41,7 +43,7 @@ export const EmployeeAnalyticView = () => {
     query: debouncedQuery,
   }));
 
-  const { onImport, onExport } = useEmployeeExcel({ data: employees.page });
+  const { onImport, onExport } = useEmployeeExcel({ searchQuery: debouncedQuery });
 
   const canGoForward = employees.hasNextPage && employees.continueCursor != null;
 
@@ -53,6 +55,7 @@ export const EmployeeAnalyticView = () => {
       searchValue={filters.q}
       onSearchChange={(q) => setFilters({ ...filters, q })}
       newLink="/meta/employees/new"
+      menu={<Navigations links={links} />}
     >
       <section className="p-4 md:p-8">
         <div className="grid gap-12">

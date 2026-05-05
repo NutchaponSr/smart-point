@@ -1,20 +1,20 @@
 export const links = [
   {
-    slug: "employee",
+    slug: "employees",
     name: {
       th: "พนักงาน",
       en: "Employee",
     },
   },
   {
-    slug: "reward",
+    slug: "rewards",
     name: {
       th: "รางวัล",
       en: "Reward",
     },
   },
   {
-    slug: "transactions",
+    slug: "transactions?status=pending",
     name: {
       th: "ธุรกรรม",
       en: "Transaction",

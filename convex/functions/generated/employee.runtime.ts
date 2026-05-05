@@ -22,6 +22,7 @@ function createProcedureRegistry() {
   "bulkDelete": ["mutation", typedProcedureResolver(api["employee"]["bulkDelete"], () => (require("../employee") as Record<string, unknown>)["bulkDelete"])],
   "bulkImport": ["mutation", typedProcedureResolver(api["employee"]["bulkImport"], () => (require("../employee") as Record<string, unknown>)["bulkImport"])],
   "create": ["mutation", typedProcedureResolver(api["employee"]["create"], () => (require("../employee") as Record<string, unknown>)["create"])],
+  "exportAll": ["mutation", typedProcedureResolver(api["employee"]["exportAll"], () => (require("../employee") as Record<string, unknown>)["exportAll"])],
   "getMany": ["query", typedProcedureResolver(api["employee"]["getMany"], () => (require("../employee") as Record<string, unknown>)["getMany"])],
   "getOne": ["query", typedProcedureResolver(api["employee"]["getOne"], () => (require("../employee") as Record<string, unknown>)["getOne"])],
   "remove": ["mutation", typedProcedureResolver(api["employee"]["remove"], () => (require("../employee") as Record<string, unknown>)["remove"])],

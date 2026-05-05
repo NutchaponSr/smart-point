@@ -54,7 +54,7 @@ export const NewRewardView = () => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormHeader title="เพิ่มรางวัล" />
+        <FormHeader title="เพิ่มรางวัล" backHref="/meta/rewards" />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <RewardForm />

@@ -28,6 +28,8 @@ import { useRewardExcel } from "@/modules/rewards/hooks/use-reward-excel";
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
 import { DataTable } from "@/components/data-table";
 import { RewardFilters } from "../components/reward-filters";
+import { Navigations } from "@/components/navigations";
+import { links } from "@/modules/dashboard/constants";
 
 export const RewardAnalyticView = () => {
   const crpc = useCRPC();
@@ -61,7 +63,12 @@ export const RewardAnalyticView = () => {
     star: filters.star,
   }));
 
-  const { onImport, onExport } = useRewardExcel({ data: rewards.page });
+  const { onImport, onExport } = useRewardExcel({
+    searchQuery: debouncedQuery,
+    minCost: filters.minCost,
+    maxCost: filters.maxCost,
+    star: filters.star,
+  });
 
   const canGoForward = rewards.hasNextPage && rewards.continueCursor != null;
 
@@ -99,6 +106,7 @@ export const RewardAnalyticView = () => {
       onSearchChange={(q) => setFilters({ ...filters, q })}
       newLink="/meta/rewards/new"
       filter={<RewardFilters variant="popover" />}
+      menu={<Navigations links={links} />}
     >
       <ConfirmationDialog />
       <section className="p-4 md:p-8">

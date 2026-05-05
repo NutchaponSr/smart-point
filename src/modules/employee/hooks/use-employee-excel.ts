@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { useCRPC } from "@/lib/convex/crpc";
@@ -9,7 +9,6 @@ import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 import { employeeExportSchema } from "@/modules/employee/schema";
 import { employeeHeaderMapping, employeeHeaders } from "@/modules/employee/constants";
 import type { ValidationError } from "@/types/excel";
-import { ApiOutputs } from "@convex/api";
 
 export type ExcelOperationState =
   | { status: "idle" }
@@ -18,14 +17,15 @@ export type ExcelOperationState =
   | { status: "success"; operation: "import" | "export" };
 
 interface Props {
-  data: ApiOutputs["employee"]["getMany"]["page"];
+  searchQuery: string;
 }
 
-export function useEmployeeExcel({ data }: Props) {
+export function useEmployeeExcel({ searchQuery }: Props) {
   const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkImport = useMutation(crpc.employee.bulkImport.mutationOptions());
+  const exportMutation = useMutation(crpc.employee.exportAll.mutationOptions());
 
   const onImport = async (file: File) => {
     setState({ status: "loading", operation: "import" });
@@ -75,7 +75,7 @@ export function useEmployeeExcel({ data }: Props) {
     setState({ status: "loading", operation: "export" });
 
     try {
-      if (!data) throw new Error("Cannot fetch employee data");
+      const data = await exportMutation.mutateAsync({ query: searchQuery });
 
       exportToExcel(
         data.map((e) => ({
@@ -86,7 +86,6 @@ export function useEmployeeExcel({ data }: Props) {
           position: e.position,
           rank: e.rank,
           division: e.division,
-          citizenId: e.citizenId,
         })),
         {
           filename: "employee-export",
@@ -97,19 +96,20 @@ export function useEmployeeExcel({ data }: Props) {
 
       setState({ status: "success", operation: "export" });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
       setState({
         status: "error",
         errors: [
           {
             row: 0,
             field: "export",
-            message:
-              error instanceof Error ? error.message : "Something went wrong",
+            message,
             value: null,
           },
         ],
       });
-      toast.error("Something went wrong");
+      toast.error(message);
     }
   };
 

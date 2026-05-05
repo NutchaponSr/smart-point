@@ -27,6 +27,8 @@ import { EventFiltersPopover } from "@/modules/events/ui/components/event-filter
 
 import { useEventExcel } from "@/modules/events/hooks/use-event-excel";
 import { useEventFilters } from "@/modules/events/stores/use-event-filters";
+import { links } from "@/modules/dashboard/constants";
+import { Navigations } from "@/components/navigations";
 
 export const EventsView = () => {
   const crpc = useCRPC(); 
@@ -59,7 +61,12 @@ export const EventsView = () => {
     minParticipants: filters.minParticipants,
     maxParticipants: filters.maxParticipants,
   }));
-  const { onImport, onExport } = useEventExcel({ data: events.page });
+  const { onImport, onExport } = useEventExcel({
+    searchQuery: debouncedQuery,
+    view: filters.view,
+    minParticipants: filters.minParticipants ?? null,
+    maxParticipants: filters.maxParticipants ?? null,
+  });
   
   const canGoForward = events.hasNextPage && events.continueCursor != null;
 
@@ -83,8 +90,9 @@ export const EventsView = () => {
       onExport={onExport}
       searchValue={filters.q}
       onSearchChange={(q) => setFilters({ ...filters, q })}
-      newLink="/dashboard/events/new"
+      newLink="/meta/events/new"
       filter={<EventFiltersPopover />}
+      menu={<Navigations links={links} />}
     >
       <section className="p-4 md:p-8">
         <div className="grid gap-12">

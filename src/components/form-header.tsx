@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   title: string;
+  backHref?: string;
 }
 
-export const FormHeader = ({ title }: Props) => {
+export const FormHeader = ({ title, backHref }: Props) => {
   const router = useRouter();
   
   return (
@@ -14,7 +15,7 @@ export const FormHeader = ({ title }: Props) => {
       <div className="flex min-h-8 items-center justify-between gap-2">
         <h1 className="line-clamp-2 text-2xl hidden! sm:block!">{title}</h1>
         <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-          <Button onClick={() => router.back()} variant="elevated" type="button">
+          <Button onClick={() => router.push(backHref ?? "/")} variant="elevated" type="button">
             ยกเลิก
           </Button>
           <Button variant="elevated" className="bg-pink" type="submit">

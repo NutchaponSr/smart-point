@@ -1,9 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
-
 import { Navigations } from "@/components/navigations";
 
 import { links } from "@/modules/dashboard/constants";
@@ -18,11 +14,6 @@ export const DashboardView = () => {
           </h1>
         </div>
         <div className="flex gap-3 overflow-x-auto">
-          <Link href="/dashboard">
-            <Button variant="rounded" size="smRounded">
-              ภาพรวม
-            </Button>
-          </Link>
           <Navigations links={links} />
         </div>
       </header>

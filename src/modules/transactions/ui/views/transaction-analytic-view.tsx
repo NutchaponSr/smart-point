@@ -1,9 +1,9 @@
 "use client";
 
-import { RowSelectionState } from "@tanstack/react-table";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useEffect, useMemo, useState } from "react";
+import { RowSelectionState } from "@tanstack/react-table";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -13,13 +13,17 @@ import { usePagination } from "@/hooks/use-pagination";
 import { Button } from "@/components/ui/button";
 
 import { Main } from "@/components/main";
-import { Pagination } from "@/components/pagniation";
 import { DataTable } from "@/components/data-table";
+import { Pagination } from "@/components/pagniation";
+import { Navigations } from "@/components/navigations";
 
-import { useTransactionExcel } from "../../hooks/use-transaction-excel";
-import { useTransactionFilters } from "../../stores/use-transaction-filter";
-import { columns } from "../components/transaction-analytic-columns";
-import { TransactionFilters } from "../components/transaction-filters";
+import { columns } from "@/modules/transactions/ui/components/transaction-analytic-columns";
+import { TransactionFilters } from "@/modules/transactions/ui/components/transaction-filters";
+
+import { links } from "@/modules/dashboard/constants";
+
+import { useTransactionExcel } from "@/modules/transactions/hooks/use-transaction-excel";
+import { useTransactionFilters } from "@/modules/transactions/stores/use-transaction-filter";
 
 export const TransactionAnalyticView = () => {
   const crpc = useCRPC();
@@ -72,12 +76,24 @@ export const TransactionAnalyticView = () => {
   const selectedTransactionIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
   const showBulkActions = selectedTransactionIds.length > 0;
 
-  const { onExport } = useTransactionExcel({ data: transactions.page });
+  const { onExport } = useTransactionExcel({
+    searchQuery: debouncedQuery,
+    status: filters.status,
+    min: filters.min,
+    max: filters.max,
+    from: filters.from ?? null,
+    to: filters.to ?? null,
+    self: false,
+  });
 
   const canGoForward = transactions.hasNextPage && transactions.continueCursor != null;
 
   return (
-    <Main title="ธุรกรรม" onExport={onExport}>
+    <Main 
+      title="ธุรกรรม" 
+      onExport={onExport} 
+      menu={<Navigations links={links} />}
+    >
       <ConfirmationDialog />
       <RejectionDialog />
       <section className="space-y-4 p-4 md:p-8">

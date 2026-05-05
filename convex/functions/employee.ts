@@ -138,6 +138,51 @@ export const getMany = authQuery
     };
   });
 
+const MAX_EXPORT_ROWS = 10000;
+const EXPORT_PAGE_SIZE = 100;
+
+/** ดึงรายชื่อพนักงานทั้งหมดที่ตรง `query` — ใช้ logic เดียวกับ getMany (ค้นหาข้ามฟิลด์) */
+export const exportAll = authMutation
+  .input(
+    z.object({
+      query: z.string().optional().nullable(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const normalizedQuery = input.query?.trim().toLowerCase() ?? "";
+    const baseQuery = ctx.orm.query.employee
+      .select()
+      .withIndex("by_employeeId")
+      .orderBy({ employeeId: "asc" })
+      .filter((row) => matchesEmployeeSearch(row, normalizedQuery))
+      .map((row) => row);
+
+    const rows: Awaited<ReturnType<(typeof baseQuery)["paginate"]>>["page"] = [];
+    let cursor: string | null = null;
+
+    while (true) {
+      const pageResult = await baseQuery.paginate({
+        cursor,
+        limit: EXPORT_PAGE_SIZE,
+      });
+
+      rows.push(...pageResult.page);
+      if (rows.length > MAX_EXPORT_ROWS) {
+        throw new CRPCError({
+          code: "BAD_REQUEST",
+          message: `พบข้อมูลมากเกิน ${MAX_EXPORT_ROWS} รายการ กรุณาใช้คำค้นให้เฉพาะเจาะจงมากขึ้น`,
+        });
+      }
+
+      if (pageResult.isDone || pageResult.continueCursor == null) {
+        break;
+      }
+      cursor = pageResult.continueCursor;
+    }
+
+    return rows;
+  });
+
 export const getOne = authQuery
   .input(
     z.object({

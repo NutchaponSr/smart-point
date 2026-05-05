@@ -3,7 +3,6 @@
 import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
-import { ApiOutputs } from "@convex/api";
 import { useMutation } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
@@ -14,8 +13,13 @@ import type { ValidationError } from "@/types/excel";
 import { eventSchema } from "@/modules/events/schema";
 import { eventHeaderMapping, eventHeaders } from "@/modules/events/constants";
 
+type EventCategory = "external" | "internal" | "internal_bu" | "specials_point";
+
 interface Props {
-  data: ApiOutputs["activity"]["getMany"]["page"];
+  searchQuery: string;
+  view: EventCategory[] | null;
+  minParticipants: number | null;
+  maxParticipants: number | null;
 }
 
 export type ExcelOperationState =
@@ -24,11 +28,17 @@ export type ExcelOperationState =
   | { status: "error"; errors: ValidationError[] }
   | { status: "success"; operation: "import" | "export" };
 
-export function useEventExcel({ data }: Props) {
+export function useEventExcel({
+  searchQuery,
+  view,
+  minParticipants,
+  maxParticipants,
+}: Props) {
   const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkCreate = useMutation(crpc.activity.bulkCreate.mutationOptions());
+  const exportMutation = useMutation(crpc.activity.exportAll.mutationOptions());
 
   const onImport = async (file: File) => {
     setState({ status: "loading", operation: "import" });
@@ -77,6 +87,13 @@ export function useEventExcel({ data }: Props) {
     setState({ status: "loading", operation: "export" });
 
     try {
+      const data = await exportMutation.mutateAsync({
+        q: searchQuery,
+        view,
+        minParticipants,
+        maxParticipants,
+      });
+
       exportToExcel(
         data.map((e) => ({
           name: e.name,
@@ -96,19 +113,20 @@ export function useEventExcel({ data }: Props) {
 
       setState({ status: "success", operation: "export" });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
       setState({
         status: "error",
         errors: [
           {
             row: 0,
             field: "export",
-            message:
-              error instanceof Error ? error.message : "Something went wrong",
+            message,
             value: null,
           },
         ],
       });
-      toast.error("Something went wrong");
+      toast.error(message);
     }
   };
 

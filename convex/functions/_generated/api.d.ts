@@ -88,6 +88,19 @@ export declare const api: {
       },
       any
     >;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        maxParticipants?: number | null;
+        minParticipants?: number | null;
+        q?: string | null;
+        view?: Array<
+          "external" | "internal" | "internal_bu" | "specials_point"
+        > | null;
+      },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",
@@ -214,6 +227,12 @@ export declare const api: {
       },
       any
     >;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      { query?: string | null },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",
@@ -318,6 +337,17 @@ export declare const api: {
       },
       any
     >;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        maxCost?: number | null;
+        minCost?: number | null;
+        q?: string | null;
+        star?: number | null;
+      },
+      any
+    >;
     getList: FunctionReference<
       "query",
       "public",
@@ -417,6 +447,22 @@ export declare const api: {
       "mutation",
       "public",
       { content: string; transactionId: string },
+      any
+    >;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        by?: string | null;
+        from?: number | null;
+        max?: number | null;
+        min?: number | null;
+        q?: string | null;
+        self: boolean;
+        status?: Array<"pending" | "completed" | "rejected"> | null;
+        to?: number | null;
+        view?: "sent" | "received" | null;
+      },
       any
     >;
     feeds: FunctionReference<

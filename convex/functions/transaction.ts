@@ -567,6 +567,98 @@ export const getMany = authQuery
     };
   });
 
+const MAX_EXPORT_ROWS = 10_000;
+const EXPORT_FETCH_BATCH = 100;
+
+/** ส่งออกธุรกรรมทั้งหมดที่ตรง filter เดียวกับ getMany (รวม pagination) */
+export const exportAll = authMutation
+  .input(
+    z.object({
+      q: z.string().optional().nullable(),
+      status: z
+        .array(z.enum(["pending", "completed", "rejected"]))
+        .optional()
+        .nullable(),
+      min: z.number().optional().nullable(),
+      max: z.number().optional().nullable(),
+      from: z.number().optional().nullable(),
+      to: z.number().optional().nullable(),
+      by: z.string().optional().nullable(),
+      view: z.enum(["sent", "received"]).optional().nullable(),
+      self: z.boolean(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const trimmedBy = input.by?.trim() ?? "";
+
+    let counterpartyEmployeeDocId: Id<"employee"> | null = null;
+
+    if (trimmedBy !== "") {
+      const resolved =
+        await resolveCounterpartyEmployeeDocIdFromPublicEmployeeId(
+          ctx,
+          trimmedBy,
+        );
+
+      if (resolved === null) {
+        return [] as Array<Awaited<ReturnType<typeof enrichTransaction>>>;
+      }
+
+      counterpartyEmployeeDocId = resolved;
+    }
+
+    const bounds: TransactionListFilterBounds = {
+      query: input.q?.trim().toLowerCase() ?? "",
+      status: input.status ?? null,
+      min: input.min ?? null,
+      max: input.max ?? null,
+      from: input.from ?? null,
+      to: input.to ?? null,
+      view: input.view ?? null,
+      counterpartyEmployeeDocId,
+    };
+
+    assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
+
+    const baseQuery = buildTransactionListBaseQuery(
+      ctx,
+      ctx.user.employeeId,
+      bounds.from,
+      bounds.to,
+      bounds.view,
+    );
+
+    const aggregated: Array<Awaited<ReturnType<typeof enrichTransaction>>> = [];
+    let cursor: string | null = null;
+
+    while (true) {
+      const { page, lastPageResult, exhausted } =
+        await collectFilteredEnrichedTransactionPage(
+          ctx,
+          baseQuery,
+          bounds,
+          EXPORT_FETCH_BATCH,
+          cursor,
+        );
+
+      aggregated.push(...page);
+      if (aggregated.length > MAX_EXPORT_ROWS) {
+        throw new CRPCError({
+          code: "BAD_REQUEST",
+          message: `พบข้อมูลมากเกิน ${MAX_EXPORT_ROWS} รายการ กรุณาใช้ตัวกรองให้แคบลง`,
+        });
+      }
+
+      if (exhausted) break;
+
+      const next = lastPageResult.continueCursor;
+      if (next == null) break;
+      cursor = next;
+    }
+
+    return aggregated;
+  });
+
 export const send = authMutation
   .input(
     z.object({

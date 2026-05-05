@@ -21,8 +21,11 @@ interface Props {
 }
 
 export const EventActions = ({ activity }: Props) => {
-  const router = useRouter();
   const crpc = useCRPC();
+  const router = useRouter();
+
+  const remove = useMutation(crpc.activity.remove.mutationOptions());
+
   const [ConfirmationDialog, confirm] = useConfirm({
     title: "ลบกิจกรรม",
   });
@@ -33,13 +36,19 @@ export const EventActions = ({ activity }: Props) => {
         <MoreHorizontalIcon className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8}>
-        <DropdownMenuItem onClick={() => router.push(`/dashboard/events/${activity.id}/join`)}>
+        <DropdownMenuItem onClick={() => router.push(`/meta/events/${activity.id}/join`)}>
           ผู้เข้าร่วม
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push(`/dashboard/events/${activity.id}/edit`)}>
+        <DropdownMenuItem onClick={() => router.push(`/meta/events/${activity.id}/edit`)}>
           แก้ไข
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {}}>
+        <DropdownMenuItem onClick={async () => {
+          const ok = await confirm();
+
+          if (ok) {
+            remove.mutate({ activityId: activity.id });
+          }
+        }}>
           ลบ
         </DropdownMenuItem>
       </DropdownMenuContent>

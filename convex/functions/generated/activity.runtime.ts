@@ -28,6 +28,7 @@ function createProcedureRegistry() {
   "bulkLeave": ["mutation", typedProcedureResolver(api["activity"]["bulkLeave"], () => (require("../activity") as Record<string, unknown>)["bulkLeave"])],
   "count": ["query", typedProcedureResolver(api["activity"]["count"], () => (require("../activity") as Record<string, unknown>)["count"])],
   "create": ["mutation", typedProcedureResolver(api["activity"]["create"], () => (require("../activity") as Record<string, unknown>)["create"])],
+  "exportAll": ["mutation", typedProcedureResolver(api["activity"]["exportAll"], () => (require("../activity") as Record<string, unknown>)["exportAll"])],
   "getMany": ["query", typedProcedureResolver(api["activity"]["getMany"], () => (require("../activity") as Record<string, unknown>)["getMany"])],
   "getOne": ["query", typedProcedureResolver(api["activity"]["getOne"], () => (require("../activity") as Record<string, unknown>)["getOne"])],
   "join": ["mutation", typedProcedureResolver(api["activity"]["join"], () => (require("../activity") as Record<string, unknown>)["join"])],

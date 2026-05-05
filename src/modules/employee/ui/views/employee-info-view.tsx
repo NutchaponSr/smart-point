@@ -74,7 +74,7 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
     <FormProvider {...form}>
       <ConfirmationDialog />
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormHeader title={employee.name} />
+        <FormHeader title={employee.name} backHref="/meta/employees" />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <EmployeeForm isEdit />
@@ -92,11 +92,9 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
                   variant="elevated" 
                   className="bg-pink" 
                   type="button"
+                  onClick={() => router.push(`/meta/transactions?by=${employee._id}`)}
                 >
                   ธุรกรรม
-                </Button>
-                <Button variant="elevated" className="bg-pink" type="button">
-                  ประวัติการแลก
                 </Button>
               </div>
             </section>

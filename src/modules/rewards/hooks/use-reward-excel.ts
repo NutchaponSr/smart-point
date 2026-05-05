@@ -2,7 +2,6 @@
 
 import { toast } from "sonner";
 import { useState } from "react";
-import type { ApiOutputs } from "@convex/api";
 import { useMutation } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
@@ -20,14 +19,23 @@ export type ExcelOperationState =
   | { status: "success"; operation: "import" | "export" };
 
 interface Props {
-  data: ApiOutputs["reward"]["getList"]["page"];
+  searchQuery: string;
+  minCost: number;
+  maxCost: number;
+  star: number;
 }
 
-export function useRewardExcel({ data }: Props) {
+export function useRewardExcel({
+  searchQuery,
+  minCost,
+  maxCost,
+  star,
+}: Props) {
   const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkCreate = useMutation(crpc.reward.bulkCreate.mutationOptions());
+  const exportMutation = useMutation(crpc.reward.exportAll.mutationOptions());
 
   const onImport = async (file: File) => {
     setState({ status: "loading", operation: "import" });
@@ -75,9 +83,12 @@ export function useRewardExcel({ data }: Props) {
     setState({ status: "loading", operation: "export" });
 
     try {
-      
-
-      if (!data) throw new Error("Cannot fetch reward data");
+      const data = await exportMutation.mutateAsync({
+        q: searchQuery,
+        minCost,
+        maxCost,
+        star,
+      });
 
       exportToExcel(
         data.map((e) => ({
@@ -97,19 +108,20 @@ export function useRewardExcel({ data }: Props) {
 
       setState({ status: "success", operation: "export" });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
       setState({
         status: "error",
         errors: [
           {
             row: 0,
             field: "export",
-            message:
-              error instanceof Error ? error.message : "Something went wrong",
+            message,
             value: null,
           },
         ],
       });
-      toast.error("Something went wrong");
+      toast.error(message);
     }
   };
 
