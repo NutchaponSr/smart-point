@@ -9,6 +9,14 @@ import type { MutationCtx, QueryCtx } from "./generated/server";
 
 type DbCtx = QueryCtx | MutationCtx;
 
+async function resolveStorageImageUrl(
+  storage: QueryCtx["storage"],
+  image: string | null | undefined,
+): Promise<string | null> {
+  if (image == null || String(image).trim() === "") return null;
+  return await storage.getUrl(image as Id<"_storage">);
+}
+
 async function getActiveCartId(
   ctx: { db: DbCtx["db"] },
   employeeId: Id<"employee">
@@ -67,7 +75,11 @@ export const getCart = authQuery.query(async ({ ctx }) => {
         });
       }
 
-      return { ...item, reward };
+      const image = await resolveStorageImageUrl(ctx.storage, reward.image);
+      return {
+        ...item,
+        reward: { ...reward, image },
+      };
     })
   );
 

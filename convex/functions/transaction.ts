@@ -432,14 +432,21 @@ async function approveTransactionById(
     };
   }
 
-  const existingLedger = await ctx.db
+  const transactionSourceId = String(transaction._id);
+  const existingReceiverLedger = await ctx.db
     .query("pointLedger")
     .withIndex("by_sourceType_sourceId", (q) =>
-      q.eq("sourceType", "transaction").eq("sourceId", String(transaction._id)),
+      q.eq("sourceType", "transaction").eq("sourceId", transactionSourceId),
+    )
+    .filter((q) =>
+      q.and(
+        q.eq(q.field("balanceType"), "receiving"),
+        q.eq(q.field("employeeId"), transaction.receiverId),
+      ),
     )
     .first();
 
-  if (!existingLedger) {
+  if (confirm && !existingReceiverLedger) {
     await ctx.db.patch(receiverWallet._id, {
       receivingBudget: receiverWallet.receivingBudget + transaction.amount,
     });
@@ -450,7 +457,7 @@ async function approveTransactionById(
       balanceAfter: receiverWallet.receivingBudget + transaction.amount,
       balanceType: "receiving",
       sourceType: "transaction",
-      sourceId: String(transaction._id),
+      sourceId: transactionSourceId,
       note: `Received from ${transaction.senderId}`,
       createdAt: Date.now(),
     });
@@ -736,7 +743,7 @@ export const send = authMutation
       balanceAfter: wallet.givingBudget - input.amount,
       balanceType: "giving",
       sourceType: "transaction",
-      sourceId: transactionId,
+      sourceId: String(transactionId),
       note: `Sent to ${receiver.name}`,
       createdAt: Date.now(),
     });

@@ -34,11 +34,11 @@ export const Main = ({
 }: Props) => {
   return (
     <>
-      <header className={cn("flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-0 sm:border-b-2 h-[82px]", !!menu && "h-[142px]")}>
+      <header className={cn("flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-2 h-[82px]", !!menu && "h-[142px]")}>
         <div className="flex min-h-8 items-center justify-between gap-2">
-          <h1 className="line-clamp-2 text-2xl hidden! sm:block!">{title}</h1>
+          <h1 className="line-clamp-2 text-2xl sm:block!">{title}</h1>
 
-          <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
+          <div className="flex items-center -my-2 gap-2">
             {searchValue !== undefined && onSearchChange && (
               <SearchInput
                 variant="popover"
@@ -63,9 +63,11 @@ export const Main = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 overflow-x-auto grow">
-          {menu}
-        </div>
+        {menu && (
+          <div className="flex items-center gap-3 overflow-x-auto grow">
+            {menu}
+          </div>
+        )}
       </header>
       
       {children}
