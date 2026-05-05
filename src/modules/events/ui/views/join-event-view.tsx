@@ -1,7 +1,5 @@
 "use client";
 
-import { ApiOutputs } from "@convex/api";
-import Link from "next/link";
 
 import { 
   ColumnFiltersState,
@@ -10,7 +8,9 @@ import {
   useReactTable,
   flexRender,
 } from "@tanstack/react-table";
+import { toast } from "sonner";
 import { useState } from "react";
+import { ApiOutputs } from "@convex/api";
 import { useRouter } from "next/navigation";
 import { GoPersonFill } from "react-icons/go";
 import { useDebounce } from "@uidotdev/usehooks";
@@ -18,7 +18,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
@@ -200,11 +199,9 @@ export const JoinEventView = ({ eventId }: Props) => {
           </h1>
           
           <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-            <Link href="/dashboard/events">
-              <Button variant="elevated" type="button">
-                ยกเลิก
-              </Button>
-            </Link>
+            <Button variant="elevated" type="button" onClick={() => router.push("/meta/events")}>
+              ยกเลิก
+            </Button>
           </div>
         </div>
       </header>
@@ -399,7 +396,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                   );
                 }}
               >
-                Bulk Approve
+                อนุมัติทั้งหมด
               </Button>
               <h2 className="text-xl leading-snug text-destructive">โซนอันตราย</h2>
               <Button 

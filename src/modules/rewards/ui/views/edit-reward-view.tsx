@@ -4,13 +4,11 @@ import type { ApiOutputs } from "@convex/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useMutation,
-  useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import Link from "next/link";
 import { useMemo } from "react";
-import { type FieldErrors, FormProvider, useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
+import { FormProvider, useForm } from "react-hook-form";
+import { FormHeader } from "@/components/form-header";
 import { useCRPC } from "@/lib/convex/crpc";
 import {
   type RewardFormInput,
@@ -77,28 +75,7 @@ export const EditRewardView = ({ rewardId }: Props) => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <header className="flex h-[82px] flex-col justify-center gap-4 border-b-2 border-border p-4 md:p-8">
-          <div className="flex min-h-8 items-center justify-between gap-2">
-            <h1 className="line-clamp-2 hidden! text-2xl! sm:block!">
-              แก้ไขรางวัล
-            </h1>
-            <div className="grid! flex-1! grid-cols-2! gap-2! has-[>*:only-child]:grid-cols-1! sm:flex! sm:flex-none! md:-my-2!">
-              <Link href="/dashboard/reward">
-                <Button variant="elevated" type="button">
-                  ยกเลิก
-                </Button>
-              </Link>
-              <Button
-                variant="elevated"
-                className="bg-pink"
-                type="submit"
-                disabled={update.isPending}
-              >
-                บันทึกข้อมูล
-              </Button>
-            </div>
-          </div>
-        </header>
+        <FormHeader title={reward.name} backHref="/meta/rewards" />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <RewardForm />

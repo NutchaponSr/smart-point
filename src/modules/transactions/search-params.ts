@@ -28,24 +28,14 @@ export const filterSearchParams = {
   to: parseAsInteger,
 };
 
-export const analyticFilterSearchParams = {
-  ...baseFilterSearchParams,
-  status: parseAsArrayOf(parseAsStringLiteral(statusValues)).withDefault([
-    "pending",
-  ]),
-  from: parseAsInteger,
-  to: parseAsInteger,
-};
-
 export const loadTransactionFilters = createLoader(filterSearchParams);
-export const loadAnalyticTransactionFilters = createLoader(
-  analyticFilterSearchParams,
-);
 
 const params = {
+  q: parseAsString.withDefault(""),
   period: parseAsStringLiteral(periodValues).withDefault("24hr"),
   limit: parseAsInteger.withDefault(25),
   cursor: parseAsInteger.withDefault(0),
+  page: parseAsInteger.withDefault(0),
 };
 
 export const loadLeaderboardSearchParams = createLoader(params);

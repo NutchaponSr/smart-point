@@ -653,6 +653,103 @@ export const getMany = authQuery
     };
   });
 
+const MAX_EXPORT_ROWS = 10_000;
+const EXPORT_ACTIVITY_PAGE_SIZE = 100;
+
+/** ส่งออกกิจกรรมทั้งหมดที่ตรง filter เดียวกับ getMany */
+export const exportAll = authMutation
+  .input(
+    z.object({
+      q: z.string().optional().nullable(),
+      view: z.array(activityCategory).optional().nullable(),
+      minParticipants: z.number().optional().nullable(),
+      maxParticipants: z.number().optional().nullable(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
+    const minParticipants = input.minParticipants ?? null;
+    const maxParticipants = input.maxParticipants ?? null;
+
+    const baseQuery = ctx.orm.query.activity
+      .select()
+      .withIndex("by_startDate")
+      .orderBy({ startDate: "desc" })
+      .filter((row) => {
+        if (!row.isActive) return false;
+        if (input.view != null && !input.view.includes(row.category)) {
+          return false;
+        }
+        return matchesActivitySearch(row, normalizedQuery);
+      })
+      .map((row) => row);
+
+    let pageResult = await baseQuery.paginate({
+      cursor: null,
+      limit: EXPORT_ACTIVITY_PAGE_SIZE,
+    });
+
+    type ActivityPageRow = (typeof pageResult.page)[number];
+    type EnrichedActivityExportRow = ActivityPageRow & {
+      joinedCount: number;
+      participantsPreview: Array<{
+        participantId: Id<"activityParticipant">;
+        employeeId: Id<"employee">;
+        name: string;
+        image: string | null;
+      }>;
+    };
+
+    const enrichedList: EnrichedActivityExportRow[] = [];
+
+    while (true) {
+      const enrichedRows = await Promise.all(
+        pageResult.page.map(async (activity): Promise<EnrichedActivityExportRow> => {
+          const { joinedCount, participantsPreview } =
+            await getActiveParticipantsMeta(
+              ctx,
+              activity.id as Id<"activity">,
+              3,
+            );
+          return {
+            ...activity,
+            joinedCount,
+            participantsPreview,
+          };
+        }),
+      );
+
+      for (const row of enrichedRows) {
+        if (
+          !matchesParticipantsRange(
+            row.joinedCount,
+            minParticipants,
+            maxParticipants,
+          )
+        ) {
+          continue;
+        }
+        enrichedList.push(row);
+        if (enrichedList.length > MAX_EXPORT_ROWS) {
+          throw new CRPCError({
+            code: "BAD_REQUEST",
+            message: `พบข้อมูลมากเกิน ${MAX_EXPORT_ROWS} รายการ กรุณาใช้ตัวกรองให้แคบลง`,
+          });
+        }
+      }
+
+      if (pageResult.isDone || pageResult.continueCursor == null) {
+        break;
+      }
+      pageResult = await baseQuery.paginate({
+        cursor: pageResult.continueCursor,
+        limit: EXPORT_ACTIVITY_PAGE_SIZE,
+      });
+    }
+
+    return enrichedList;
+  });
+
 export const getOne = authQuery
   .input(
     z.object({

@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
@@ -12,6 +10,8 @@ import { useCRPC } from "@/lib/convex/crpc";
 import { useConfirm } from "@/hooks/use-confirm";
 
 import { Button } from "@/components/ui/button";
+
+import { FormHeader } from "@/components/form-header";
 
 import { EventForm } from "@/modules/events/ui/components/event-form";
 import { EventPreview } from "@/modules/events/ui/components/event-preview";
@@ -72,28 +72,7 @@ export const EditEventView = ({ eventId }: Props) => {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <ConfirmationDialog />
-        <header className="flex h-[82px] flex-col justify-center gap-4 border-b-2 border-border p-4 md:p-8">
-          <div className="flex min-h-8 items-center justify-between gap-2">
-            <h1 className="line-clamp-2 hidden! text-2xl sm:block!">
-              {activity.name}
-            </h1>
-            <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-              <Link href="/dashboard/events">
-                <Button variant="elevated" type="button">
-                  ยกเลิก
-                </Button>
-              </Link>
-              <Button
-                variant="elevated"
-                className="bg-pink"
-                type="submit"
-                disabled={update.isPending}
-              >
-                บันทึกข้อมูล
-              </Button>
-            </div>
-          </div>
-        </header>
+        <FormHeader title={activity.name} backHref="/meta/events" />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <EventForm />
@@ -112,7 +91,7 @@ export const EditEventView = ({ eventId }: Props) => {
                 variant="elevated" 
                 className="bg-pink" 
                 type="button" 
-                onClick={() => router.push(`/dashboard/events/${eventId}/join`)}
+                onClick={() => router.push(`/meta/events/${eventId}/join`)}
               >
                 ผู้เข้าร่วม
               </Button>

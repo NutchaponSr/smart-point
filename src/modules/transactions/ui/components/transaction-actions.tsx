@@ -30,6 +30,8 @@ export const TransactionActions = ({ transaction }: Props) => {
     title: "ปฏิเสธธุรกรรม",
   });
 
+  if (transaction.status === "completed") return null;
+
   return (
     <>
       <ConfirmationDialog />

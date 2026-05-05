@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { Id } from "../../../../../convex/functions/_generated/dataModel";
+
 interface Props {
   employee: ApiOutputs["employee"]["getMany"]["page"][0];
 }
@@ -35,7 +37,7 @@ export const EmployeeActions = ({ employee }: Props) => {
           <MoreHorizontalIcon className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8}>
-          <DropdownMenuItem onClick={() => router.push(`/dashboard/employee/${employee.id}`)}>
+          <DropdownMenuItem onClick={() => router.push(`/meta/employees/${employee.id}`)}>
             แก้ไข
           </DropdownMenuItem>
           <DropdownMenuItem 
@@ -43,7 +45,7 @@ export const EmployeeActions = ({ employee }: Props) => {
               const ok = await confirm();
 
               if (ok) {
-                remove.mutate({ employeeId: employee.id });
+                remove.mutate({ employeeId: employee.id as Id<"employee"> });
               }
             }}
           >

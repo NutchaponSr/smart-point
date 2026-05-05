@@ -1,9 +1,36 @@
 {
   "nav": {
-      "transaction": "Transactions",
-      "reward": "Rewards",
-      "leaderboard": "Leaderboard",
-      "dashboard": "Dashboard",
-      "events": "Events"
+    "transaction": "Transactions",
+    "reward": "Rewards",
+    "leaderboard": "Leaderboard",
+    "dashboard": "Dashboard",
+    "events": "Events"
+  },
+  "purchases": {
+    "title": "Purchases",
+    "filters": {
+      "search": "Search",
+      "show": "Showing",
+      "from": "from",
+      "sort-by": "Sort by",
+      "recently-updated": "Recently Updated",
+      "purchase-date": "Purchase Date",
+      "limit": "Limit"
+    }
+  },
+  "events": {
+    "title": "Events",
+    "my-events": {
+      "title": "My Events"
+    },
+    "filters": {
+      "search": "Search",
+      "show": "Showing",
+      "from": "from",
+      "sort-by": "Sort by",
+      "recently-updated": "Recently Updated",
+      "event-date": "Event Date",
+      "limit": "Limit"
+    }
   }
 }

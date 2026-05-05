@@ -4,39 +4,85 @@ import { ColumnDef } from "@tanstack/react-table";
 
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 
-import { statuses } from "../../constants";
+import { statuses } from "@/modules/transactions/constants";
 
-type Transaction = ApiOutputs["transaction"]["getHistory"]["items"][0];
+type Transaction = ApiOutputs["transaction"]["getMany"]["page"][0];
 
-export const transactionColumns = (): ColumnDef<Transaction>[] => {
+interface Props {
+  view: "sent" | "received";
+}
+
+export const columns = ({ view }: Props): ColumnDef<Transaction>[] => {
   return [
     {
       id: "employeeName",
       header: "พนักงาน",
       cell: ({ row }) => {
-        return (
-          <div className="flex items-center gap-2.5">
-            {row.original.receiver && (
-              <UserAvatar
-                name={row.original.receiver.name}
-                src={row.original.receiver.image || undefined}
-                className={{
-                  container: "size-9 after:border-[1.5px]",
-                  fallback: "text-sm font-medium",
-                }}
-              />
-            )}
-            <div className="flex flex-col">
-              <h4 className="text-base">{row.original.receiver?.name}</h4>
-              <small className="text-sm text-muted-foreground">{row.original.receiver?.department}</small>
+        const senderName = row.original.sender?.name ?? "ไม่พบข้อมูลผู้ส่ง";
+        const receiverName = row.original.receiver?.name ?? "ไม่พบข้อมูลผู้รับ";
+
+        if (view === "sent") {
+          return (
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <UserAvatar
+                  name={senderName}
+                  className={{
+                    container: "size-9 after:border-[1.5px]",
+                    fallback: "text-sm font-medium",
+                  }}
+                />
+                <div className="absolute -bottom-2 -right-2">
+                  <UserAvatar
+                    name={receiverName}
+                    className={{
+                      container: "size-6 after:border-[1.5px]",
+                      fallback: "text-xs font-medium bg-orange",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <p className="text-base font-medium">
+                  {senderName}{" "}
+                  <span className="font-normal">ให้ <u>{row.original.amount}</u> พอยต์ {" "}</span>
+                  <span className="text-blue">{receiverName}</span>
+                </p>
+              </div>
             </div>
-          </div>
-        )
+          )
+        } else {
+          return (
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <UserAvatar
+                  name={receiverName}
+                  className={{
+                    container: "size-9 after:border-[1.5px]",
+                    fallback: "text-sm font-medium bg-orange",
+                  }}
+                />
+                <div className="absolute -bottom-2 -right-2">
+                  <UserAvatar
+                    name={senderName}
+                    className={{
+                      container: "size-6 after:border-[1.5px]",
+                      fallback: "text-xs font-medium",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <p className="text-base font-medium">
+                  {receiverName}{" "}
+                  <span className="font-normal">ได้รับ <u>{row.original.amount}</u> พอยต์ จาก{" "}</span>
+                  <span className="text-blue">{senderName}</span>
+                </p>
+              </div>
+            </div>
+          );
+        }
       },
-    },
-    {
-      accessorKey: "amount",
-      header: "จำนวนพอยต์",
     },
     {
       accessorKey: "status",

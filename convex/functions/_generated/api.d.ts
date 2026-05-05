@@ -88,6 +88,19 @@ export declare const api: {
       },
       any
     >;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        maxParticipants?: number | null;
+        minParticipants?: number | null;
+        q?: string | null;
+        view?: Array<
+          "external" | "internal" | "internal_bu" | "specials_point"
+        > | null;
+      },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",
@@ -179,7 +192,7 @@ export declare const api: {
     bulkDelete: FunctionReference<
       "mutation",
       "public",
-      { employeeIds: Array<string> },
+      { employeeIds: Array<any> },
       any
     >;
     bulkImport: FunctionReference<
@@ -214,21 +227,20 @@ export declare const api: {
       },
       any
     >;
-    exportList: FunctionReference<"query", "public", {}, any>;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      { query?: string | null },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",
       { cursor?: string | null; limit: number; query?: string | null },
       any
     >;
-    getOne: FunctionReference<"query", "public", { employeeId: string }, any>;
-    listForExport: FunctionReference<"query", "public", {}, any>;
-    remove: FunctionReference<
-      "mutation",
-      "public",
-      { employeeId: string },
-      any
-    >;
+    getOne: FunctionReference<"query", "public", { employeeId: any }, any>;
+    remove: FunctionReference<"mutation", "public", { employeeId: any }, any>;
     search: FunctionReference<
       "query",
       "public",
@@ -241,7 +253,7 @@ export declare const api: {
       {
         department: string;
         division: string;
-        employeeId: string;
+        employeeId: any;
         name: string;
         position: string;
         rank: string;
@@ -254,9 +266,10 @@ export declare const api: {
       "query",
       "public",
       {
-        cursor?: number | null;
+        cursor?: string | null;
         limit: number;
         period: "24hr" | "7d" | "30d" | "fullTime";
+        q?: string | null;
       },
       any
     >;
@@ -273,31 +286,13 @@ export declare const api: {
       "public",
       {
         cursor?: string | null;
-        limit?: number;
+        from?: number | null;
+        limit: number;
         q?: string | null;
         sort?: "recently-updated" | "purchase-date" | null;
+        to?: number | null;
       },
-      {
-        continueCursor: string | null;
-        isDone: boolean;
-        page: Array<{
-          redemption: {
-            _id: any;
-            createdAt: number;
-            employeeId: string;
-            pointSpent: number;
-            quantity: number;
-            status: "pending" | "fulfilled" | "cancelled";
-          };
-          review: {
-            _id: string;
-            comment: string | null;
-            createdAt: number;
-            stars: number;
-          } | null;
-          reward: { _id: any; image: string; name: string; pointCost: number };
-        }>;
-      }
+      any
     >;
     reviewRedemption: FunctionReference<
       "mutation",
@@ -342,7 +337,17 @@ export declare const api: {
       },
       any
     >;
-    exportExcel: FunctionReference<"query", "public", {}, any>;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        maxCost?: number | null;
+        minCost?: number | null;
+        q?: string | null;
+        star?: number | null;
+      },
+      any
+    >;
     getList: FunctionReference<
       "query",
       "public",
@@ -387,7 +392,6 @@ export declare const api: {
     >;
     getOne: FunctionReference<"query", "public", { rewardId: string }, any>;
     getRecommend: FunctionReference<"query", "public", {}, any>;
-    getTrending: FunctionReference<"query", "public", { query?: string }, any>;
     remove: FunctionReference<"mutation", "public", { rewardId: string }, any>;
     update: FunctionReference<
       "mutation",
@@ -443,6 +447,22 @@ export declare const api: {
       "mutation",
       "public",
       { content: string; transactionId: string },
+      any
+    >;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        by?: string | null;
+        from?: number | null;
+        max?: number | null;
+        min?: number | null;
+        q?: string | null;
+        self: boolean;
+        status?: Array<"pending" | "completed" | "rejected"> | null;
+        to?: number | null;
+        view?: "sent" | "received" | null;
+      },
       any
     >;
     feeds: FunctionReference<
@@ -503,37 +523,21 @@ export declare const api: {
         }>;
       }
     >;
-    getHistory: FunctionReference<
-      "query",
-      "public",
-      {
-        cursor: number | null;
-        from?: number | null;
-        limit: number;
-        max: number | null;
-        min: number | null;
-        query?: string;
-        status?: Array<
-          "pending" | "completed" | "rejected" | "approved"
-        > | null;
-        to?: number | null;
-        view: "sent" | "received";
-      },
-      any
-    >;
     getMany: FunctionReference<
       "query",
       "public",
       {
-        by?: "senderId" | "receiverId" | null;
+        by?: string | null;
         cursor?: string | null;
         from?: number | null;
         limit: number;
         max?: number | null;
         min?: number | null;
         q?: string | null;
+        self: boolean;
         status?: Array<"pending" | "completed" | "rejected"> | null;
         to?: number | null;
+        view?: "sent" | "received" | null;
       },
       any
     >;
@@ -582,7 +586,7 @@ export declare const internal: {
       "internal",
       {
         email: string;
-        employeeId: string;
+        employeeId: any;
         name: string;
         password: string;
         username: string;

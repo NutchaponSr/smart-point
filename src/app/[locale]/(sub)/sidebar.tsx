@@ -3,14 +3,23 @@
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
+import { BsDatabaseFill } from "react-icons/bs";
 
 import { cn } from "@/lib/utils";
 
-import { navigations } from "@/constants";
+import { metadata, navigations } from "@/constants";
+
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 import { Logo } from "@/components/logo";
 
 import { UserButtonDropdown } from "@/modules/auth/ui/components/user-button";
+
 
 export const Sidebar = () => {
   const pathname = usePathname();
@@ -38,6 +47,22 @@ export const Sidebar = () => {
               <span className="ml-4">{navigation.label}</span>
             </Link>
           ))}
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center truncate border-y-2 border-white/50 border-b-transparent px-6 py-4 no-underline last:border-b-white/50 hover:text-pink dark:border-foreground/50 dark:border-b-transparent dark:last:border-b-foreground/50 min-h-15">
+              <BsDatabaseFill className="size-5" />
+              <span className="ml-4">ข้อมูล</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-[calc(var(--radix-dropdown-menu-trigger-width)-8px)]">
+              {metadata.map((metadata) => (
+                <Link href={metadata.href} key={metadata.href} className="w-full">
+                  <DropdownMenuItem>
+                    {metadata.label}
+                  </DropdownMenuItem>
+                </Link>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </section>
       </div>
       <footer className="mt-auto hidden lg:grid">

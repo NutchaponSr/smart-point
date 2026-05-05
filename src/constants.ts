@@ -36,3 +36,22 @@ export const navigations = [
     href: "/dashboard",
   },
 ]
+
+export const metadata = [
+  {
+    label: "พนักงาน",
+    href: "/meta/employees",
+  },
+  {
+    label: "รางวัล",
+    href: "/meta/rewards",
+  },
+  {
+    label: "ธุรกรรม",
+    href: "/meta/transactions?status=pending",
+  },
+  {
+    label: "กิจกรรม",
+    href: "/meta/events",
+  },
+]

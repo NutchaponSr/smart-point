@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
@@ -18,17 +18,24 @@ export type ExcelOperationState =
   | { status: "error"; errors: ValidationError[] }
   | { status: "success"; operation: "import" | "export" };
 
-export function useRewardExcel() {
+interface Props {
+  searchQuery: string;
+  minCost: number;
+  maxCost: number;
+  star: number;
+}
+
+export function useRewardExcel({
+  searchQuery,
+  minCost,
+  maxCost,
+  star,
+}: Props) {
   const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkCreate = useMutation(crpc.reward.bulkCreate.mutationOptions());
-
-  // Only fetch export data when the export operation is triggered
-  const exportQuery = useQuery({
-    enabled: state.status === "loading" && (state as any).operation === "export",
-    ...crpc.reward.exportExcel.queryOptions(),
-  });
+  const exportMutation = useMutation(crpc.reward.exportAll.mutationOptions());
 
   const onImport = async (file: File) => {
     setState({ status: "loading", operation: "import" });
@@ -76,12 +83,12 @@ export function useRewardExcel() {
     setState({ status: "loading", operation: "export" });
 
     try {
-      // Wait for query to resolve if not yet available
-      const data =
-        exportQuery.data ??
-        (await exportQuery.refetch().then((r) => r.data));
-
-      if (!data) throw new Error("Cannot fetch reward data");
+      const data = await exportMutation.mutateAsync({
+        q: searchQuery,
+        minCost,
+        maxCost,
+        star,
+      });
 
       exportToExcel(
         data.map((e) => ({
@@ -101,19 +108,20 @@ export function useRewardExcel() {
 
       setState({ status: "success", operation: "export" });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
       setState({
         status: "error",
         errors: [
           {
             row: 0,
             field: "export",
-            message:
-              error instanceof Error ? error.message : "Something went wrong",
+            message,
             value: null,
           },
         ],
       });
-      toast.error("Something went wrong");
+      toast.error(message);
     }
   };
 

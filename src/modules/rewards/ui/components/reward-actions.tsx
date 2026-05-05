@@ -37,7 +37,7 @@ export const RewardActions = ({ reward }: Props) => {
           <MoreHorizontalIcon className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8}>
-          <DropdownMenuItem onClick={() => router.push(`/dashboard/reward/${reward._id}`)}>
+          <DropdownMenuItem onClick={() => router.push(`/meta/rewards/${reward._id}`)}>
             แก้ไข
           </DropdownMenuItem>
           <DropdownMenuItem 

@@ -3,8 +3,9 @@
 import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
-import { ApiOutputs } from "@convex/api";
+import { useMutation } from "@tanstack/react-query";
 
+import { useCRPC } from "@/lib/convex/crpc";
 import { exportToExcel } from "@/lib/excel";
 
 import type { ValidationError } from "@/types/excel";
@@ -12,7 +13,13 @@ import type { ValidationError } from "@/types/excel";
 import { statuses, transactionHeaders } from "@/modules/transactions/constants";
 
 interface Props {
-  data: ApiOutputs["transaction"]["getMany"]["page"];
+  searchQuery: string;
+  status: Array<"pending" | "completed" | "rejected"> | null;
+  min: number;
+  max: number;
+  from: number | null;
+  to: number | null;
+  self: boolean;
 }
 
 export type ExcelOperationState =
@@ -21,13 +28,35 @@ export type ExcelOperationState =
   | { status: "error"; errors: ValidationError[] }
   | { status: "success"; operation: "import" | "export" };
 
-export function useTransactionExcel({ data }: Props) {
+export function useTransactionExcel({
+  searchQuery,
+  status,
+  min,
+  max,
+  from,
+  to,
+  self,
+}: Props) {
+  const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
+  const exportMutation = useMutation(
+    crpc.transaction.exportAll.mutationOptions(),
+  );
 
   const onExport = async () => {
     setState({ status: "loading", operation: "export" });
 
     try {
+      const data = await exportMutation.mutateAsync({
+        q: searchQuery,
+        status,
+        min,
+        max,
+        from,
+        to,
+        self,
+      });
+
       exportToExcel(
         data.map((e) => ({
           senderId: e.sender?.id,
@@ -50,19 +79,20 @@ export function useTransactionExcel({ data }: Props) {
 
       setState({ status: "success", operation: "export" });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
       setState({
         status: "error",
         errors: [
           {
             row: 0,
             field: "export",
-            message:
-              error instanceof Error ? error.message : "Something went wrong",
+            message,
             value: null,
           },
         ],
       });
-      toast.error("Something went wrong");
+      toast.error(message);
     }
   };
 
