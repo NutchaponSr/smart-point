@@ -142,6 +142,8 @@ type TransactionListFilterBounds = {
   from: number | null;
   to: number | null;
   view: TransactionListViewMode;
+  /** When true, scope to the authenticated user's transactions only. */
+  self: boolean;
   /** Resolved `by` employee document id when valid; omitted when unset. Invalid `by` is handled separately. */
   counterpartyEmployeeDocId: Id<"employee"> | null;
 };
@@ -196,11 +198,17 @@ async function resolveCounterpartyEmployeeDocIdFromPublicEmployeeId(
 
 function buildTransactionListBaseQuery(
   ctx: QueryCtx,
-  myEmployeeDocId: Id<"employee">,
+  scopeEmployeeDocId: Id<"employee"> | null,
   from: number | null,
   to: number | null,
   view: TransactionListViewMode,
 ) {
+  if (scopeEmployeeDocId == null) {
+    return ctx.db.query("transaction").order("desc");
+  }
+
+  const myEmployeeDocId = scopeEmployeeDocId;
+
   if (view === "received") {
     return ctx.db
       .query("transaction")
@@ -247,10 +255,17 @@ function transactionMatchesListFilters(
 ): boolean {
   const counterpartyId = bounds.counterpartyEmployeeDocId;
   if (counterpartyId != null) {
-    const viewingReceived = bounds.view === "received";
-    if (viewingReceived) {
-      if (transaction.senderId !== counterpartyId) return false;
-    } else if (transaction.receiverId !== counterpartyId) {
+    if (bounds.self) {
+      const viewingReceived = bounds.view === "received";
+      if (viewingReceived) {
+        if (transaction.senderId !== counterpartyId) return false;
+      } else if (transaction.receiverId !== counterpartyId) {
+        return false;
+      }
+    } else if (
+      transaction.senderId !== counterpartyId &&
+      transaction.receiverId !== counterpartyId
+    ) {
       return false;
     }
   }
@@ -528,6 +543,7 @@ export const getMany = authQuery
       from: input.from ?? null,
       to: input.to ?? null,
       view: input.view ?? null,
+      self: input.self,
       counterpartyEmployeeDocId,
     };
 
@@ -535,7 +551,7 @@ export const getMany = authQuery
 
     const baseQuery = buildTransactionListBaseQuery(
       ctx,
-      ctx.user.employeeId,
+      input.self ? ctx.user.employeeId : null,
       bounds.from,
       bounds.to,
       bounds.view,
@@ -622,6 +638,7 @@ export const exportAll = authMutation
       from: input.from ?? null,
       to: input.to ?? null,
       view: input.view ?? null,
+      self: input.self,
       counterpartyEmployeeDocId,
     };
 
@@ -629,7 +646,7 @@ export const exportAll = authMutation
 
     const baseQuery = buildTransactionListBaseQuery(
       ctx,
-      ctx.user.employeeId,
+      input.self ? ctx.user.employeeId : null,
       bounds.from,
       bounds.to,
       bounds.view,

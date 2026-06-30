@@ -3,15 +3,15 @@
 import Link from "next/link";
 
 import { BsClock } from "react-icons/bs";
+import { formatDistanceToNow } from "date-fns";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
-
+import { EventCard } from "@/modules/events/ui/components/event-card";
 import { PointHero } from "@/modules/wallets/ui/components/point-hero";
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
 import { FeedTransactions } from "@/modules/transactions/ui/components/feed-transactions";
-import { EventCard } from "@/modules/events/ui/components/event-card";
 
 export const OverviewsView = () => {
   const crpc = useCRPC();
@@ -34,7 +34,7 @@ export const OverviewsView = () => {
                   <Link href="/transactions" className="hover:underline text-sm">ดูประวัติ</Link>
                   <div className="flex items-center gap-2">
                     <BsClock className="size-4 stroke-[0.2]" />
-                    <span>Last updated 12 hours ago</span>
+                    <span>{formatDistanceToNow(wallet.lastBudgetUpdate)}</span>
                   </div>
                 </div>
                 }
