@@ -2,7 +2,7 @@ import { arrayOf, boolean, convexTable, custom, defineRelations, defineSchema, i
 
 export const user = convexTable("user", {
   name: text().notNull(),
-  email: text().notNull(),
+  email: text(),
   emailVerified: boolean(),
   image: text(),
   createdAt: timestamp().notNull().defaultNow(),

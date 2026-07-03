@@ -50,7 +50,7 @@ export const OptionsStep = ({ user }: Props) => {
         title: "ผู้ส่ง",
         Icon: ArrowUpRightIcon,
         name: user.name,
-        email: user.email,
+        email: user.email ?? "",
         department: user.department,
         image: user.image,
       },

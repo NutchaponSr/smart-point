@@ -7,8 +7,8 @@ import { normalizeEmployeeId } from "../lib/employee-id";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
-function defaultSignupEmail(employeeId: string): string {
-  return `${employeeId}@example.somboon.co.th`;
+function defaultSignupEmail(): string {
+  return `example@somboon.co.th`;
 }
 
 export const insertEmployee = privateMutation
@@ -155,7 +155,7 @@ export const seedEmployee = optionalAuthAction
         await ctx.auth.api.signUpEmail({
           body: {
             name: emp.name,
-            email: emp.email ?? defaultSignupEmail(employeeId),
+            email: emp.email ?? defaultSignupEmail(),
             password: emp.password,
             username: employeeId,
             employeeId: empId,

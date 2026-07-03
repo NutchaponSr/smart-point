@@ -2,10 +2,15 @@ import bcrypt from "bcryptjs";
 import authConfig from "./auth.config";
 
 import { convex } from "better-convex/auth";
-import { customSession, username } from "better-auth/plugins";
+import { username } from "better-auth/plugins";
 
 import { defineAuth } from "./generated/auth";
-import { BetterAuthOptions } from "better-auth";
+
+const normalizeEmail = (email: string) => {
+  if (email === "example@somboon.co.th") return undefined;
+
+  return email;
+}
 
 export default defineAuth((ctx) => {
   return {
@@ -31,6 +36,20 @@ export default defineAuth((ctx) => {
           return await bcrypt.compare(password, hash);
         },
       },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            return {
+              data: {
+                ...user,
+                email: normalizeEmail(user.email),
+              }
+            }
+          }
+        }
+      }
     },
     user: {
       additionalFields: {

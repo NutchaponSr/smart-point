@@ -843,7 +843,7 @@ export type DataModel = {
     document: {
       createdAt?: number;
       displayUsername: string;
-      email: string;
+      email?: null | string;
       emailVerified?: null | boolean;
       employeeId: Id<"employee">;
       image?: null | string;

@@ -284,6 +284,10 @@ export const bulkImport = authMutation
 
       if (seenInBatch.has(businessEmployeeId)) {
         skipped += 1;
+        console.log("bulkImport skip (duplicate in batch)", {
+          rowIndex: row.rowIndex,
+          employeeId: businessEmployeeId,
+        });
         continue;
       }
       seenInBatch.add(businessEmployeeId);
@@ -297,6 +301,10 @@ export const bulkImport = authMutation
 
         if (existing) {
           skipped += 1;
+          console.log("bulkImport skip (already exists)", {
+            rowIndex: row.rowIndex,
+            employeeId: businessEmployeeId,
+          });
           continue;
         }
 
@@ -312,6 +320,10 @@ export const bulkImport = authMutation
         });
 
         inserted += 1;
+        console.log("bulkImport created", {
+          rowIndex: row.rowIndex,
+          employeeId: businessEmployeeId,
+        });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "เกิดข้อผิดพลาดขณะนำเข้า";
