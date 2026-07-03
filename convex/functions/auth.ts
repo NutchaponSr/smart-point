@@ -8,7 +8,7 @@ import { defineAuth } from "./generated/auth";
 import { BetterAuthOptions } from "better-auth";
 
 export default defineAuth((ctx) => {
-  const options = {
+  return {
     baseURL: process.env.SITE_URL!,
     trustedOrigins: [process.env.SITE_URL || "http://localhost:3000"],
     session: {
@@ -44,29 +44,11 @@ export default defineAuth((ctx) => {
         }
       },
     },
-  } satisfies BetterAuthOptions;
-
-  return {
-    ...options,
     plugins: [
       convex({ authConfig }),
       username({
         minUsernameLength: 1,
       }),
-      customSession(async ({ user, session }) => {
-        return {
-          user: {
-            ...user,
-            role: user.role,
-          },
-          session: {
-            role: user.role,
-            expiresAt: session.expiresAt,
-            token: session.token,
-            userAgent: session.userAgent,
-          },
-        };
-      }, options),
     ],
-  };
+  }
 });

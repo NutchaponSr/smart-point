@@ -38,9 +38,8 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
 
 function resolveRole(
   userRole: string | undefined,
-  sessionRole: string | undefined,
 ): UserRole | undefined {
-  const role = userRole ?? sessionRole;
+  const role = userRole
 
   if (role === ROLES.ADMIN || role === ROLES.USER) {
     return role;
@@ -59,7 +58,7 @@ export function canShowByRole(
 export function usePermission() {
   const { data: session, isPending, isRefetching } = authClient.useSession();
 
-  const role = resolveRole(session?.user?.role, session?.session?.role);
+  const role = resolveRole(session?.user?.role);
 
   return useMemo(() => {
     const isAuthenticated = !!session;
