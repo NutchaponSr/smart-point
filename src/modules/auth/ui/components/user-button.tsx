@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { BsDoorOpen } from "react-icons/bs";
+import { BsDoorOpen, BsGearFill } from "react-icons/bs";
 
 import { authClient } from "@/lib/convex/auth-client";
 import { getAvatarInitialFromName } from "@/lib/name-initial";
@@ -77,6 +77,14 @@ export const UserButtonDropdown = () => {
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" alignOffset={4} side="bottom" sideOffset={6}>
+        <DropdownMenuItem
+          onClick={() => {
+            router.push("/settings");
+          }}
+        >
+          <BsGearFill className="size-5" />
+          Settings
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             authClient.signOut({

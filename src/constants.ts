@@ -1,10 +1,24 @@
+import type { IconType } from "react-icons";
 import { MdLeaderboard } from "react-icons/md";
 import { HiShoppingCart } from "react-icons/hi2";
 import { RiCopperCoinFill } from "react-icons/ri";
 import { FaMoneyBillTransfer } from "react-icons/fa6";
 import { BsCalendar2EventFill, BsFillGridFill } from "react-icons/bs";
 
-export const navigations = [
+export type NavigationItem = {
+  icon: IconType;
+  label: string;
+  href: string;
+  isAdmin?: boolean;
+};
+
+export type MetadataItem = {
+  label: string;
+  href: string;
+  isAdmin?: boolean;
+};
+
+export const navigations: NavigationItem[] = [
   {
     icon: RiCopperCoinFill,
     label: "ธุรกรรม",
@@ -24,34 +38,40 @@ export const navigations = [
     icon: MdLeaderboard,
     label: "กระดานผู้นำ",
     href: "/leaderboard",
-  },  
+  },
   {
     icon: BsCalendar2EventFill,
     label: "กิจกรรม",
     href: "/events",
+    isAdmin: true,
   },
   {
     icon: BsFillGridFill,
     label: "แดชบอร์ด",
     href: "/dashboard",
+    isAdmin: true,
   },
-]
+];
 
-export const metadata = [
+export const metadata: MetadataItem[] = [
   {
     label: "พนักงาน",
     href: "/meta/employees",
+    isAdmin: true,
   },
   {
     label: "รางวัล",
     href: "/meta/rewards",
+    isAdmin: true,
   },
   {
     label: "ธุรกรรม",
     href: "/meta/transactions?status=pending",
+    isAdmin: true,
   },
   {
     label: "กิจกรรม",
     href: "/meta/events",
+    isAdmin: true,
   },
-]
+];

@@ -1,4 +1,5 @@
-import { EmployeeSchema } from "./schema";
+/** จำกัดแถวต่อ mutation — อยู่ใต้ Convex IO limit (1,000) เมื่อแถวใหม่ ~4 IO/แถว */
+export const BULK_IMPORT_CHUNK_SIZE = 200;
 
 export const employeeHeaderMapping: Record<string, string> = {
   "Employee Id": "employeeId",

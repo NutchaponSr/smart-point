@@ -255,6 +255,8 @@ export async function importExcelWithValidation<T extends ZodRawShape>(
     rawData = parseExcelFile(file, sheetIndex);
   }
 
+  console.log("rawData", rawData, headerMapping);
+
   const mappedData = headerMapping
     ? rawData.map((row) => {
       const mappedRow: ExcelRow = {};

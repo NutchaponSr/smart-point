@@ -15,6 +15,7 @@ import { columns } from "@/modules/employee/ui/components/employee-columns";
 
 import { useEmployeeExcel } from "@/modules/employee/hooks/use-employee-excel";
 import { useEmployeeFilters } from "@/modules/employee/stores/use-employee-filters";
+import { ExcelImportErrorsDialog } from "@/modules/employee/ui/components/excel-import-errors-dialog";
 import { Navigations } from "@/components/navigations";
 import { links } from "@/modules/dashboard/constants";
 
@@ -43,12 +44,16 @@ export const EmployeeAnalyticView = () => {
     query: debouncedQuery,
   }));
 
-  const { onImport, onExport } = useEmployeeExcel({ searchQuery: debouncedQuery });
+  const { onImport, onExport, errors, clearErrors } = useEmployeeExcel({
+    searchQuery: debouncedQuery,
+  });
 
   const canGoForward = employees.hasNextPage && employees.continueCursor != null;
 
   return (
-    <Main
+    <>
+      <ExcelImportErrorsDialog errors={errors} onClose={clearErrors} />
+      <Main
       title="พนักงาน"
       onImport={onImport}
       onExport={onExport}
@@ -75,5 +80,6 @@ export const EmployeeAnalyticView = () => {
         </div>
       </section>
     </Main>
+    </>
   );
 };

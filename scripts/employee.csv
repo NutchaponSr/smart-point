@@ -1,4 +1,4 @@
 employeeId,name,email,department,position,rank,division,password
-12613,สมชาย ใจดี,somchai@company.com,IT,Developer,Senior,Technology,12345
-5263,สมหญิง รักงาน,,HR,HR Manager,Manager,People,12345
-12347,วิชัย มานะ,wichai@company.com,Finance,Accountant,Junior,Finance,8044
+1,Admin1,,IT,Admin,Admin,Admin,12321
+2,Admin2,,IT,Admin,Admin,Admin,12321
+3,Admin3,,IT,Admin,Admin,Admin,12321

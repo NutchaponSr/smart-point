@@ -10,7 +10,9 @@ export const user = convexTable("user", {
   username: text().notNull(),
   displayUsername: text().notNull(),
   employeeId: id("employee").notNull(),
+  role: textEnum(["admin", "user"] as const).notNull(),
 }, (t) => [
+  index("by_role").on(t.role),
   index("by_email").on(t.email),
   index("by_username").on(t.username),
   index("by_employeeId").on(t.employeeId),

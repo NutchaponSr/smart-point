@@ -2,6 +2,7 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { authMutation, authQuery, privateAuthAction } from "../lib/crpc";
+import { normalizeEmployeeId } from "../lib/employee-id";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./generated/server";
@@ -9,6 +10,10 @@ import type { MutationCtx } from "./generated/server";
 const zEmployeeDocId = z.custom<Id<"employee">>(
   (val): val is Id<"employee"> => typeof val === "string" && val.length > 0,
 );
+
+function defaultSignupEmail(businessEmployeeId: string): string {
+  return `${businessEmployeeId}@example.somboon.co.th`;
+}
 
 function normalizeOptionalEmail(email: string | null | undefined): string | undefined {
   const t = email?.trim() ?? "";
@@ -30,8 +35,10 @@ async function insertEmployeeWalletAndScheduleSignup(
   ctx: MutationCtx,
   row: NewEmployeePayload,
 ): Promise<Id<"employee">> {
+  const businessEmployeeId = normalizeEmployeeId(row.businessEmployeeId);
+
   const employeeDocId = await ctx.db.insert("employee", {
-    employeeId: row.businessEmployeeId,
+    employeeId: businessEmployeeId,
     name: row.name,
     email: row.email,
     department: row.department,
@@ -50,9 +57,9 @@ async function insertEmployeeWalletAndScheduleSignup(
 
   await ctx.scheduler.runAfter(0, internal.employee.signUpEmployeeInternal, {
     name: row.name,
-    email: row.email || "example@somboon.co.th",
+    email: row.email ?? defaultSignupEmail(businessEmployeeId),
     password: row.password,
-    username: row.businessEmployeeId,
+    username: businessEmployeeId,
     employeeId: employeeDocId,
   });
 
@@ -244,54 +251,84 @@ export const search = authQuery
     return results.slice(0, 10);
   });
 
+const bulkImportRowSchema = z.object({
+  rowIndex: z.number().int().positive(),
+  employeeId: z.string().trim(),
+  name: z.string().trim(),
+  email: z.string().optional().nullable(),
+  department: z.string().trim(),
+  position: z.string().trim(),
+  rank: z.string().trim(),
+  division: z.string().trim(),
+  password: z.string().trim(),
+});
+
 export const bulkImport = authMutation
   .input(
     z.object({
-      rows: z.array(
-        z.object({
-          employeeId: z.string().trim(),
-          name: z.string().trim(),
-          email: z.string().optional().nullable(),
-          department: z.string().trim(),
-          position: z.string().trim(),
-          rank: z.string().trim(),
-          division: z.string().trim(),
-          password: z.string().trim(),
-        }),
-      )
+      rows: z.array(bulkImportRowSchema),
     }),
   )
   .mutation(async ({ ctx, input }) => {
     let inserted = 0;
     let skipped = 0;
+    const errors: Array<{
+      rowIndex: number;
+      employeeId: string;
+      message: string;
+    }> = [];
+    const seenInBatch = new Set<string>();
 
     for (const row of input.rows) {
-      const email = normalizeOptionalEmail(row.email);
-      const existing = await ctx.db
-        .query("employee")
-        .withIndex("by_employeeId", (q) => q.eq("employeeId", row.employeeId))
-        .first();
+      const businessEmployeeId = normalizeEmployeeId(row.employeeId);
 
-      if (existing) {
+      if (seenInBatch.has(businessEmployeeId)) {
         skipped += 1;
         continue;
       }
+      seenInBatch.add(businessEmployeeId);
 
-      await insertEmployeeWalletAndScheduleSignup(ctx, {
-        businessEmployeeId: row.employeeId,
-        name: row.name,
-        email,
-        department: row.department,
-        position: row.position,
-        rank: row.rank,
-        division: row.division,
-        password: row.password,
-      });
+      try {
+        const email = normalizeOptionalEmail(row.email);
+        const existing = await ctx.db
+          .query("employee")
+          .withIndex("by_employeeId", (q) => q.eq("employeeId", businessEmployeeId))
+          .first();
 
-      inserted += 1;
+        if (existing) {
+          skipped += 1;
+          continue;
+        }
+
+        await insertEmployeeWalletAndScheduleSignup(ctx, {
+          businessEmployeeId,
+          name: row.name,
+          email,
+          department: row.department,
+          position: row.position,
+          rank: row.rank,
+          division: row.division,
+          password: row.password,
+        });
+
+        inserted += 1;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "เกิดข้อผิดพลาดขณะนำเข้า";
+        console.error("bulkImport failed", {
+          rowIndex: row.rowIndex,
+          employeeId: row.employeeId,
+          error: message,
+        });
+        errors.push({
+          rowIndex: row.rowIndex,
+          employeeId: row.employeeId,
+          message,
+        });
+      }
     }
 
-    return { inserted, skipped };
+    return { inserted, skipped, errors };
   });
 
 export const signUpEmployeeInternal = privateAuthAction
@@ -312,6 +349,7 @@ export const signUpEmployeeInternal = privateAuthAction
         password: input.password,
         username: input.username,
         employeeId: input.employeeId,
+        role: "user",
       },
     });
   });
@@ -330,10 +368,11 @@ export const create = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    const businessEmployeeId = normalizeEmployeeId(input.employeeId);
     const email = normalizeOptionalEmail(input.email);
     const existing = await ctx.db
       .query("employee")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", input.employeeId))
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", businessEmployeeId))
       .first();
 
     if (existing) {
@@ -341,7 +380,7 @@ export const create = authMutation
     }
 
     const employeeDocId = await insertEmployeeWalletAndScheduleSignup(ctx, {
-      businessEmployeeId: input.employeeId,
+      businessEmployeeId,
       name: input.name,
       email,
       department: input.department,

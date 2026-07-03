@@ -12,6 +12,7 @@ import { EventCard } from "@/modules/events/ui/components/event-card";
 import { PointHero } from "@/modules/wallets/ui/components/point-hero";
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
 import { FeedTransactions } from "@/modules/transactions/ui/components/feed-transactions";
+import { usePermission } from "@/modules/auth/hooks/use-permisson";
 
 export const OverviewsView = () => {
   const crpc = useCRPC();

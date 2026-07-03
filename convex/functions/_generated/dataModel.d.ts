@@ -848,6 +848,7 @@ export type DataModel = {
       employeeId: Id<"employee">;
       image?: null | string;
       name: string;
+      role: "admin" | "user";
       updatedAt?: null | number;
       username: string;
       _id: Id<"user">;
@@ -863,6 +864,7 @@ export type DataModel = {
       | "_id"
       | "image"
       | "name"
+      | "role"
       | "updatedAt"
       | "username";
     indexes: {
@@ -870,6 +872,7 @@ export type DataModel = {
       by_creation_time: ["_creationTime"];
       by_email: ["email", "_creationTime"];
       by_employeeId: ["employeeId", "_creationTime"];
+      by_role: ["role", "_creationTime"];
       by_username: ["username", "_creationTime"];
     };
     searchIndexes: {};

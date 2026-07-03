@@ -2,16 +2,17 @@ import bcrypt from "bcryptjs";
 import authConfig from "./auth.config";
 
 import { convex } from "better-convex/auth";
-import { username } from "better-auth/plugins";
+import { customSession, username } from "better-auth/plugins";
 
 import { defineAuth } from "./generated/auth";
+import { BetterAuthOptions } from "better-auth";
 
 export default defineAuth((ctx) => {
-  return {
+  const options = {
     baseURL: process.env.SITE_URL!,
     trustedOrigins: [process.env.SITE_URL || "http://localhost:3000"],
     session: {
-      expiresIn: 60 * 60 * 24 * 30,
+      expiresIn: 60 * 60 * 24 * 30, // 30 days
       updateAge: 60 * 60 * 24 * 15,
     },
     emailAndPassword: {
@@ -37,11 +38,35 @@ export default defineAuth((ctx) => {
           type: "string",
           required: true,
         },
+        role: {
+          type: "string",
+          required: true,
+        }
       },
     },
+  } satisfies BetterAuthOptions;
+
+  return {
+    ...options,
     plugins: [
       convex({ authConfig }),
-      username(),
-    ]
-  }
+      username({
+        minUsernameLength: 1,
+      }),
+      customSession(async ({ user, session }) => {
+        return {
+          user: {
+            ...user,
+            role: user.role,
+          },
+          session: {
+            role: user.role,
+            expiresAt: session.expiresAt,
+            token: session.token,
+            userAgent: session.userAgent,
+          },
+        };
+      }, options),
+    ],
+  };
 });

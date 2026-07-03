@@ -2,9 +2,14 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { optionalAuthAction, privateMutation } from "../lib/crpc";
+import { normalizeEmployeeId } from "../lib/employee-id";
 
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+
+function defaultSignupEmail(employeeId: string): string {
+  return `${employeeId}@example.somboon.co.th`;
+}
 
 export const insertEmployee = privateMutation
   .input(
@@ -20,15 +25,17 @@ export const insertEmployee = privateMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    const employeeId = normalizeEmployeeId(input.employeeId);
+
     const existing = await ctx.db
       .query("employee")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", input.employeeId))
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", employeeId))
       .first();
 
     if (existing) return null;
 
     const employeeDocId = await ctx.db.insert("employee", {
-      employeeId: input.employeeId,
+      employeeId,
       name: input.name,
       email: input.email,
       department: input.department,
@@ -126,8 +133,10 @@ export const seedEmployee = optionalAuthAction
     let skipped = 0;
 
     for (const emp of input.employees) {
+      const employeeId = normalizeEmployeeId(emp.employeeId);
+
       const empId = await ctx.runMutation(internal.seed.insertEmployee, {
-        employeeId: emp.employeeId,
+        employeeId,
         name: emp.name,
         email: emp.email,
         department: emp.department,
@@ -146,17 +155,17 @@ export const seedEmployee = optionalAuthAction
         await ctx.auth.api.signUpEmail({
           body: {
             name: emp.name,
-            email: emp.email ? emp.email : `example@somboon.co.th`,
+            email: emp.email ?? defaultSignupEmail(employeeId),
             password: emp.password,
-            username: emp.employeeId,
+            username: employeeId,
             employeeId: empId,
+            role: "user",
           },
         });
+        created++;
       } catch (err) {
-        console.error(`Failed to sign up employee ${emp.employeeId}:`, err);
+        console.error(`Failed to sign up employee ${employeeId}:`, err);
       }
-
-      created++;
     }
 
     console.log(`Seed done: ${created} created, ${skipped} skipped`);

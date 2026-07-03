@@ -208,6 +208,7 @@ export declare const api: {
           password: string;
           position: string;
           rank: string;
+          rowIndex: number;
         }>;
       },
       any

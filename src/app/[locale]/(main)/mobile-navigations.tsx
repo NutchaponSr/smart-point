@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Sheet,
   SheetContent,
@@ -6,6 +8,7 @@ import {
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 import { metadata, navigations } from "@/constants";
+import { canShowByRole, usePermission } from "@/modules/auth/hooks/use-permisson";
 import { UserButtonDropdown } from "@/modules/auth/ui/components/user-button";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { BsDatabaseFill } from "react-icons/bs";
@@ -24,6 +27,14 @@ interface Props {
 
 export const MobileNavigations = ({ children }: Props) => {
   const pathname = usePathname();
+  const { isAdmin } = usePermission();
+
+  const visibleNavigations = navigations.filter((item) =>
+    canShowByRole(item, isAdmin),
+  );
+  const visibleMetadata = metadata.filter((item) =>
+    canShowByRole(item, isAdmin),
+  );
 
   /** Strip `/th` or `/en` locale segment; keep a leading `/` (replace was stripping it). */
   const pathWithoutLocale =
@@ -45,29 +56,31 @@ export const MobileNavigations = ({ children }: Props) => {
         </div>
         <div className="grow flex flex-col overflow-x-hidden overflow-y-auto">
           <section className="mb-12 grid">
-            {navigations.map((navigation, index) => (
+            {visibleNavigations.map((navigation, index) => (
               <Link key={index} href={navigation.href} className={cn("flex items-center truncate border-y-2 border-white/50 border-b-transparent px-6 py-4 no-underline last:border-b-white/50 hover:text-pink dark:border-foreground/50 dark:border-b-transparent dark:last:border-b-foreground/50 min-h-15 text-white", isActive(navigation.href) && "text-pink")}>
                 <navigation.icon className="size-5" />
                 <span className="ml-4">{navigation.label}</span>
               </Link>
             ))}
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center truncate border-y-2 border-white/50 border-b-transparent px-6 py-4 no-underline last:border-b-white/50 hover:text-pink dark:border-foreground/50 dark:border-b-transparent dark:last:border-b-foreground/50 min-h-15 text-white">
-                <BsDatabaseFill className="size-5" />
-                <span className="ml-4 grow text-left">ข้อมูล</span>
-                <ChevronRightIcon className="size-5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-[calc(var(--radix-dropdown-menu-trigger-width)-8px)]">
-                {metadata.map((metadata) => (
-                  <Link href={metadata.href} key={metadata.href} className="w-full">
-                    <DropdownMenuItem>
-                      {metadata.label}
-                    </DropdownMenuItem>
-                  </Link>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+            {visibleMetadata.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center truncate border-y-2 border-white/50 border-b-transparent px-6 py-4 no-underline last:border-b-white/50 hover:text-pink dark:border-foreground/50 dark:border-b-transparent dark:last:border-b-foreground/50 min-h-15 text-white">
+                  <BsDatabaseFill className="size-5" />
+                  <span className="ml-4 grow text-left">ข้อมูล</span>
+                  <ChevronRightIcon className="size-5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-[calc(var(--radix-dropdown-menu-trigger-width)-8px)]">
+                  {visibleMetadata.map((item) => (
+                    <Link href={item.href} key={item.href} className="w-full">
+                      <DropdownMenuItem>
+                        {item.label}
+                      </DropdownMenuItem>
+                    </Link>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </section>
         </div>
         <footer className="mt-auto grid">
