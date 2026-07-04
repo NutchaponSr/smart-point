@@ -4,7 +4,7 @@ import * as path from "path";
 import Papa from "papaparse";
 import * as dotenv from "dotenv";
 import { api } from "../convex/functions/_generated/api";
-import { normalizeEmployeeId } from "../convex/lib/employee-id";
+import { normalizeText } from "../convex/lib/employee-id";
 
 interface EmployeeCSVRow {
   employeeId: string;
@@ -80,7 +80,7 @@ async function main() {
     }
 
     employees.push({
-      employeeId: normalizeEmployeeId(row.employeeId),
+      employeeId: normalizeText(row.employeeId, 5),
       name: row.name,
       email: row.email || undefined,         // ✅ ว่าง → undefined
       department: row.department,

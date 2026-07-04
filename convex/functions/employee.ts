@@ -2,7 +2,7 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { authMutation, authQuery, privateAuthAction } from "../lib/crpc";
-import { normalizeEmployeeId } from "../lib/employee-id";
+import { normalizeText } from "../lib/employee-id";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./generated/server";
@@ -35,7 +35,7 @@ async function insertEmployeeWalletAndScheduleSignup(
   ctx: MutationCtx,
   row: NewEmployeePayload,
 ): Promise<Id<"employee">> {
-  const businessEmployeeId = normalizeEmployeeId(row.businessEmployeeId);
+  const businessEmployeeId = normalizeText(row.businessEmployeeId, 5);
 
   const employeeDocId = await ctx.db.insert("employee", {
     employeeId: businessEmployeeId,
@@ -280,7 +280,7 @@ export const bulkImport = authMutation
     const seenInBatch = new Set<string>();
 
     for (const row of input.rows) {
-      const businessEmployeeId = normalizeEmployeeId(row.employeeId);
+      const businessEmployeeId = normalizeText(row.employeeId, 5);
 
       if (seenInBatch.has(businessEmployeeId)) {
         skipped += 1;
@@ -316,7 +316,7 @@ export const bulkImport = authMutation
           position: row.position,
           rank: row.rank,
           division: row.division,
-          password: row.password,
+          password: normalizeText(row.password, 5),
         });
 
         inserted += 1;
@@ -358,7 +358,7 @@ export const signUpEmployeeInternal = privateAuthAction
       body: {
         name: input.name,
         email: input.email,
-        password: input.password,
+        password: normalizeText(input.password, 5),
         username: input.username,
         employeeId: input.employeeId,
         role: "user",
@@ -380,7 +380,7 @@ export const create = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const businessEmployeeId = normalizeEmployeeId(input.employeeId);
+    const businessEmployeeId = normalizeText(input.employeeId, 5);
     const email = normalizeOptionalEmail(input.email);
     const existing = await ctx.db
       .query("employee")

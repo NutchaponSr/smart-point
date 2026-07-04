@@ -2,7 +2,7 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { optionalAuthAction, privateMutation } from "../lib/crpc";
-import { normalizeEmployeeId } from "../lib/employee-id";
+import { normalizeText } from "../lib/employee-id";
 
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -25,7 +25,7 @@ export const insertEmployee = privateMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const employeeId = normalizeEmployeeId(input.employeeId);
+    const employeeId = normalizeText(input.employeeId, 5);
 
     const existing = await ctx.db
       .query("employee")
@@ -133,7 +133,8 @@ export const seedEmployee = optionalAuthAction
     let skipped = 0;
 
     for (const emp of input.employees) {
-      const employeeId = normalizeEmployeeId(emp.employeeId);
+      const employeeId = normalizeText(emp.employeeId, 5);
+      const password = normalizeText(emp.password, 12);
 
       const empId = await ctx.runMutation(internal.seed.insertEmployee, {
         employeeId,
@@ -156,7 +157,7 @@ export const seedEmployee = optionalAuthAction
           body: {
             name: emp.name,
             email: emp.email ?? defaultSignupEmail(),
-            password: emp.password,
+            password: normalizeText(emp.password, 5),
             username: employeeId,
             employeeId: empId,
             role: "user",

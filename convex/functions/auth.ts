@@ -45,11 +45,11 @@ export default defineAuth((ctx) => {
               data: {
                 ...user,
                 email: normalizeEmail(user.email),
-              }
-            }
-          }
-        }
-      }
+              },
+            };
+          },
+        },
+      },
     },
     user: {
       additionalFields: {
