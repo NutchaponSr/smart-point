@@ -45,7 +45,6 @@ async function insertEmployeeWalletAndScheduleSignup(
     position: row.position,
     rank: row.rank,
     division: row.division,
-    citizenId: row.password,
   });
 
   await ctx.db.insert("wallet", {

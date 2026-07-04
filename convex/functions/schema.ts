@@ -78,7 +78,6 @@ export const employee = convexTable("employee", {
   position: text().notNull(),
   rank: text().notNull(),
   division: text().notNull(),
-  citizenId: text().notNull(),
 }, (t) => [
   index("by_department").on(t.department),
   uniqueIndex("by_employeeId").on(t.employeeId),

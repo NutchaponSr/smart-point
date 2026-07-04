@@ -42,7 +42,6 @@ export const insertEmployee = privateMutation
       position: input.position,
       rank: input.rank,
       division: input.division,
-      citizenId: input.password,
     });
 
     // init wallet ทันที

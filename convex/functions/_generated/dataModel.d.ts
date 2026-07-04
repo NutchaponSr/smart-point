@@ -464,7 +464,6 @@ export type DataModel = {
   };
   employee: {
     document: {
-      citizenId: string;
       department: string;
       division: string;
       email?: null | string;
@@ -476,7 +475,6 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "citizenId"
       | "_creationTime"
       | "department"
       | "division"
