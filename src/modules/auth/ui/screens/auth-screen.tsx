@@ -1,18 +1,21 @@
+import { UserRound } from "lucide-react";
+
 interface Props {
   title: string;
   children: React.ReactNode;
 }
 
-export const AuthScreen = ({ title, children }: Props) => {
+export const AuthScreen = ({ children }: Props) => {
   return (
-    <div className="squished-content-x flex flex-col grow shrink basis-0">
-      <header className="flex flex-col gap-4 border-b-2 md:p-8 p-8 sm:p-16">
-        <h1 className="text-[40px] leading-[1.2]">{title}</h1>
-      </header>
+    <div className="mx-auto w-full min-w-0 max-w-lg rounded-lg border-2 bg-card p-6 sm:p-12">
+      <h2 className="text-center text-3xl font-extrabold text-brand-navy sm:text-4xl">
+        ยินดีต้อนรับ
+      </h2>
+      <p className="mt-3 text-center text-base font-semibold text-brand-navy/80 sm:text-lg">
+        กรุณากรอกข้อมูลเพื่อเข้าสู่ระบบ
+      </p>
 
-      <main className="p-8 sm:p-16">
-        {children}
-      </main>
+      {children}
     </div>
   );
 }

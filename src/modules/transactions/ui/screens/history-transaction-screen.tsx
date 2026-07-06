@@ -52,7 +52,7 @@ export const HistoryTransactionScreen = () => {
   const canGoForward = transactions.hasNextPage && transactions.continueCursor != null;
 
   return (
-    <section className="space-y-4 p-4 md:p-8">
+    <section className="space-y-4">
       <h2 className="text-xl">ประวัติธุรกรรม</h2>
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_4fr]">
         <TransactionFilters total={transactions.page.length} />

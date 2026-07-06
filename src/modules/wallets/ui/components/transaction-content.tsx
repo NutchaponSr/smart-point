@@ -61,14 +61,14 @@ export const TransactionContent = ({ showHeader = true, givingBudget, className 
         email: "",
         department: "",
       },
-      amount: 0,
+      amount: 5,
       message: "",
       tags: "",
     },
   });
 
   return (
-    <section className={cn("grid rounded-xs grid-cols-1 first:border-t-0 border-2 border-border", className)}>
+    <section className={cn("grid rounded-xs grid-cols-1 border-2 border-border", className)}>
       <header data-show={showHeader} className="data-[show=false]:hidden grid content-start border-b-2 p-4 border-border">
         <div className="flex items-center gap-2 h-8">
           {step === "options" && (
@@ -83,7 +83,7 @@ export const TransactionContent = ({ showHeader = true, givingBudget, className 
             </Button>
           )}
           <h2 className="text-[20px] font-normal leading-[1.3]">
-            {step === "send" ? "ธุรกรรม" : step === "options" ? "ตรวจสอบข้อมูล" : "การส่งเงินสำเร็จ"}
+            {step === "send" ? "เพื่อนพนักงานที่คุณต้องการชื่นชม" : step === "options" ? "ตรวจสอบข้อมูล" : "การส่งเงินสำเร็จ"}
           </h2>
         </div>
       </header>
@@ -139,7 +139,7 @@ export const TransactionContent = ({ showHeader = true, givingBudget, className 
                 receiverId: values.employee.id,
                 amount: values.amount,
                 message: values.message,
-                tags: values.tags,
+                tags: values.tags ?? "",
               }, {
                 onSuccess: () => {
                   form.reset();

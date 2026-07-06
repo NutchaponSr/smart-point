@@ -1,7 +1,6 @@
 import z from "zod/v4";
 
 import {
-  getSmartCultureTagPoints,
   isSmartCultureTagId,
 } from "@/modules/transactions/constants";
 
@@ -13,12 +12,14 @@ export const sendTransactionSchema = z
       email: z.string().optional(),
       department: z.string(),
     }),
-    amount: z.number().min(1, "กรุณาระบุจำนวนที่มากกว่า 0"),
+    amount: z.union([z.literal(5), z.literal(10)], {
+      error: "กรุณาเลือก 5 หรือ 10 แต้ม",
+    }),
     message: z.string().min(1, "กรุณาระบุข้อความ"),
     tags: z
       .string()
-      .min(1, "กรุณาเลือกแท็ก SMART Culture")
-      .refine(isSmartCultureTagId, {
+      .optional()
+      .refine((value) => !value || isSmartCultureTagId(value), {
         message: "รหัสแท็กไม่ถูกต้อง",
       }),
   })
@@ -26,17 +27,17 @@ export const sendTransactionSchema = z
     message: "กรุณาเลือกพนักงาน",
     path: ["employee"],
   })
-  .refine(
-    (data) => {
-      if (!isSmartCultureTagId(data.tags)) return true;
-      const pts = getSmartCultureTagPoints(data.tags);
-      return pts !== null && data.amount === pts;
-    },
-    {
-      message: "จำนวนแต้มต้องตรงกับระดับพฤติกรรมที่เลือก",
-      path: ["amount"],
-    },
-  );
+  // .refine(
+  //   (data) => {
+  //     if (!isSmartCultureTagId(data.tags)) return true;
+  //     const pts = getSmartCultureTagPoints(data.tags);
+  //     return pts !== null && data.amount === pts;
+  //   },
+  //   {
+  //     message: "จำนวนแต้มต้องตรงกับระดับพฤติกรรมที่เลือก",
+  //     path: ["amount"],
+  //   },
+  // );
 
 export type SendTransactionSchema = z.infer<typeof sendTransactionSchema>;
 

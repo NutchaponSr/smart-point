@@ -21,8 +21,8 @@ export type MetadataItem = {
 export const navigations: NavigationItem[] = [
   {
     icon: RiCopperCoinFill,
-    label: "ธุรกรรม",
-    href: "/transactions",
+    label: "หน้าหลัก",
+    href: "/",
   },
   {
     icon: HiShoppingCart,
@@ -31,12 +31,12 @@ export const navigations: NavigationItem[] = [
   },
   {
     icon: FaMoneyBillTransfer,
-    label: "ประวัติการแลก",
+    label: "ประวัติการแลกรางวัล",
     href: "/purchases",
   },
   {
     icon: MdLeaderboard,
-    label: "กระดานผู้นำ",
+    label: "อันดับคะแนนสูงสุด",
     href: "/leaderboard",
   },
   {

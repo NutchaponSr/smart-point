@@ -52,6 +52,18 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-brand-sky: var(--brand-sky);
+  --color-brand-green: var(--brand-green);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-mint: var(--brand-mint);
+  --color-brand-cream: var(--brand-cream);
+  --brand-sky: oklch(0.72 0.14 235);
+  --brand-green: oklch(0.78 0.14 165);
+  --brand-navy: oklch(0.38 0.11 262);
+  --brand-orange: oklch(0.76 0.16 60);
+  --brand-mint: oklch(0.95 0.04 165);
+  --brand-cream: oklch(0.96 0.015 85);
 }
 
 :root {

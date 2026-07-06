@@ -831,7 +831,9 @@ export type DataModel = {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
       by_receiverId: ["receiverId", "_creationTime"];
+      by_receiverId_status: ["receiverId", "status", "_creationTime"];
       by_senderId: ["senderId", "_creationTime"];
+      by_senderId_status: ["senderId", "status", "_creationTime"];
       by_status: ["status", "_creationTime"];
     };
     searchIndexes: {};

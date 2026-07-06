@@ -35,11 +35,11 @@ export const SignInView = () => {
   return (
     <form onSubmit={handleSubmit}>
       <div className="grid gap-8">
-        <fieldset className="flex flex-col border-none gap-2"> 
-          <legend className="relative mb-2 flex w-full items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
+        <fieldset className="flex min-w-0 flex-col gap-2 border-none"> 
+          <legend className="relative mb-2 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
             <Label 
               htmlFor="username"
-              className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
+              className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 sr-only"
             >
               Employee ID
             </Label>
@@ -49,16 +49,17 @@ export const SignInView = () => {
             id="username"
             type="text"
             value={username}
+            placeholder="รหัสพนักงาน"
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full"
+            className="w-full rounded-lg bg-brand-sky/60 px-6 py-4 text-lg font-medium text-brand-navy placeholder:text-brand-navy/70 focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </fieldset>
 
-        <fieldset className="flex flex-col border-none gap-2"> 
-          <legend className="relative mb-2 flex w-full items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
+        <fieldset className="flex min-w-0 flex-col gap-2 border-none"> 
+          <legend className="relative mb-2 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
             <Label 
               htmlFor="password"
-              className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
+              className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 sr-only"
             >
               Last 5 digits of your citizenship number
             </Label>
@@ -68,12 +69,13 @@ export const SignInView = () => {
             id="password"
             type="password"
             value={password}
+            placeholder="รหัสผ่าน"
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full"
+            className="w-full rounded-lg bg-brand-sky/60 px-6 py-4 text-lg font-medium text-brand-navy placeholder:text-brand-navy/70 focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </fieldset>
 
-        <Button variant="elevated" type="submit">
+        <Button variant="elevated" type="submit" className="bg-pink">
           Login
         </Button>
       </div>
