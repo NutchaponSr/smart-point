@@ -16,12 +16,13 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { SheetTrigger } from "@/components/ui/sheet";
 
 import { Logo } from "@/components/logo";
 
 import { UserButtonDropdown } from "@/modules/auth/ui/components/user-button";
-import { SheetTrigger } from "@/components/ui/sheet";
-import { MobileNavigations } from "../(main)/mobile-navigations";
+
+import { MobileNavigations } from "./mobile-navigations";
 
 
 export const Sidebar = () => {

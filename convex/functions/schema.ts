@@ -108,6 +108,8 @@ export const transaction = convexTable("transaction", {
   index("by_senderId").on(t.senderId),
   index("by_receiverId").on(t.receiverId),
   index("by_status").on(t.status),
+  index("by_senderId_status").on(t.senderId, t.status),
+  index("by_receiverId_status").on(t.receiverId, t.status),
 ]);
 
 export const like = convexTable("like", {

@@ -19,40 +19,111 @@ import {
   DialogHidden,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 
 import { Id } from "../../../../../convex/functions/_generated/dataModel";
 
+const FEED_VIEWS = ["all", "sent", "received"] as const;
+type FeedView = (typeof FEED_VIEWS)[number];
+
+const FEED_VIEW_LABELS: Record<FeedView, string> = {
+  all: "ทั้งหมด",
+  sent: "ที่ส่ง",
+  received: "ที่ได้รับ",
+};
+
+const getFeedHeadline = (
+  view: FeedView,
+  senderName: string,
+  receiverName: string,
+  amount: number,
+) => {
+  if (view === "received") {
+    return (
+      <>
+        {receiverName}{" "}
+        <span className="font-normal text-muted-foreground mx-1">
+          ได้รับ <u>{amount}</u> พอยต์ จาก{" "}
+        </span>
+        <span className="text-blue">{senderName}</span>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {senderName}{" "}
+      <span className="font-normal text-muted-foreground mx-1">
+        ให้ <u>{amount}</u> พอยต์{" "}
+      </span>
+      <span className="text-blue">{receiverName}</span>
+    </>
+  );
+};
+
+const FEED_EMPTY_MESSAGES: Record<FeedView, { title: string; description: string }> = {
+  all: {
+    title: "ยังไม่มีกิจกรรมในฟีด",
+    description: "เมื่อมีการมอบคะแนน รายการจะแสดงขึ้นที่นี่",
+  },
+  sent: {
+    title: "ยังไม่มีรายการที่คุณส่ง",
+    description: "เมื่อคุณมอบคะแนนให้เพื่อนร่วมงาน รายการจะแสดงขึ้นที่นี่",
+  },
+  received: {
+    title: "ยังไม่มีรายการที่คุณได้รับ",
+    description: "เมื่อมีคนมอบคะแนนให้คุณ รายการจะแสดงขึ้นที่นี่",
+  },
+};
+
 export const FeedTransactions = () => {
   const crpc = useCRPC();
+  const [view, setView] = useState<FeedView>("all");
 
   const { 
     data: feeds,
     fetchNextPage,
     hasNextPage,
-  } = useInfiniteQuery(crpc.transaction.feeds.infiniteQueryOptions());
+  } = useInfiniteQuery(crpc.transaction.feeds.infiniteQueryOptions({ view }));
   
   const like = useMutation(crpc.transaction.like.mutationOptions());
+  const emptyMessage = FEED_EMPTY_MESSAGES[view];
 
   return (
     <section className="flex flex-col gap-4">
       <header className="data-[show=false]:hidden grid content-start gap-3">
-        <div className="flex items-center gap-2 h-8">
+        {/* <div className="flex items-center gap-2 h-8">
           <h2 className="text-lg font-normal leading-[1.3]">
             SMART Culture Feed
           </h2>
-        </div>
+        </div> */}
+
+        <Tabs
+          value={view}
+          onValueChange={(value) => setView(value as FeedView)}
+        >
+          <TabsList className="w-full">
+            {FEED_VIEWS.map((feedView) => (
+              <TabsTrigger key={feedView} value={feedView}>
+                {FEED_VIEW_LABELS[feedView]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </header>
 
       <div className="flex flex-col gap-4">
         {feeds.length > 0 ? feeds.map((feed) => (
           <FeedItem 
-            key={feed._id} 
+            key={feed._id}
+            view={view}
             amount={feed.amount}
             senderName={feed.sender.name}
             senderImage={feed.sender.image}
             receiverName={feed.receiver.name}
+            receiverImage={feed.receiver.image}
             message={feed.message}
             likes={feed.likes.count}
             comments={feed.comments}
@@ -68,8 +139,8 @@ export const FeedTransactions = () => {
               <figure className="w-full">
                 <img src={checkoutImage.src} alt="Checkout" className="w-full rounded-xs" />
               </figure>
-              <h3 className="text-lg font-normal leading-snug">คุณยังไม่ได้เพิ่มอะไรเลย...ในตอนนี้!</h3>
-              <p>เมื่อคุณทำแล้ว รายการจะแสดงขึ้นที่นี่เพื่อให้คุณดำเนินการสั่งซื้อให้เสร็จสมบูรณ์</p>
+              <h3 className="text-lg font-normal leading-snug">{emptyMessage.title}</h3>
+              <p>{emptyMessage.description}</p>
             </div>
           </div>
         )}
@@ -85,11 +156,13 @@ export const FeedTransactions = () => {
 }
 
 const FeedItem = ({
+  view,
   amount,
   message,
   senderName,
   senderImage,
   receiverName,
+  receiverImage,
   likes,
   comments,
   createdAt,
@@ -98,11 +171,13 @@ const FeedItem = ({
   transactionId,
   likedByCurrentUser,
 }: {
+  view: FeedView;
   transactionId: Id<"transaction">;
   amount: number;
   senderName: string;
   senderImage: string | null;
   receiverName: string;
+  receiverImage: string | null;
   message: string;
   likes: number;
   comments: ApiOutputs["transaction"]["feeds"]["page"][0]["comments"];
@@ -112,20 +187,40 @@ const FeedItem = ({
   likedByCurrentUser: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const isReceivedView = view === "received";
 
   return (
     <article className="flex flex-col rounded-xs border-2 border-border bg-background select-none">
-      <div className="flex items-center px-4">
-        <UserAvatar 
-          name={senderName}
-          className={{
-            container: "size-12 after:border-2! after:rounded-full!",
-            fallback: "text-xl font-medium rounded-full!",
-          }}
-        />
+      <div className="flex items-center p-4">
+        <div className="relative">
+          <UserAvatar 
+            name={isReceivedView ? receiverName : senderName}
+            src={(isReceivedView ? receiverImage : senderImage) || undefined}
+            className={{
+              container: "size-12 after:border-2! after:rounded-full!",
+              fallback: cn(
+                "text-xl font-medium rounded-full!",
+                isReceivedView && "bg-orange",
+              ),
+            }}
+          />
+          <div className="absolute -bottom-1 -right-1">
+            <UserAvatar
+              name={isReceivedView ? senderName : receiverName}
+              src={(isReceivedView ? senderImage : receiverImage) || undefined}
+              className={{
+                container: "size-7 after:border-2! after:rounded-full!",
+                fallback: cn(
+                  "text-xs font-medium rounded-full!",
+                  !isReceivedView && "bg-orange",
+                ),
+              }}
+            />
+          </div>
+        </div>
         <div className="flex flex-col py-2 px-4 gap-1">
           <p className="text-sm md:text-base font-bold whitespace-pre-wrap wrap-break-word">
-            {senderName} <span className="font-normal text-muted-foreground mx-1">gave <u>{amount}</u> points to</span> <span className="text-blue">{receiverName}</span>
+            {getFeedHeadline(view, senderName, receiverName, amount)}
           </p>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground rounded-lg bg-muted px-2 py-1">
@@ -154,11 +249,13 @@ const FeedItem = ({
           </Button>
           <FeedDialog 
             isOpen={isOpen} 
-            onOpenChange={setIsOpen} 
+            onOpenChange={setIsOpen}
+            view={view}
             amount={amount}
             senderName={senderName}
             senderImage={senderImage}
             receiverName={receiverName}
+            receiverImage={receiverImage}
             message={message}
             likes={likes}
             comments={comments}
@@ -180,10 +277,12 @@ const FeedItem = ({
 export const FeedDialog = ({
   isOpen,
   onOpenChange,
+  view,
   amount,
   senderName,
   senderImage,
   receiverName,
+  receiverImage,
   message,
   likes,
   comments,
@@ -194,10 +293,12 @@ export const FeedDialog = ({
   likedByCurrentUser,
 }: {
   isOpen: boolean;
+  view: FeedView;
   amount: number;
   senderName: string;
   senderImage: string | null;
   receiverName: string;
+  receiverImage: string | null;
   message: string;
   likes: number;
   comments: ApiOutputs["transaction"]["feeds"]["page"][0]["comments"];
@@ -215,23 +316,42 @@ export const FeedDialog = ({
   const [comment, setComment] = useState("");
 
   const addComment = useMutation(crpc.transaction.comment.mutationOptions());
+  const isReceivedView = view === "received";
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:w-md! sm:max-w-md! p-0 gap-0">
         <DialogHidden />
         <div className="flex items-center px-4">
-          <UserAvatar 
-            name={senderName}
-            src={senderImage || undefined}
-            className={{
-              container: "size-12 after:border-2! after:rounded-full!",
-              fallback: "text-xl font-medium rounded-full!",
-            }}
-          />
+          <div className="relative">
+            <UserAvatar 
+              name={isReceivedView ? receiverName : senderName}
+              src={(isReceivedView ? receiverImage : senderImage) || undefined}
+              className={{
+                container: "size-12 after:border-2! after:rounded-full!",
+                fallback: cn(
+                  "text-xl font-medium rounded-full!",
+                  isReceivedView && "bg-orange",
+                ),
+              }}
+            />
+            <div className="absolute -bottom-1 -right-1">
+              <UserAvatar
+                name={isReceivedView ? senderName : receiverName}
+                src={(isReceivedView ? senderImage : receiverImage) || undefined}
+                className={{
+                  container: "size-7 after:border-2! after:rounded-full!",
+                  fallback: cn(
+                    "text-xs font-medium rounded-full!",
+                    !isReceivedView && "bg-orange",
+                  ),
+                }}
+              />
+            </div>
+          </div>
           <div className="flex flex-col py-2 px-4 gap-1">
             <p className="text-sm md:text-base font-bold whitespace-pre-wrap wrap-break-word">
-              {senderName} <span className="font-normal text-muted-foreground mx-1">gave <u>{amount}</u> points to</span> <span className="text-blue">{receiverName}</span>
+              {getFeedHeadline(view, senderName, receiverName, amount)}
             </p>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground rounded-lg bg-muted px-2 py-1">

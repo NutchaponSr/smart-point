@@ -469,7 +469,11 @@ export declare const api: {
     feeds: FunctionReference<
       "query",
       "public",
-      { cursor?: string | null; limit?: number },
+      {
+        cursor?: string | null;
+        limit?: number;
+        view?: "all" | "sent" | "received";
+      },
       {
         continueCursor: string | null;
         isDone: boolean;

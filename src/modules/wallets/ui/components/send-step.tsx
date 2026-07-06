@@ -1,5 +1,4 @@
 import { Fragment, useMemo } from "react";
-import CurrencyInput from "react-currency-input-field";
 import { ChevronDownIcon } from "lucide-react";
 
 import { ApiOutputs } from "@convex/api";
@@ -29,7 +28,6 @@ import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 import { SendTransactionSchema } from "@/modules/wallets/schema";
 import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
 import {
-  getSmartCultureTagPoints,
   isSmartCultureTagId,
   smartCulturePillars,
   smartCultureTagOptions,
@@ -37,6 +35,8 @@ import {
   type SmartCulturePillarKey,
 } from "@/modules/transactions/constants";
 import { cn } from "@/lib/utils";
+
+const sendAmountOptions = [5, 10] as const;
 
 interface Props {
   points: number;
@@ -79,7 +79,7 @@ export const SendStep = ({ points, user }: Props) => {
     name: "tags",
   });
 
-  const tagId = tagsField.value;
+  const tagId = tagsField.value ?? "";
 
   const levelSummary = useMemo(() => {
     const s = tagId ? splitTagId(tagId) : null;
@@ -90,13 +90,9 @@ export const SendStep = ({ points, user }: Props) => {
     return { pillar: p, level: L };
   }, [tagId]);
 
-  const tagAmountAligned =
-    isSmartCultureTagId(tagId) &&
-    getSmartCultureTagPoints(tagId) === amountField.value;
-
-  const formBlockKey = tagAmountAligned
+  const formBlockKey = isSmartCultureTagId(tagId)
     ? `${tagId}-${amountField.value}`
-    : "pending-smart";
+    : `amount-${amountField.value}`;
 
   const employeeValue = employeeField.value ?? {
     id: "",
@@ -111,32 +107,32 @@ export const SendStep = ({ points, user }: Props) => {
   return (
     <div className="grid gap-4">
       <h1 className="uppercase font-medium text-sm leading-none tracking-wide">จาก:</h1>
-      <div className="p-4 border-2 border-border rounded-xs bg-background">
-        <div className="flex items-center gap-2.5">
+      <div className="p-4 border-2 border-border rounded-xs bg-background min-w-0">
+        <div className="flex min-w-0 items-center gap-2.5">
           <UserAvatar
             name={user?.name ?? ""}
             className={{
-              container: "size-9 after:border-[1.5px]",
+              container: "size-9 shrink-0 after:border-[1.5px]",
               fallback: "text-base font-medium",
             }}
           />
-          <div className="flex flex-col whitespace-nowrap overflow-hidden text-ellipsis grow">
-            <p className="text-sm font-medium leading-5 tracking-wide text-ellipsis overflow-hidden whitespace-nowrap">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <p className="truncate text-sm font-medium leading-5 tracking-wide">
               {user?.name ?? "—"}
             </p>
-            <p className="text-xs text-muted-foreground leading-4 tracking-wide text-ellipsis overflow-hidden whitespace-nowrap">
-              {user?.email ?? "—"} · {user?.department ?? "—"}
+            <p className="truncate text-xs text-muted-foreground leading-4 tracking-wide">
+              {[user?.email, user?.department].filter(Boolean).join(" · ")}
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <RiCopperCoinFill className="size-9" />
             <h2 className="text-3xl font-bold tracking-wide">{points}</h2>
           </div>
         </div>
       </div>
 
-      <h1 className="uppercase font-medium text-sm leading-none tracking-wide">โอนไปยัง:</h1>
+      <h1 className="uppercase font-medium text-sm leading-none tracking-wide">กรุณาระบุ: ชื่อเพื่อนพนักงานที่คุณต้องการชื่นชม</h1>
       <fieldset className="flex flex-col border-none gap-2">
         <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
           <Label htmlFor="employeeId" className="">
@@ -144,7 +140,7 @@ export const SendStep = ({ points, user }: Props) => {
           </Label>
         </legend>
         <Selection
-          placeholder="ระบุพนักงาน"
+          placeholder="ระบุพนักงาน (ชื่อหรือรหัสพนักงาน)"
           selectedValue={employeeValue.id || undefined}
           selectedLabel={employeeValue.name || undefined}
           onClear={() => {
@@ -187,9 +183,44 @@ export const SendStep = ({ points, user }: Props) => {
       <div className="grid gap-4" key={formBlockKey}>
         <fieldset className="flex flex-col border-none gap-2">
           <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
-            <Label htmlFor="employeeId" className="">
-              แท็ก SMART Culture
-            </Label>
+            <Label>คะแนนที่ต้องการมอบให้เพื่อน</Label>
+          </legend>
+          <div className="grid grid-cols-2 gap-2">
+            {sendAmountOptions.map((value) => (
+              <label
+                key={value}
+                className={cn(
+                  "flex cursor-pointer items-center justify-between gap-2 rounded-xs border-2 px-4 py-3 text-base font-medium transition-colors",
+                  amountField.value === value
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-background hover:bg-muted/40",
+                )}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <RiCopperCoinFill className="size-5 shrink-0" />
+                  {value} แต้ม
+                </span>
+                <span className="relative inline-flex shrink-0 items-center justify-center">
+                  <input
+                    type="radio"
+                    name="send-amount"
+                    value={value}
+                    className="peer size-[calc(1lh+0.125rem)] shrink-0 cursor-pointer appearance-none rounded-full border-[1.5px] border-border bg-background checked:bg-pink"
+                    checked={amountField.value === value}
+                    onChange={() => amountField.onChange(value)}
+                  />
+                  <span className="pointer-events-none absolute hidden size-[0.65rem] rounded-full bg-black peer-checked:block" />
+                </span>
+              </label>
+            ))}
+          </div>
+          <small className="text-destructive">{amountState.error?.message}</small>
+        </fieldset>
+
+        {/* <fieldset className="flex flex-col border-none gap-2">
+          <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
+            <Label>แท็ก SMART Culture</Label>
+            <span className="text-xs font-normal text-muted-foreground">(ไม่บังคับ)</span>
           </legend>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -199,7 +230,12 @@ export const SendStep = ({ points, user }: Props) => {
                 size="lg"
                 className="w-full justify-between min-h-10 px-4 text-sm font-[inherit] border-2"
               >
-                <span className={cn("truncate text-left text-base", !isSmartCultureTagId(tagId) && "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "truncate text-left text-base",
+                    !isSmartCultureTagId(tagId) && "text-muted-foreground",
+                  )}
+                >
                   {isSmartCultureTagId(tagId) ? tagLabels[tagId] : "เลือกแท็ก SMART Culture"}
                 </span>
                 <ChevronDownIcon className="size-4 shrink-0" />
@@ -211,15 +247,15 @@ export const SendStep = ({ points, user }: Props) => {
                   value={isSmartCultureTagId(tagId) ? tagId : ""}
                   onValueChange={(id) => {
                     tagsField.onChange(id);
-                    const pts = getSmartCultureTagPoints(id);
-                    if (pts !== null) {
-                      amountField.onChange(pts);
-                    }
                   }}
                 >
+                  <DropdownMenuRadioItem value="" className="h-10">
+                    ไม่ระบุ
+                  </DropdownMenuRadioItem>
                   {smartCultureTagOptions.map((opt, i) => {
                     const showHeader =
-                      i === 0 || opt.pillarKey !== smartCultureTagOptions[i - 1]!.pillarKey
+                      i === 0 ||
+                      opt.pillarKey !== smartCultureTagOptions[i - 1]!.pillarKey;
                     return (
                       <Fragment key={opt.id}>
                         {showHeader && (
@@ -254,9 +290,9 @@ export const SendStep = ({ points, user }: Props) => {
             </DropdownMenuContent>
           </DropdownMenu>
           <small className="text-destructive">{tagsState.error?.message}</small>
-        </fieldset>
+        </fieldset> */}
 
-        {tagAmountAligned && levelSummary && (
+        {isSmartCultureTagId(tagId) && levelSummary && (
           <div
             className="rounded-xs border-2 border-border p-3 bg-background text-sm space-y-1.5"
             key={`summary-${formBlockKey}`}

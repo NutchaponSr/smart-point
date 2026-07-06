@@ -377,6 +377,244 @@ async function hasNextFilteredTransactionPage(
   return false;
 }
 
+type StreamCursor = {
+  creationTime: number;
+  id: Id<"transaction">;
+} | null;
+
+type FeedsCursor = {
+  senderCursor: StreamCursor;
+  receiverCursor: StreamCursor;
+  senderPendingIds: Id<"transaction">[];
+  receiverPendingIds: Id<"transaction">[];
+};
+
+function emptyFeedsCursor(): FeedsCursor {
+  return {
+    senderCursor: null,
+    receiverCursor: null,
+    senderPendingIds: [],
+    receiverPendingIds: [],
+  };
+}
+
+function normalizeStreamCursor(value: unknown): StreamCursor {
+  if (
+    value &&
+    typeof value === "object" &&
+    "creationTime" in value &&
+    "id" in value &&
+    typeof value.creationTime === "number" &&
+    typeof value.id === "string"
+  ) {
+    return {
+      creationTime: value.creationTime,
+      id: value.id as Id<"transaction">,
+    };
+  }
+  return null;
+}
+
+function encodeFeedsCursor(cursor: FeedsCursor): string | null {
+  if (
+    cursor.senderCursor == null &&
+    cursor.receiverCursor == null &&
+    cursor.senderPendingIds.length === 0 &&
+    cursor.receiverPendingIds.length === 0
+  ) {
+    return null;
+  }
+  return JSON.stringify(cursor);
+}
+
+function decodeFeedsCursor(raw: string | null | undefined): FeedsCursor {
+  if (!raw) {
+    return emptyFeedsCursor();
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<FeedsCursor>;
+    return {
+      senderCursor: normalizeStreamCursor(parsed.senderCursor),
+      receiverCursor: normalizeStreamCursor(parsed.receiverCursor),
+      senderPendingIds: parsed.senderPendingIds ?? [],
+      receiverPendingIds: parsed.receiverPendingIds ?? [],
+    };
+  } catch {
+    return emptyFeedsCursor();
+  }
+}
+
+function isAfterStreamCursor(
+  tx: Doc<"transaction">,
+  cursor: StreamCursor,
+): boolean {
+  if (!cursor) {
+    return true;
+  }
+
+  return (
+    tx._creationTime < cursor.creationTime ||
+    (tx._creationTime === cursor.creationTime && tx._id < cursor.id)
+  );
+}
+
+async function fetchCompletedStreamBatch(
+  baseQuery: {
+    take: (n: number) => Promise<Doc<"transaction">[]>;
+  },
+  cursor: StreamCursor,
+  limit: number,
+): Promise<{ batch: Doc<"transaction">[]; exhausted: boolean }> {
+  let overfetch = Math.max(limit * 5, 50);
+  let raw: Doc<"transaction">[] = [];
+  let filtered: Doc<"transaction">[] = [];
+
+  while (true) {
+    raw = await baseQuery.take(overfetch);
+    filtered = raw.filter((tx) => isAfterStreamCursor(tx, cursor));
+
+    if (filtered.length >= limit || raw.length < overfetch) {
+      break;
+    }
+
+    overfetch = Math.min(overfetch * 2, 500);
+  }
+
+  return {
+    batch: filtered.slice(0, limit),
+    exhausted: raw.length < overfetch && filtered.length <= limit,
+  };
+}
+
+function advanceStreamCursor(
+  cursor: StreamCursor,
+  batch: Doc<"transaction">[],
+): StreamCursor {
+  if (batch.length === 0) {
+    return cursor;
+  }
+
+  const last = batch[batch.length - 1]!;
+  return {
+    creationTime: last._creationTime,
+    id: last._id,
+  };
+}
+
+async function restoreFeedBuffer(
+  ctx: QueryCtx,
+  ids: Id<"transaction">[],
+): Promise<Doc<"transaction">[]> {
+  const docs = await Promise.all(ids.map((id) => ctx.db.get(id)));
+  return docs.filter((doc): doc is Doc<"transaction"> => doc !== null);
+}
+
+async function collectMyCompletedFeedPage(
+  ctx: QueryCtx,
+  employeeId: Id<"employee">,
+  limit: number,
+  initialCursor: FeedsCursor,
+  view: "all" | "sent" | "received" = "all",
+): Promise<{
+  page: Doc<"transaction">[];
+  nextCursor: FeedsCursor;
+  exhausted: boolean;
+}> {
+  let senderCursor = initialCursor.senderCursor;
+  let receiverCursor = initialCursor.receiverCursor;
+  let sentBuffer = await restoreFeedBuffer(ctx, initialCursor.senderPendingIds);
+  let receivedBuffer = await restoreFeedBuffer(
+    ctx,
+    initialCursor.receiverPendingIds,
+  );
+  let senderExhausted = view === "received";
+  let receiverExhausted = view === "sent";
+
+  const sentQuery = ctx.db
+    .query("transaction")
+    .withIndex("by_senderId_status", (q) =>
+      q.eq("senderId", employeeId).eq("status", "completed"),
+    )
+    .order("desc");
+
+  const receivedQuery = ctx.db
+    .query("transaction")
+    .withIndex("by_receiverId_status", (q) =>
+      q.eq("receiverId", employeeId).eq("status", "completed"),
+    )
+    .order("desc");
+
+  const page: Doc<"transaction">[] = [];
+
+  while (page.length < limit) {
+    if (sentBuffer.length === 0 && !senderExhausted) {
+      const senderResult = await fetchCompletedStreamBatch(
+        sentQuery,
+        senderCursor,
+        limit,
+      );
+      sentBuffer = [...senderResult.batch];
+      senderExhausted = senderResult.exhausted;
+      senderCursor = advanceStreamCursor(senderCursor, senderResult.batch);
+    }
+
+    if (receivedBuffer.length === 0 && !receiverExhausted) {
+      const receiverResult = await fetchCompletedStreamBatch(
+        receivedQuery,
+        receiverCursor,
+        limit,
+      );
+      receivedBuffer = [...receiverResult.batch];
+      receiverExhausted = receiverResult.exhausted;
+      receiverCursor = advanceStreamCursor(
+        receiverCursor,
+        receiverResult.batch,
+      );
+    }
+
+    if (sentBuffer.length === 0 && receivedBuffer.length === 0) {
+      break;
+    }
+
+    while (
+      page.length < limit &&
+      (sentBuffer.length > 0 || receivedBuffer.length > 0)
+    ) {
+      const pickSent =
+        receivedBuffer.length === 0 ||
+        (sentBuffer.length > 0 &&
+          sentBuffer[0]!._creationTime >= receivedBuffer[0]!._creationTime);
+      page.push(pickSent ? sentBuffer.shift()! : receivedBuffer.shift()!);
+    }
+
+    if (page.length >= limit) {
+      break;
+    }
+    if (senderExhausted && receiverExhausted) {
+      break;
+    }
+  }
+
+  const exhausted =
+    page.length < limit &&
+    senderExhausted &&
+    receiverExhausted &&
+    sentBuffer.length === 0 &&
+    receivedBuffer.length === 0;
+
+  return {
+    page,
+    nextCursor: {
+      senderCursor,
+      receiverCursor,
+      senderPendingIds: sentBuffer.map((tx) => tx._id),
+      receiverPendingIds: receivedBuffer.map((tx) => tx._id),
+    },
+    exhausted,
+  };
+}
+
 type ApproveTransactionResult =
   | {
       transactionId: Id<"transaction">;
@@ -831,6 +1069,11 @@ export const bulkApprove = authMutation
   });
 
 export const feeds = authQuery
+  .input(
+    z.object({
+      view: z.enum(["all", "sent", "received"]).optional().default("all"),
+    }),
+  )
   .paginated({
     limit: 10,
     item: z.object({
@@ -889,17 +1132,17 @@ export const feeds = authQuery
     }),
   })
   .query(async ({ ctx, input }) => {
-    const result = await ctx.db
-      .query("transaction")
-      .withIndex("by_status", (q) => q.eq("status", "completed"))
-      .order("desc")
-      .paginate({
-        numItems: input.limit,
-        cursor: input.cursor ?? null,
-      });
+    const { page: transactions, nextCursor, exhausted } =
+      await collectMyCompletedFeedPage(
+        ctx,
+        ctx.user.employeeId,
+        input.limit,
+        decodeFeedsCursor(input.cursor),
+        input.view,
+      );
 
     const txMeta = await Promise.all(
-      result.page.map(async (tx) => {
+      transactions.map(async (tx) => {
         const [likes, comments, likedByCurrentUser] = await Promise.all([
           ctx.db
             .query("like")
@@ -1013,8 +1256,8 @@ export const feeds = authQuery
           ];
         },
       ),
-      isDone: result.isDone,
-      continueCursor: result.continueCursor,
+      isDone: exhausted,
+      continueCursor: exhausted ? null : encodeFeedsCursor(nextCursor),
     };
   });
 

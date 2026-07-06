@@ -1,17 +1,15 @@
 import { AuthGuard } from "@/modules/auth/ui/components/auth-guard";
 
-import { Header } from "./header";
+import { Sidebar } from "./sidebar";
 
 const Layout = (props: LayoutProps<"/[locale]">) => {
   return (
     <AuthGuard>
-      <div className="flex-1 flex flex-col lg:h-screen overflow-y-auto">
-        <div className="flex-1 flex flex-col">
-          <Header />
-          <div className="bg-[#f4f4f0] min-h-screen">
-            {props.children}
-          </div>
-        </div>
+      <div className="flex h-screen flex-col lg:flex-row">
+        <Sidebar />
+        <main className="flex flex-1 flex-col overflow-y-auto bg-[#f4f4f0]">
+          {props.children}
+        </main>
       </div>
     </AuthGuard>
   );
