@@ -10,7 +10,7 @@ export const CompleteStep = () => {
       </div>
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-          การส่งเงินสำเร็จ
+          คำชมของคุณ ส่งถึงผู้รับสำเร็จจ
         </h1>
         <p className="mx-auto max-w-md text-base text-muted-foreground leading-relaxed">
           รายการของคุณถูกบันทึกแล้ว สามารถตรวจสอบได้ในประวัติธุรกรรม

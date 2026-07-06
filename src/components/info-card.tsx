@@ -1,11 +1,13 @@
+import { IconType } from "react-icons";
+
 import { cva, VariantProps } from "class-variance-authority";
 
-export const dotColor = cva("size-5 rounded-full", {
+export const iconColor = cva("size-5", {
   variants: {
     color: {
-      pink: "bg-pink",
-      orange: "bg-orange",
-      purple: "bg-purple",
+      pink: "text-pink",
+      orange: "text-orange",
+      purple: "text-purple",
     },
   },
   defaultVariants: {
@@ -13,20 +15,22 @@ export const dotColor = cva("size-5 rounded-full", {
   },
 });
 
-interface Props extends VariantProps<typeof dotColor> {
+interface Props extends VariantProps<typeof iconColor> {
   title: string;
   value: number;
+  icon: IconType;
 }
 
 export const InfoCard = ({
   title,
   value,
   color,
+  icon: Icon,
 }: Props) => {
   return (
-    <section className="text-4xl leading-tight p-8 border-2 border-border rounded-xs grid content-between gap-2 bg-background">
+    <section className="text-4xl leading-tight p-6 border-2 border-border rounded-xs grid content-between gap-2 bg-background">
       <h2 className="flex gap-2 text-base items-center">
-        <div className={dotColor({ color })} />
+        <Icon className={iconColor({ color })} />
         {title}
       </h2>
       <div className="overflow-hidden wrap-break-word">

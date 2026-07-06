@@ -1,4 +1,4 @@
-import { arrayOf, boolean, convexTable, custom, defineRelations, defineSchema, id, index, integer, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
+import { arrayOf, boolean, convexTable, custom, defineRelations, defineSchema, id, index, integer, searchIndex, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
 
 export const user = convexTable("user", {
   name: text().notNull(),
@@ -81,6 +81,9 @@ export const employee = convexTable("employee", {
 }, (t) => [
   index("by_department").on(t.department),
   uniqueIndex("by_employeeId").on(t.employeeId),
+  searchIndex("search_name").on(t.name),
+  searchIndex("search_email").on(t.email),
+  searchIndex("search_employeeId").on(t.employeeId),
 ]);
 
 export const wallet = convexTable("wallet", {

@@ -5,7 +5,7 @@ import { authMutation, authQuery, privateAuthAction } from "../lib/crpc";
 import { normalizeText } from "../lib/employee-id";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import type { MutationCtx } from "./generated/server";
+import type { MutationCtx, QueryCtx } from "./generated/server";
 
 const zEmployeeDocId = z.custom<Id<"employee">>(
   (val): val is Id<"employee"> => typeof val === "string" && val.length > 0,
@@ -63,6 +63,26 @@ async function insertEmployeeWalletAndScheduleSignup(
   });
 
   return employeeDocId;
+}
+
+/** บัญชี admin จาก seed (scripts/employee.csv) — position/rank/division เป็น Admin ทั้งสาม */
+function isSystemAdminEmployee(row: {
+  position: string;
+  rank: string;
+  division: string;
+}) {
+  return row.position === "Admin" && row.rank === "Admin" && row.division === "Admin";
+}
+
+async function getAdminEmployeeDocIds(
+  ctx: Pick<QueryCtx, "db">,
+): Promise<Set<string>> {
+  const adminUsers = await ctx.db
+    .query("user")
+    .withIndex("by_role", (q) => q.eq("role", "admin"))
+    .collect();
+
+  return new Set(adminUsers.map((user) => user.employeeId));
 }
 
 function matchesEmployeeSearch(
@@ -213,34 +233,31 @@ export const search = authQuery
     }),
   )
   .query(async ({ ctx, input }) => {
-    const q = input.query.toLowerCase();
+    const q = input.query.trim();
+    if (!q) return [];
 
-    const [id, name] = await Promise.all([
+    const adminEmployeeIds = await getAdminEmployeeDocIds(ctx);
+
+    const [byEmployeeId, byName, byEmail] = await Promise.all([
       ctx.orm.query.employee.findMany({
-        where: { employeeId: q },
-        limit: 5,
+        search: { index: "search_employeeId", query: q },
+        limit: 10,
       }),
-      ctx.orm.query.employee
-        .findMany({
-          orderBy: { employeeId: "asc" },
-          allowFullScan: true,
-        })
-        .then((rows) =>
-          rows
-            .filter(
-              (row) =>
-                row.name.toLowerCase().includes(q) ||
-                (row.email ?? "").toLowerCase().includes(q) ||
-                row.employeeId.toLowerCase().includes(q),
-            )
-            .slice(0, 10),
-        ),
+      ctx.orm.query.employee.findMany({
+        search: { index: "search_name", query: q },
+        limit: 10,
+      }),
+      ctx.orm.query.employee.findMany({
+        search: { index: "search_email", query: q },
+        limit: 10,
+      }),
     ]);
 
     const seen = new Set<string>();
-    const results = [...id, ...name].filter((e) => {
+    const results = [...byEmployeeId, ...byName, ...byEmail].filter((e) => {
       /** `self: true` — ให้ผลค้นหารวมตัวเองได้; default ตัดตัวเองออกสำหรับ picker */
       if (!input.self && e.id === ctx.user.employeeId) return false;
+      if (adminEmployeeIds.has(e.id) || isSystemAdminEmployee(e)) return false;
       if (seen.has(e.employeeId)) return false;
 
       seen.add(e.employeeId);

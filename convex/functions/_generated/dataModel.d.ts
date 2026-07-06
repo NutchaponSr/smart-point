@@ -490,7 +490,20 @@ export type DataModel = {
       by_department: ["department", "_creationTime"];
       by_employeeId: ["employeeId", "_creationTime"];
     };
-    searchIndexes: {};
+    searchIndexes: {
+      search_email: {
+        searchField: "email";
+        filterFields: never;
+      };
+      search_employeeId: {
+        searchField: "employeeId";
+        filterFields: never;
+      };
+      search_name: {
+        searchField: "name";
+        filterFields: never;
+      };
+    };
     vectorIndexes: {};
   };
   jwks: {

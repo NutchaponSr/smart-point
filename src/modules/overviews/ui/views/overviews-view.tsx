@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 
-import { BsClock } from "react-icons/bs";
-import { formatDistanceToNow } from "date-fns";
+import { IoMdTrendingUp } from "react-icons/io";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { BsFillGiftFill, BsFillSendFill } from "react-icons/bs";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
-import { PointHero } from "@/modules/wallets/ui/components/point-hero";
+import { InfoCard } from "@/components/info-card";
+
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
 import { FeedTransactions } from "@/modules/transactions/ui/components/feed-transactions";
 import { GivingPointExpiryWarning } from "@/modules/overviews/ui/components/giving-point-expiry-warning";
@@ -20,45 +21,28 @@ export const OverviewsView = () => {
   const { data: wallet } = useSuspenseQuery(crpc.wallet.getOne.queryOptions());
 
   return (
-    <div className="relative mx-auto container h-full">
+    <div className="relative h-full">
       <div className="grid gap-16! px-4 py-16 lg:ps-16 lg:pe-16">
-        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-8 lg:grid-cols-[3fr_2fr]">
+        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-8 lg:grid-cols-[3fr_1.5fr]">
           <div className="grid grid-cols-1 gap-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <PointHero 
-                variant="pink"
-                title="คะแนนคงเหลือสำหรับมอบให้เพื่อน" 
-                points={wallet.givingBudget} 
-                footer={
-                <div className="flex flex-row items-center justify-between w-full">
-                  <a
-                    href="#history-transactions"
-                    className="hover:underline text-sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      document
-                        .getElementById("history-transactions")
-                        ?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                  >
-                    ดูประวัติ
-                  </a>
-                  <div className="flex items-center gap-2">
-                    <BsClock className="size-4 stroke-[0.2]" />
-                    <span>{formatDistanceToNow(wallet.lastBudgetUpdate)}</span>
-                  </div>
-                </div>
-                }
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <InfoCard 
+                title="คะแนนที่คุณให้เพื่อน" 
+                value={wallet.givingBudget} 
+                icon={BsFillSendFill} 
+                color="orange"
               />
-              <PointHero 
-                title="คะแนนที่ได้รับ (สำหรับแลกรางวัล)" 
-                points={wallet.receivingBudget} 
-                variant="orange" 
-                footer={
-                  <div className="flex flex-row items-center justify-end w-full">
-                    <Link href="/rewards" className="hover:underline">แลกของรางวัล</Link>
-                  </div>
-                }
+              <InfoCard 
+                title="คะแนนที่คุณได้รับ" 
+                value={wallet.receivingBudget} 
+                icon={BsFillGiftFill} 
+                color="pink"
+              />
+              <InfoCard 
+                title="เปอร์เซ็นต์คะแนนที่คุณได้รับ" 
+                value={100} 
+                icon={IoMdTrendingUp} 
+                color="purple"
               />
             </div>
             

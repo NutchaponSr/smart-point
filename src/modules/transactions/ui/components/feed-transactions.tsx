@@ -191,7 +191,7 @@ const FeedItem = ({
 
   return (
     <article className="flex flex-col rounded-xs border-2 border-border bg-background select-none">
-      <div className="flex items-center p-4">
+      <div className="flex items-center px-4 pt-4">
         <div className="relative">
           <UserAvatar 
             name={isReceivedView ? receiverName : senderName}
@@ -322,7 +322,7 @@ export const FeedDialog = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:w-md! sm:max-w-md! p-0 gap-0">
         <DialogHidden />
-        <div className="flex items-center px-4">
+        <div className="flex items-center px-4 pt-4">
           <div className="relative">
             <UserAvatar 
               name={isReceivedView ? receiverName : senderName}
