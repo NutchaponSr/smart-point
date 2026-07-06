@@ -73,7 +73,7 @@ export const UserButtonDropdown = () => {
               fallback: "text-sm font-medium rounded-full!",
             }}
           />
-          <span className="text-base text-white font-normal">{session?.user?.name}</span>
+          <span className="text-base text-white font-normal">{session?.user?.name.split(" ")[0]}</span>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" alignOffset={4} side="bottom" sideOffset={6}>

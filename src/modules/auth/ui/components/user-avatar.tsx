@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { getAvatarInitialFromName } from "@/lib/name-initial";
 
 import { 
   Avatar, 
@@ -29,7 +30,7 @@ export const UserAvatar = ({
         />
       )} */}
       <AvatarFallback className={cn(className?.fallback)}>
-        {name.charAt(0).toUpperCase()}
+        {getAvatarInitialFromName(name) }
       </AvatarFallback>
     </Avatar>
   );
