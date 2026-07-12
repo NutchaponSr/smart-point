@@ -1,7 +1,7 @@
 "use client";
 
-
 import { useRouter } from "next/navigation";
+import { RiArrowLeftLine } from "react-icons/ri";
 
 import { Button } from "@/components/ui/button";
 
@@ -11,15 +11,26 @@ export const CheckoutView = () => {
   const router = useRouter();
 
   return (
-    <div className="mx-auto w-full max-w-400">
-      <header className="flex flex-col gap-4 border-b-2 border-border p-4 md:p-8 border-none pb-0 md:px-16 md:pb-0 lg:mb-2">
-        <div className="flex min-h-8 items-center justify-between gap-2">
-          <h1 className="line-clamp-2 text-2xl grow truncate">รถเข็น</h1>
-
-          <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-            <Button variant="elevated" size="lg" onClick={() => router.push("/rewards")}>
-              ดูรางวัลเพิ่มเติม
-            </Button>
+    <div className="mx-auto w-full max-w-6xl px-6 py-6 md:py-10">
+      <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/rewards")}
+            className="w-fit gap-1.5 px-0 text-muted-foreground hover:text-foreground"
+          >
+            <RiArrowLeftLine className="size-4" />
+            กลับไปเลือกรางวัล
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              รถเข็น
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              ตรวจสอบรายการก่อนยืนยันแลกพอยต์
+            </p>
           </div>
         </div>
       </header>

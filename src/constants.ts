@@ -1,12 +1,14 @@
-import type { IconType } from "react-icons";
-import { MdLeaderboard } from "react-icons/md";
-import { HiShoppingCart } from "react-icons/hi2";
-import { RiCopperCoinFill } from "react-icons/ri";
-import { FaMoneyBillTransfer } from "react-icons/fa6";
-import { BsCalendar2EventFill, BsFillGridFill } from "react-icons/bs";
+import type { StaticImageData } from "next/image";
+
+import HomeIcon from "../public/home.svg";
+import ShopIcon from "../public/shop.svg";
+import HistoryIcon from "../public/page.svg";
+import LeaderboardIcon from "../public/leaderboard.svg";
+import EventsIcon from "../public/event.svg";
+import DashboardIcon from "../public/chart.svg";
 
 export type NavigationItem = {
-  icon: IconType;
+  icon: StaticImageData;
   label: string;
   href: string;
   isAdmin?: boolean;
@@ -20,33 +22,33 @@ export type MetadataItem = {
 
 export const navigations: NavigationItem[] = [
   {
-    icon: RiCopperCoinFill,
+    icon: HomeIcon,
     label: "หน้าหลัก",
     href: "/",
   },
   {
-    icon: HiShoppingCart,
+    icon: ShopIcon,
     label: "รางวัล",
     href: "/rewards",
   },
   {
-    icon: FaMoneyBillTransfer,
-    label: "ประวัติการแลกรางวัล",
+    icon: HistoryIcon,
+    label: "ประวัติการแลก",
     href: "/purchases",
   },
   {
-    icon: MdLeaderboard,
-    label: "อันดับคะแนนสูงสุด",
+    icon: LeaderboardIcon,
+    label: "ตารางคะแนน",
     href: "/leaderboard",
   },
   {
-    icon: BsCalendar2EventFill,
+    icon: EventsIcon,
     label: "กิจกรรม",
     href: "/events",
     isAdmin: true,
   },
   {
-    icon: BsFillGridFill,
+    icon: DashboardIcon,
     label: "แดชบอร์ด",
     href: "/dashboard",
     isAdmin: true,
@@ -72,6 +74,11 @@ export const metadata: MetadataItem[] = [
   {
     label: "กิจกรรม",
     href: "/meta/events",
+    isAdmin: true,
+  },
+  {
+    label: "ข่าวสาร",
+    href: "/meta/news",
     isAdmin: true,
   },
 ];

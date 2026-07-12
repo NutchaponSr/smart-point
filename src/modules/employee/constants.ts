@@ -116,19 +116,15 @@ export const ranks = [
   },
 ];
 
+/** BU / สังกัดของพนักงาน — ใช้ร่วมกับกิจกรรม internal_bu และ specials_point */
 export const divisions = [
-  {
-    slug: "headquarters",
-    name: {
-      th: "สำนักงานใหญ่",
-      en: "Headquarters",
-    },
-  },
-  {
-    slug: "branch",
-    name: {
-      th: "สาขา",
-      en: "Branch",
-    },
-  },
-];
+  { slug: "SBM3", name: { th: "SBM3", en: "SBM3" } },
+  { slug: "SFT3", name: { th: "SFT3", en: "SFT3" } },
+  { slug: "ICP2", name: { th: "ICP2", en: "ICP2" } },
+  { slug: "SFT", name: { th: "SFT", en: "SFT" } },
+  { slug: "SAT1", name: { th: "SAT1", en: "SAT1" } },
+  { slug: "SFT2", name: { th: "SFT2", en: "SFT2" } },
+  { slug: "ICP1", name: { th: "ICP1", en: "ICP1" } },
+] as const;
+
+export type DivisionSlug = (typeof divisions)[number]["slug"];

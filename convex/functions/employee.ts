@@ -51,6 +51,7 @@ async function insertEmployeeWalletAndScheduleSignup(
     employeeId: employeeDocId,
     givingBudget: 100,
     receivingBudget: 0,
+    specialBudget: 0,
     lastBudgetUpdate: Date.now(),
   });
 

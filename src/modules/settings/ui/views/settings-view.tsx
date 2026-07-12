@@ -102,7 +102,7 @@ export const SettingsView = () => {
                 />
               </fieldset>
 
-              <Button className="bg-pink" variant="elevated" type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Save password"}
               </Button>
             </div>

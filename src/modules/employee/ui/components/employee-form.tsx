@@ -86,7 +86,7 @@ export const EmployeeForm = ({ isEdit = false }: { isEdit?: boolean }) => {
             <FieldSet label="แผนก" errorMessage={fieldState.error?.message}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" size="lg" className="w-full justify-between">
+                  <Button type="button" size="lg" className="w-full justify-between">
                     <span>{departments.find((d) => d.slug === field.value)?.name.th}</span>
                     <ChevronDownIcon className="size-4.5" />
                   </Button>
@@ -113,7 +113,7 @@ export const EmployeeForm = ({ isEdit = false }: { isEdit?: boolean }) => {
             <FieldSet label="ตำแหน่ง" errorMessage={fieldState.error?.message}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" size="lg" className="w-full justify-between">
+                  <Button type="button" size="lg" className="w-full justify-between">
                     <span>{positions.find((p) => p.slug === field.value)?.name.th}</span>
                     <ChevronDownIcon className="size-4.5" />
                   </Button>
@@ -140,7 +140,7 @@ export const EmployeeForm = ({ isEdit = false }: { isEdit?: boolean }) => {
             <FieldSet label="ระดับ" errorMessage={fieldState.error?.message}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" size="lg" className="w-full justify-between">
+                  <Button type="button" size="lg" className="w-full justify-between">
                     <span>{ranks.find((r) => r.slug === field.value)?.name.th}</span>
                     <ChevronDownIcon className="size-4.5" />
                   </Button>
@@ -164,10 +164,10 @@ export const EmployeeForm = ({ isEdit = false }: { isEdit?: boolean }) => {
           control={control}
           name="division"
           render={({ field, fieldState }) => (
-            <FieldSet label="หน่วยงาน" errorMessage={fieldState.error?.message}>
+            <FieldSet label="BU / สังกัด" errorMessage={fieldState.error?.message}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" size="lg" className="w-full justify-between">
+                  <Button type="button" size="lg" className="w-full justify-between">
                     <span>{divisions.find((d) => d.slug === field.value)?.name.th}</span>
                     <ChevronDownIcon className="size-4.5" />
                   </Button>

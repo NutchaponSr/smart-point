@@ -1,13 +1,16 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { useRef, useState } from "react";
 import { GoPlus } from "react-icons/go";
-import { useCRPC } from "@/lib/convex/crpc";
+import { useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
 import { cn } from "@/lib/utils";
+import { useCRPC } from "@/lib/convex/crpc";
+
+import { Button } from "@/components/ui/button";
+
 import { REWARD_IMAGE_MAX_BYTES } from "@/modules/rewards/image-limits";
-import { Button } from "./ui/button";
 
 type ImageUploadFieldProps = {
   value: string;
@@ -99,7 +102,6 @@ export const ImageUpload = ({
           <Button
             type="button"
             size="icon"
-            variant="outline"
             className="absolute inset-e-1 top-1 h-8 w-8 rounded-full bg-background p-0 group-hover:opacity-100 opacity-0 transition-opacity"
             onClick={() => onChange("")}
             disabled={disabled || isUploading}
@@ -130,7 +132,6 @@ export const ImageUpload = ({
         disabled={disabled || isUploading}
       />
       <Button
-        variant="elevated"
         type="button"
         className="bg-pink"
         onClick={() => inputRef.current?.click()}

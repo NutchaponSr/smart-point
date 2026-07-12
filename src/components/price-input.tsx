@@ -70,7 +70,7 @@ export const PriceInput = (props: Props) => {
           }
           props.onValueChange(parsed);
         }}
-        className={cn("font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-pink focus:border-pink focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3", props.className)}
+        className={cn("font-[inherit] min-h-12 px-4 text-sm leading-snug border-2 border-border rounded-md block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-[#1cb0f6] focus:border-[#1cb0f6] focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3", props.className)}
       />
     </fieldset>
   );

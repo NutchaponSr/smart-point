@@ -34,6 +34,7 @@ function createProcedureRegistry() {
   "join": ["mutation", typedProcedureResolver(api["activity"]["join"], () => (require("../activity") as Record<string, unknown>)["join"])],
   "leave": ["mutation", typedProcedureResolver(api["activity"]["leave"], () => (require("../activity") as Record<string, unknown>)["leave"])],
   "list": ["query", typedProcedureResolver(api["activity"]["list"], () => (require("../activity") as Record<string, unknown>)["list"])],
+  "recommended": ["query", typedProcedureResolver(api["activity"]["recommended"], () => (require("../activity") as Record<string, unknown>)["recommended"])],
   "remove": ["mutation", typedProcedureResolver(api["activity"]["remove"], () => (require("../activity") as Record<string, unknown>)["remove"])],
   "update": ["mutation", typedProcedureResolver(api["activity"]["update"], () => (require("../activity") as Record<string, unknown>)["update"])],
 } as const;

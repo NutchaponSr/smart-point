@@ -157,7 +157,9 @@ const sortCatalogRewards = (params: {
       const scoreA = avgStarsForReward(a._id);
       const scoreB = avgStarsForReward(b._id);
       if (scoreA !== scoreB) return scoreB - scoreA;
+      return b._creationTime - a._creationTime;
     }
+    if (a.pointCost !== b.pointCost) return a.pointCost - b.pointCost;
     return b._creationTime - a._creationTime;
   });
 };

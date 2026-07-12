@@ -6,28 +6,40 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xs text-base font-normal transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline: "border-2 bg-background dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary: "bg-white/50 text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-        elevated: "bg-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[4px] hover:-translate-y-[4px] border-2 border-border",
-        roundedElevated: "rounded-full bg-black text-white border border-transparent hover:border-white",
-        rounded: "border-2 no-underline rounded-full hover:border-border bg-background border-border",
-        roundedOutline: "border-2 no-underline shrink-0 rounded-full border-transparent px-3 py-2 hover:border-border"
+        default:
+          "bg-white text-primary border-border border-2 border-b-4 active:border-b-2 hover:bg-[#f7f7f7]",
+
+        // custom
+        locked: "bg-neutral-200 text-primary-foreground hover:bg-neutral-200/90 border-neutral-400 border-b-4 active:border-b-0",
+
+        primary: "bg-sky-400 text-primary-foreground hover:bg-sky-400/90 border-sky-500 border-b-4 active:border-b-0",
+        primaryOutline: "bg-white text-[#1cb0f6] hover:bg-[#f7f7f7]",
+
+        secondary: "bg-[#58cc02] text-primary-foreground hover:bg-[#58cc02]/90 border-[#0003] border-b-4 active:border-b-0",
+        secondaryOutline: "bg-white text-[#58cc02] hover:bg-[#f7f7f7]",
+
+        danger: "bg-rose-500 text-primary-foreground hover:bg-rose-500/90 border-rose-600 border-b-4 active:border-b-0",
+        dangerOutline: "bg-white text-rose-500 hover:bg-[#f7f7f7]",
+
+        super: "bg-indigo-500 text-primary-foreground hover:bg-indigo-500/90 border-indigo-600 border-b-4 active:border-b-0",
+        superOutline: "bg-white text-indigo-500 hover:bg-[#f7f7f7]",
+
+        ghost:"bg-transparent text-[#777] border-transparent border-0 hover:bg-[#f7f7f7]",
+
+        sidebar: "bg-transparent text-[#777] border-2 border-transparent hover:bg-[#f7f7f7] transition-none",
+        sidebarOutline: "bg-sky-500/15 text-sky-500 border-sky-300 border-2 hover:bg-sky-500/20 transition-none",
       },
       size: {
-        default: "h-12 px-4 py-2 has-[>svg]:px-3 text-lg",
+        default: "h-11 px-4 py-2 has-[>svg]:px-3 text-base",
         sm: "h-10 gap-1.5 px-3 has-[>svg]:px-2.5",
         xs: "h-8 gap-1 px-2 has-[>svg]:px-1.5 text-sm",
-        lg: "h-12 px-6 has-[>svg]:px-4",
+        lg: "h-13 px-3 has-[>svg]:px-4 text-lg gap-3",
         icon: "size-8",
-        iconLg: "size-12",
+        iconLg: "size-13",
         smRounded: "h-10 rounded-full gap-1.5 px-3 has-[>svg]:px-2.5",
       },
     },

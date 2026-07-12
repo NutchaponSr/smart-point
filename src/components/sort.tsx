@@ -11,7 +11,7 @@ export const Sort = ({ activeValue, values, onChange }: Props) => {
     <div className="flex items-center gap-2">
       {values.map((value, index) => (
         <Button
-          variant={value === activeValue ? "rounded" : "roundedOutline"}
+          variant={value === activeValue ? "primary" : "secondary"}
           size="smRounded"
           key={index}
           className="capitalize"

@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 
-import { IoMdTrendingUp } from "react-icons/io";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BsFillGiftFill, BsFillSendFill } from "react-icons/bs";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
-import { InfoCard } from "@/components/info-card";
+import { News } from "@/components/news";
+import { Currencies } from "@/modules/cart/ui/components/currency";
 
+import { EventCarousel } from "@/modules/events/ui/components/event-carousel";
+import { Feeds } from "@/modules/transactions/ui/components/feeds";
+import { MonthlyQuest } from "@/modules/overviews/ui/components/monthly-quest";
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
-import { FeedTransactions } from "@/modules/transactions/ui/components/feed-transactions";
-import { GivingPointExpiryWarning } from "@/modules/overviews/ui/components/giving-point-expiry-warning";
-import { HistoryTransactionScreen } from "@/modules/transactions/ui/screens/history-transaction-screen";
 
 export const OverviewsView = () => {
   const crpc = useCRPC();
@@ -21,51 +20,35 @@ export const OverviewsView = () => {
   const { data: wallet } = useSuspenseQuery(crpc.wallet.getOne.queryOptions());
 
   return (
-    <div className="relative h-full">
-      <div className="grid gap-16! px-4 py-16 lg:ps-16 lg:pe-16">
-        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-8 lg:grid-cols-[3fr_1.5fr]">
-          <div className="grid grid-cols-1 gap-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <InfoCard 
-                title="คะแนนที่คุณให้เพื่อน" 
-                value={wallet.givingBudget} 
-                icon={BsFillSendFill} 
-                color="orange"
-              />
-              <InfoCard 
-                title="คะแนนที่คุณได้รับ" 
-                value={wallet.receivingBudget} 
-                icon={BsFillGiftFill} 
-                color="pink"
-              />
-              <InfoCard 
-                title="เปอร์เซ็นต์คะแนนที่คุณได้รับ" 
-                value={100} 
-                icon={IoMdTrendingUp} 
-                color="purple"
-              />
-            </div>
-            
-            <div className="col-span-2 py-2">
-              <TransactionContent 
-                givingBudget={wallet.givingBudget}
-                receivingBudget={wallet.receivingBudget}
-              />
-            </div>
-            <div className="grid gap-4 col-span-2 lg:hidden">
-              <GivingPointExpiryWarning givingBudget={wallet.givingBudget} />
-              <FeedTransactions />
-            </div>
+    <div className="flex flex-col gap-6 px-6">
+      <div className="flex flex-col gap-6 lg:flex-row-reverse lg:gap-12">
+        <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-[368px] lg:shrink-0 lg:self-start">
+          <div className="mb-2 flex h-11 flex-row items-center justify-between">
+            <Currencies />
           </div>
-          <div className="gap-4 hidden lg:grid overflow-y-auto lg:sticky lg:inset-y-4 lg:gap-8 lg:max-h-[calc(100vh-2rem)]">
-            <GivingPointExpiryWarning givingBudget={wallet.givingBudget} />
-            <FeedTransactions />
+          <News />
+          <MonthlyQuest />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-row items-center justify-between">
+              <h2 className="text-base font-bold">กิจกรรมสำหรับ BU ของคุณ</h2>
+              <Link
+                href="/events"
+                className="text-sm font-medium text-[#1cb0f6]"
+              >
+                ดูทั้งหมด
+              </Link>
+            </div>
+            <EventCarousel autoLoop />
           </div>
+        </aside>
+
+        <div className="z-0 flex min-w-0 flex-1 flex-col gap-6 pb-24">
+          <TransactionContent
+            givingBudget={wallet.givingBudget}
+            receivingBudget={wallet.receivingBudget}
+          />
+          <Feeds />
         </div>
-      </div>
-      <div className="border-t-2" />
-      <div id="history-transactions" className="grid gap-16! px-4 py-16 lg:ps-16 lg:pe-16 scroll-mt-24">
-        <HistoryTransactionScreen />
       </div>
     </div>
   );

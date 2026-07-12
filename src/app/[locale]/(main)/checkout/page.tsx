@@ -4,6 +4,7 @@ import { CheckoutView } from "@/modules/cart/ui/views/checkout-view";
 
 const Page = () => {
   prefetch(crpc.cart.getCart.queryOptions());
+  prefetch(crpc.wallet.getOne.queryOptions());
   prefetch(crpc.reward.getMany.queryOptions());
 
   return (

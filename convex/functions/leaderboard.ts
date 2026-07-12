@@ -46,7 +46,11 @@ function leaderboardEmployeeBaseQuery(ctx: QueryCtx, normalizedQuery: string | n
     .select()
     .withIndex("by_employeeId")
     .orderBy({ employeeId: "asc" })
-    .filter((row) => normalizedQuery == null || matchesEmployeeSearch(row, normalizedQuery))
+    .filter(
+      (row) =>
+        row.rank !== "Admin" &&
+        (normalizedQuery == null || matchesEmployeeSearch(row, normalizedQuery)),
+    )
     .map((row) => row);
 }
 

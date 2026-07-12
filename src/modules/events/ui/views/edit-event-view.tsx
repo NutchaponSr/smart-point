@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { FormHeader } from "@/components/form-header";
 
 import { EventForm } from "@/modules/events/ui/components/event-form";
+import { EventBuSelector } from "@/modules/events/ui/components/event-bu-selector";
 import { EventPreview } from "@/modules/events/ui/components/event-preview";
 
 import { eventSchema, EventSchema } from "@/modules/events/schema";
@@ -45,6 +46,12 @@ export const EditEventView = ({ eventId }: Props) => {
       startDate: activity?.startDate,
       endDate: activity?.endDate ?? 0,
       maxParticipants: activity?.maxParticipants ?? 0,
+      allowedDivisions: (activity?.allowedDivisions ?? []).filter(
+        (d): d is string => d != null,
+      ),
+      allowedDepartments: (activity?.allowedDepartments ?? []).filter(
+        (d): d is string => d != null,
+      ),
     },
   });
 
@@ -59,6 +66,8 @@ export const EditEventView = ({ eventId }: Props) => {
         startDate: data.startDate,
         endDate: data.endDate,
         maxParticipants: data.maxParticipants,
+        allowedDivisions: data.allowedDivisions,
+        allowedDepartments: data.allowedDepartments,
       },
       {
         onSuccess: () => {
@@ -76,6 +85,7 @@ export const EditEventView = ({ eventId }: Props) => {
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <EventForm />
+            <EventBuSelector />
           </div>
           <aside className="sticky top-0 hidden h-screen flex-col self-start overflow-y-auto bg-background lg:flex lg:border-l-2 lg:border-border">
             <div className="grid gap-4 p-4! md:p-6!">
@@ -87,9 +97,7 @@ export const EditEventView = ({ eventId }: Props) => {
               <EventPreview />
             </div>
             <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
-              <Button 
-                variant="elevated" 
-                className="bg-pink" 
+              <Button  
                 type="button" 
                 onClick={() => router.push(`/meta/events/${eventId}/join`)}
               >
@@ -101,7 +109,6 @@ export const EditEventView = ({ eventId }: Props) => {
                 โซนอันตราย
               </h2>
               <Button 
-                variant="elevated" 
                 className="bg-destructive" 
                 type="button" 
                 onClick={async () => {

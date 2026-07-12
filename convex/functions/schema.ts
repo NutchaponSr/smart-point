@@ -90,7 +90,9 @@ export const wallet = convexTable("wallet", {
   employeeId: id("employee").notNull(),
   givingBudget: integer().notNull(),
   receivingBudget: integer().notNull(),
+  specialBudget: integer(),
   lastBudgetUpdate: timestamp().notNull().defaultNow(),
+  lastDailyBonus: timestamp(),
 }, (t) => [
   index("by_employeeId").on(t.employeeId),
 ]);
@@ -198,6 +200,8 @@ export const activity = convexTable("activity", {
   startDate: timestamp().notNull(),
   endDate: timestamp(),
   maxParticipants: integer(), // null = unlimited
+  allowedDivisions: arrayOf(text()),
+  allowedDepartments: arrayOf(text()),
   isActive: boolean().notNull(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().$onUpdate(() => new Date()),
@@ -241,18 +245,36 @@ export const activityParticipant = convexTable("activityParticipant", {
   uniqueIndex("by_activityId_employeeId").on(t.activityId, t.employeeId),
 ]);
 
+export const news = convexTable("news", {
+  title: text().notNull(),
+  summary: text(),
+  body: text().notNull(),
+  isPublished: boolean().notNull(),
+  publishedAt: timestamp(),
+  isPinned: boolean(),
+  createdBy: id("user").notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
+}, (t) => [
+  index("by_isPublished").on(t.isPublished),
+  index("by_publishedAt").on(t.publishedAt),
+  index("by_isPublished_publishedAt").on(t.isPublished, t.publishedAt),
+  index("by_createdBy").on(t.createdBy),
+]);
+
 export const pointLedger = convexTable("pointLedger", {
   employeeId: id("employee").notNull(),
   delta: integer().notNull(), // บวก = รับ, ลบ = จ่าย
   balanceAfter: integer().notNull(),
-  balanceType: textEnum(["giving", "receiving"] as const).notNull(),
-  sourceType: textEnum(["transaction", "redemption", "activity", "monthly_reset"] as const).notNull(),
+  balanceType: textEnum(["giving", "receiving", "special"] as const).notNull(),
+  sourceType: textEnum(["transaction", "redemption", "activity", "monthly_reset", "daily_login", "monthly_quest"] as const).notNull(),
   sourceId: text(),
   note: text(),
   createdAt: timestamp().notNull().defaultNow(),
 }, (t) => [
   index("by_employeeId").on(t.employeeId),
   index("by_sourceType_sourceId").on(t.sourceType, t.sourceId),
+  index("by_employeeId_sourceType").on(t.employeeId, t.sourceType),
 ]);
 
 export const tables = {
@@ -274,6 +296,7 @@ export const tables = {
   review,
   like,
   comment,
+  news,
 }
 
 /** ต้องรัน `defineSchema` ก่อน `defineRelations` เพื่อให้ `tables` มี `OrmSchemaDefinition` (จำเป็นต่อ ORM select().filter()…​.paginate() ฯลฯ) */

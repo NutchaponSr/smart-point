@@ -38,15 +38,12 @@ export const TransactionFilters = ({ total }: Props) => {
     setFilters({ ...filters, [key]: value });
   }
 
-  const dateRangeLabel = formatDateRangeLabel(
-    "from" in filters ? filters.from : null,
-    "to" in filters ? filters.to : null,
-  );
+  const dateRangeLabel = formatDateRangeLabel(filters.from, filters.to);
 
   return (
-    <div className="grid divide-y-2 divide-solid divide-border rounded-xs border-2 border-border bg-background overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)]">
+    <div className="grid divide-y-2 divide-solid divide-border rounded-md border-2 border-border bg-background overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)]">
       <header className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <div className="grow">แสดง 1-{total} จาก {total} รายการ</div>
+        <div className="grow font-bold">แสดง 1-{total} จาก {total} รายการ</div>
       </header>
       <div className="flex flex-wrap items-center justify-between gap-4 p-4">
         <SearchInput 
@@ -95,15 +92,19 @@ export const TransactionFilters = ({ total }: Props) => {
           onMaxCostChange={(maxCost) => onChange("max", maxCost)}
         />
       </Accordion>
-      {"from" in filters ? (
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4">
-          <DateFilter>
-            <button type="button" className="hover:underline w-full text-start flex">
-              {dateRangeLabel}
-            </button>
-          </DateFilter>
-        </div>
-      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <DateFilter
+          from={filters.from}
+          to={filters.to}
+          onChange={({ from, to }) =>
+            void setFilters({ ...filters, from, to, page: 0 })
+          }
+        >
+          <button type="button" className="flex w-full text-start hover:underline">
+            {dateRangeLabel}
+          </button>
+        </DateFilter>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-4 p-4">
         <fieldset className="flex flex-col border-none gap-2 grow basis-0">
           <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
@@ -114,7 +115,7 @@ export const TransactionFilters = ({ total }: Props) => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="lg" className="justify-between">
+              <Button size="lg" className="justify-between">
                 {filters.limit} 
                 <ChevronDownIcon className="size-4.5" />
               </Button>

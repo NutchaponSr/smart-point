@@ -26,7 +26,7 @@ export const Navigations = ({ links }: Props) => {
   return (
     <>
       <Link href="/dashboard">
-        <Button variant="rounded" size="smRounded">
+        <Button>
           ภาพรวม
         </Button>
       </Link>

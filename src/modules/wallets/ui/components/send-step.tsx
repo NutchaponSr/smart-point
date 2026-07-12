@@ -1,42 +1,28 @@
-import { Fragment, useMemo } from "react";
-import { ChevronDownIcon } from "lucide-react";
+import { useMemo } from "react";
+import Image from "next/image";
 
 import { ApiOutputs } from "@convex/api";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
-import { RiCopperCoinFill } from "react-icons/ri";
 import { useController, useFormContext } from "react-hook-form";
 
+import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
 import { Selection } from "@/components/selection";
-
-import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
+import ElementEditable from "@/components/element-editable";
 
 import { SendTransactionSchema } from "@/modules/wallets/schema";
+import { SendPointHelpPopover } from "@/modules/wallets/ui/components/send-point-help-popover";
 import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
 import {
   isSmartCultureTagId,
   smartCulturePillars,
-  smartCultureTagOptions,
-  tags as tagLabels,
   type SmartCulturePillarKey,
 } from "@/modules/transactions/constants";
-import { cn } from "@/lib/utils";
 
-const sendAmountOptions = [5, 10] as const;
+import CoinGivingIcon from "../../../../../public/coin-give.svg";
+const sendAmountOptions = [5, 10, 20] as const;
 
 interface Props {
   points: number;
@@ -52,7 +38,7 @@ function splitTagId(
   return { pillar: a as SmartCulturePillarKey, points: Number(b) as 5 | 15 | 20 };
 }
 
-export const SendStep = ({ points, user }: Props) => {
+export const SendStep = ({ points }: Props) => {
   const crpc = useCRPC();
   const { query, setQuery } = useSearchEmployee();
 
@@ -74,9 +60,13 @@ export const SendStep = ({ points, user }: Props) => {
     control,
     name: "amount",
   });
-  const { field: tagsField, fieldState: tagsState } = useController({
+  const { field: tagsField } = useController({
     control,
     name: "tags",
+  });
+  const { field: messageField, fieldState: messageState } = useController({
+    control,
+    name: "message",
   });
 
   const tagId = tagsField.value ?? "";
@@ -104,206 +94,141 @@ export const SendStep = ({ points, user }: Props) => {
   const employeeErrorMessage =
     employeeState.error?.message ?? errors.employee?.id?.message;
 
+  const messageErrorMessage =
+    messageState.error?.message ?? errors.message?.message;
+
   return (
     <div className="grid gap-4">
-      <h1 className="uppercase font-medium text-sm leading-none tracking-wide">จาก:</h1>
-      <div className="p-4 border-2 border-border rounded-xs bg-background min-w-0">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <UserAvatar
-            name={user?.name ?? ""}
-            className={{
-              container: "size-9 shrink-0 after:border-[1.5px]",
-              fallback: "text-base font-medium",
+      <section className="grid gap-1.5">
+        <h3 className="text-sm font-bold text-[#4b4b4b]">
+          เลือกพนักงาน
+        </h3>
+        <div
+          className={cn(
+            "[&_[class*='rounded-xs']]:rounded-xl",
+            "[&_[class*='border-border']]:border-[#e5e5e5]",
+            "[&_[class*='min-h-10']]:min-h-10",
+            "[&_input]:text-sm [&_input]:text-[#4b4b4b]",
+            "[&_span]:text-sm",
+            "focus-within:[&_[class*='border-border']]:border-[#84d8ff]",
+            "focus-within:[&_[class*='bg-background']]:bg-[#ddf4ff]",
+          )}
+        >
+          <Selection
+            placeholder="ค้นหาชื่อหรือรหัสพนักงาน"
+            selectedValue={employeeValue.id || undefined}
+            selectedLabel={employeeValue.name || undefined}
+            onClear={() => {
+              employeeField.onChange({
+                id: "",
+                name: "",
+                email: "",
+                department: "",
+              });
+            }}
+            options={
+              employees?.map((employee) => ({
+                label: employee.name,
+                value: employee.employeeId,
+                email: employee.email,
+                department: employee.department,
+              })) || []
+            }
+            onSearch={async (value) => {
+              setQuery(value);
+              return [];
+            }}
+            onSelect={(option) => {
+              const employee = employees?.find(
+                (e) => e.employeeId === option.value,
+              );
+              if (!employee) return;
+
+              employeeField.onChange({
+                id: option.value,
+                name: option.label,
+                email: employee.email,
+                department: employee.department,
+              });
             }}
           />
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <p className="truncate text-sm font-medium leading-5 tracking-wide">
-              {user?.name ?? "—"}
-            </p>
-            <p className="truncate text-xs text-muted-foreground leading-4 tracking-wide">
-              {[user?.email, user?.department].filter(Boolean).join(" · ")}
-            </p>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1.5">
-            <RiCopperCoinFill className="size-9" />
-            <h2 className="text-3xl font-bold tracking-wide">{points}</h2>
-          </div>
         </div>
-      </div>
+        {employeeErrorMessage && (
+          <p className="text-xs font-medium text-[#ea2b2b]">{employeeErrorMessage}</p>
+        )}
+      </section>
 
-      <h1 className="uppercase font-medium text-sm leading-none tracking-wide">กรุณาระบุ: ชื่อเพื่อนพนักงานที่คุณต้องการชื่นชม</h1>
-      <fieldset className="flex flex-col border-none gap-2">
-        <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
-          <Label htmlFor="employeeId" className="">
-            พนักงาน
-          </Label>
-        </legend>
-        <Selection
-          placeholder="ระบุพนักงาน (ชื่อหรือรหัสพนักงาน)"
-          selectedValue={employeeValue.id || undefined}
-          selectedLabel={employeeValue.name || undefined}
-          onClear={() => {
-            employeeField.onChange({
-              id: "",
-              name: "",
-              email: "",
-              department: "",
-            });
-          }}
-          options={
-            employees?.map((employee) => ({
-              label: employee.name,
-              value: employee.employeeId,
-              email: employee.email,
-              department: employee.department,
-            })) || []
-          }
-          onSearch={async (value) => {
-            setQuery(value);
-            return [];
-          }}
-          onSelect={(option) => {
-            const employee = employees?.find(
-              (e) => e.employeeId === option.value,
-            );
-            if (!employee) return;
-
-            employeeField.onChange({
-              id: option.value,
-              name: option.label,
-              email: employee.email,
-              department: employee.department,
-            });
+      <section className="grid gap-1.5">
+        <h3 className="text-sm font-bold text-[#4b4b4b]">
+          ข้อความชื่นชม
+        </h3>
+        <ElementEditable
+          value={messageField.value ?? ""}
+          placeholder="บอกเล่าสิ่งที่คุณชื่นชม..."
+          onChange={messageField.onChange}
+          onBlur={messageField.onBlur}
+          className={{
+            container: cn(
+              "min-h-0 rounded-md border-2 bg-white p-2",
+              messageErrorMessage
+                ? "border-[#ea2b2b] bg-[#fff5f5]"
+                : "border-[#e5e5e5] focus-within:border-[#84d8ff] focus-within:bg-[#ddf4ff]",
+            ),
+            input: "min-h-12 text-sm text-[#4b4b4b]",
+            placeholder: "top-3 left-3",
           }}
         />
-        <small className="text-destructive">{employeeErrorMessage}</small>
-      </fieldset>
+        {messageErrorMessage && (
+          <p className="text-xs font-medium text-[#ea2b2b]">{messageErrorMessage}</p>
+        )}
+      </section>
 
-      <div className="grid gap-4" key={formBlockKey}>
-        <fieldset className="flex flex-col border-none gap-2">
-          <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
-            <Label>คะแนนที่ต้องการมอบให้เพื่อน</Label>
-          </legend>
-          <div className="grid grid-cols-2 gap-2">
-            {sendAmountOptions.map((value) => (
-              <label
-                key={value}
-                className={cn(
-                  "flex cursor-pointer items-center justify-between gap-2 rounded-xs border-2 px-4 py-3 text-base font-medium transition-colors",
-                  amountField.value === value
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-background hover:bg-muted/40",
-                )}
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  <RiCopperCoinFill className="size-5 shrink-0" />
-                  {value} แต้ม
-                </span>
-                <span className="relative inline-flex shrink-0 items-center justify-center">
-                  <input
-                    type="radio"
-                    name="send-amount"
-                    value={value}
-                    className="peer size-[calc(1lh+0.125rem)] shrink-0 cursor-pointer appearance-none rounded-full border-[1.5px] border-border bg-background checked:bg-pink"
-                    checked={amountField.value === value}
-                    onChange={() => amountField.onChange(value)}
-                  />
-                  <span className="pointer-events-none absolute hidden size-[0.65rem] rounded-full bg-black peer-checked:block" />
-                </span>
-              </label>
-            ))}
+      <div className="grid gap-1.5" key={formBlockKey}>
+        <section className="grid gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-[#4b4b4b]">
+              คะแนนที่มอบให้
+            </h3>
+            <SendPointHelpPopover />
           </div>
-          <small className="text-destructive">{amountState.error?.message}</small>
-        </fieldset>
 
-        {/* <fieldset className="flex flex-col border-none gap-2">
-          <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
-            <Label>แท็ก SMART Culture</Label>
-            <span className="text-xs font-normal text-muted-foreground">(ไม่บังคับ)</span>
-          </legend>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="w-full justify-between min-h-10 px-4 text-sm font-[inherit] border-2"
-              >
-                <span
+          <div className="grid grid-cols-3 gap-2">
+            {sendAmountOptions.map((value) => {
+              const isSelected = amountField.value === value;
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => amountField.onChange(value)}
                   className={cn(
-                    "truncate text-left text-base",
-                    !isSmartCultureTagId(tagId) && "text-muted-foreground",
+                    "flex items-center justify-center gap-1.5 rounded-md border-2 px-3 py-2.5 font-medium transition-colors",
+                    isSelected
+                      ? "border-[#84d8ff] bg-[#ddf4ff] text-[#4b4b4b]"
+                      : "border-[#e5e5e5] bg-white text-[#4b4b4b] hover:bg-[#f7f7f7]",
                   )}
                 >
-                  {isSmartCultureTagId(tagId) ? tagLabels[tagId] : "เลือกแท็ก SMART Culture"}
-                </span>
-                <ChevronDownIcon className="size-4 shrink-0" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) max-h-[min(24rem,70vh)] overflow-y-auto">
-              <DropdownMenuGroup>
-                <DropdownMenuRadioGroup
-                  value={isSmartCultureTagId(tagId) ? tagId : ""}
-                  onValueChange={(id) => {
-                    tagsField.onChange(id);
-                  }}
-                >
-                  <DropdownMenuRadioItem value="" className="h-10">
-                    ไม่ระบุ
-                  </DropdownMenuRadioItem>
-                  {smartCultureTagOptions.map((opt, i) => {
-                    const showHeader =
-                      i === 0 ||
-                      opt.pillarKey !== smartCultureTagOptions[i - 1]!.pillarKey;
-                    return (
-                      <Fragment key={opt.id}>
-                        {showHeader && (
-                          <DropdownMenuLabel className="pt-1.5 px-4 first:pt-0">
-                            <span className="font-mono mr-1.5 text-foreground">
-                              {opt.pillarKey}
-                            </span>
-                            {opt.pillarNameTh}
-                          </DropdownMenuLabel>
-                        )}
-                        <DropdownMenuRadioItem value={opt.id} className="items-start h-auto">
-                          <span className="flex flex-col gap-0.5 py-0.5 min-w-0 w-full text-left">
-                            <span className="flex min-w-0 w-full max-w-full flex-nowrap items-center gap-1.5 text-sm">
-                              <span className="min-w-0 flex-1 truncate font-medium">
-                                {opt.title}
-                              </span>
-                              <span className="text-muted-foreground flex shrink-0 items-center gap-0.5 whitespace-nowrap text-sm">
-                                <RiCopperCoinFill className="size-3 shrink-0" />
-                                {opt.points}
-                              </span>
-                            </span>
-                            <span className="text-xs text-muted-foreground font-normal leading-snug line-clamp-2">
-                              {opt.description}
-                            </span>
-                          </span>
-                        </DropdownMenuRadioItem>
-                      </Fragment>
-                    );
-                  })}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <small className="text-destructive">{tagsState.error?.message}</small>
-        </fieldset> */}
+                  <Image src={CoinGivingIcon} alt="" width={20} height={20} className="shrink-0" />                  
+                  <span className="text-base text-[#f1c40f]">{value}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {amountState.error?.message && (
+            <p className="text-xs font-medium text-[#ea2b2b]">{amountState.error.message}</p>
+          )}
+        </section>
 
         {isSmartCultureTagId(tagId) && levelSummary && (
           <div
-            className="rounded-xs border-2 border-border p-3 bg-background text-sm space-y-1.5"
+            className="space-y-0.5 rounded-xl border-2 border-[#e5e5e5] bg-[#f7f7f7] p-3 text-xs"
             key={`summary-${formBlockKey}`}
           >
-            <p className="font-bold leading-snug">{levelSummary.pillar.nameTh}</p>
-            <p className="font-medium text-foreground/90">
+            <p className="font-bold text-[#4b4b4b]">{levelSummary.pillar.nameTh}</p>
+            <p className="text-[#4b4b4b]/90">
               {levelSummary.level.title}{" "}
-              <span className="text-muted-foreground">({levelSummary.level.points} แต้ม)</span>
-            </p>
-            <p className="text-muted-foreground leading-relaxed text-xs">
-              {levelSummary.level.description}
+              <span className="text-[#afafaf]">({levelSummary.level.points} แต้ม)</span>
             </p>
           </div>
         )}

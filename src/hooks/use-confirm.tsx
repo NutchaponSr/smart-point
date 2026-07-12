@@ -44,10 +44,10 @@ export const useConfirm = ({
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col w-full space-y-1.5">
-          <Button variant="destructive" onClick={handleConfirm}>
+          <Button variant="secondary" onClick={handleConfirm}>
             ยืนยัน
           </Button>
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="default" onClick={handleCancel}>
             ยกเลิก
           </Button>
         </div>

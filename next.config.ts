@@ -7,6 +7,14 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "resolute-crow-793.convex.cloud",
+      },
+    ],
+  },
 };
 
 export default withNextIntl(nextConfig);

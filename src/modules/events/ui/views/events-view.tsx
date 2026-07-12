@@ -109,7 +109,6 @@ export const EventsView = () => {
               />
               {(table.getIsAllPageRowsSelected() || table.getIsSomePageRowsSelected()) && (
                 <Button 
-                  variant="elevated" 
                   className="bg-destructive text-white"
                   onClick={() => {}}
                 >

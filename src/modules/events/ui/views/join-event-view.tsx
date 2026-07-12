@@ -199,7 +199,7 @@ export const JoinEventView = ({ eventId }: Props) => {
           </h1>
           
           <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-            <Button variant="elevated" type="button" onClick={() => router.push("/meta/events")}>
+            <Button type="button" onClick={() => router.push("/meta/events")}>
               ยกเลิก
             </Button>
           </div>
@@ -307,8 +307,6 @@ export const JoinEventView = ({ eventId }: Props) => {
           </div>
           <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
             <Button 
-              variant="elevated" 
-              className="bg-pink" 
               type="button" 
               onClick={() => router.push(`/dashboard/events/${eventId}/edit`)}
             >
@@ -355,9 +353,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                   </FieldSet>
                 )}
               />
-              <Button 
-                variant="elevated" 
-                className="bg-pink" 
+              <Button  
                 type="submit"
                 disabled={join.isPending}
               >
@@ -369,8 +365,6 @@ export const JoinEventView = ({ eventId }: Props) => {
             <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
               <h2 className="text-xl leading-snug">การจัดการผู้เข้าร่วม</h2>
               <Button
-                variant="elevated"
-                className="bg-pink"
                 type="button"
                 disabled={bulkApprove.isPending}
                 onClick={() => {
@@ -400,7 +394,6 @@ export const JoinEventView = ({ eventId }: Props) => {
               </Button>
               <h2 className="text-xl leading-snug text-destructive">โซนอันตราย</h2>
               <Button 
-                variant="elevated" 
                 className="bg-destructive" 
                 type="button" 
                 onClick={async () => {

@@ -26,6 +26,7 @@ export const api = {
     join: createApiLeaf<"mutation", typeof import("../functions/activity").join>(convexApi["activity"]["join"], { auth: "required", type: "mutation" }),
     leave: createApiLeaf<"mutation", typeof import("../functions/activity").leave>(convexApi["activity"]["leave"], { auth: "required", type: "mutation" }),
     list: createApiLeaf<"query", typeof import("../functions/activity").list>(convexApi["activity"]["list"], { auth: "required", type: "query" }),
+    recommended: createApiLeaf<"query", typeof import("../functions/activity").recommended>(convexApi["activity"]["recommended"], { auth: "required", type: "query" }),
     remove: createApiLeaf<"mutation", typeof import("../functions/activity").remove>(convexApi["activity"]["remove"], { auth: "required", type: "mutation" }),
     update: createApiLeaf<"mutation", typeof import("../functions/activity").update>(convexApi["activity"]["update"], { auth: "required", type: "mutation" }),
   },
@@ -50,6 +51,15 @@ export const api = {
   leaderboard: {
     getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", type: "query" }),
     getMyEntry: createApiLeaf<"query", typeof import("../functions/leaderboard").getMyEntry>(convexApi["leaderboard"]["getMyEntry"], { auth: "required", type: "query" }),
+  },
+  news: {
+    bulkDelete: createApiLeaf<"mutation", typeof import("../functions/news").bulkDelete>(convexApi["news"]["bulkDelete"], { auth: "required", type: "mutation" }),
+    create: createApiLeaf<"mutation", typeof import("../functions/news").create>(convexApi["news"]["create"], { auth: "required", type: "mutation" }),
+    getLatest: createApiLeaf<"query", typeof import("../functions/news").getLatest>(convexApi["news"]["getLatest"], { auth: "required", type: "query" }),
+    getList: createApiLeaf<"query", typeof import("../functions/news").getList>(convexApi["news"]["getList"], { auth: "required", type: "query" }),
+    getOne: createApiLeaf<"query", typeof import("../functions/news").getOne>(convexApi["news"]["getOne"], { auth: "required", type: "query" }),
+    remove: createApiLeaf<"mutation", typeof import("../functions/news").remove>(convexApi["news"]["remove"], { auth: "required", type: "mutation" }),
+    update: createApiLeaf<"mutation", typeof import("../functions/news").update>(convexApi["news"]["update"], { auth: "required", type: "mutation" }),
   },
   redemption: {
     getMany: createApiLeaf<"query", typeof import("../functions/redemption").getMany>(convexApi["redemption"]["getMany"], { auth: "required", type: "query" }),
@@ -79,6 +89,7 @@ export const api = {
     exportAll: createApiLeaf<"mutation", typeof import("../functions/transaction").exportAll>(convexApi["transaction"]["exportAll"], { auth: "required", type: "mutation" }),
     feeds: createApiLeaf<"query", typeof import("../functions/transaction").feeds>(convexApi["transaction"]["feeds"], { auth: "required", limit: 10, type: "query" }),
     getMany: createApiLeaf<"query", typeof import("../functions/transaction").getMany>(convexApi["transaction"]["getMany"], { auth: "required", type: "query" }),
+    getMonthlyQuestProgress: createApiLeaf<"query", typeof import("../functions/transaction").getMonthlyQuestProgress>(convexApi["transaction"]["getMonthlyQuestProgress"], { auth: "required", type: "query" }),
     like: createApiLeaf<"mutation", typeof import("../functions/transaction").like>(convexApi["transaction"]["like"], { auth: "required", type: "mutation" }),
     send: createApiLeaf<"mutation", typeof import("../functions/transaction").send>(convexApi["transaction"]["send"], { auth: "required", type: "mutation" }),
   },
@@ -90,6 +101,8 @@ export const api = {
     getCurrentUser: createApiLeaf<"query", typeof import("../functions/user").getCurrentUser>(convexApi["user"]["getCurrentUser"], { auth: "required", type: "query" }),
   },
   wallet: {
+    dailyBonusHistory: createApiLeaf<"query", typeof import("../functions/wallet").dailyBonusHistory>(convexApi["wallet"]["dailyBonusHistory"], { auth: "required", type: "query" }),
+    dailyLogin: createApiLeaf<"mutation", typeof import("../functions/wallet").dailyLogin>(convexApi["wallet"]["dailyLogin"], { auth: "required", type: "mutation" }),
     getOne: createApiLeaf<"query", typeof import("../functions/wallet").getOne>(convexApi["wallet"]["getOne"], { auth: "required", type: "query" }),
   },
   _http: {

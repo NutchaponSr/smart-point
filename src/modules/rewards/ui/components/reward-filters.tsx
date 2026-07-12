@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
 
-type RewardFiltersProps =
+type Props =
   | { variant?: "default" }
   | {
       variant: "popover";
@@ -24,7 +24,7 @@ type RewardFiltersProps =
       popoverContentClassName?: string;
     };
 
-export const RewardFilters = (props: RewardFiltersProps) => {
+export const RewardFilters = (props: Props) => {
   const [filters, setFilters] = useRewardFilters();
 
   const onChange = (key: keyof typeof filters, value: unknown) => {
@@ -46,10 +46,12 @@ export const RewardFilters = (props: RewardFiltersProps) => {
     <>
       <header
         className={cn(
-          "flex flex-wrap items-center justify-between gap-4 p-4",
+          "flex flex-wrap items-center justify-between gap-4 p-4"
         )}
       >
-        ตัวกรอง
+        <h2 className="relative z-1 text-base font-bold leading-snug">
+          ตัวกรอง
+        </h2>
         {hasActiveFilters && (
           <div className="grow text-right">
             <button
@@ -62,7 +64,7 @@ export const RewardFilters = (props: RewardFiltersProps) => {
           </div>
         )}
       </header>
-      <Accordion title="ราคา">
+      <Accordion title="พอยต์">
         <CostFilter
           minCost={filters.minCost}
           maxCost={filters.maxCost}
@@ -85,7 +87,7 @@ export const RewardFilters = (props: RewardFiltersProps) => {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="elevated" size="iconLg">
+          <Button variant="primaryOutline" size="iconLg">
             <ListFilterIcon className="size-5" />
           </Button>
         </PopoverTrigger>
@@ -103,7 +105,7 @@ export const RewardFilters = (props: RewardFiltersProps) => {
   return (
     <section
       aria-label="ตัวกรอง"
-      className="grid max-h-[calc(100vh-2rem)] divide-y-2 divide-solid divide-border overflow-y-auto rounded-xs border-2 border-border bg-background lg:sticky lg:inset-y-4"
+      className="grid max-h-[calc(100vh-2rem)] divide-y-2 divide-solid divide-border overflow-y-auto rounded-md border-2 bg-background lg:sticky lg:inset-y-4"
     >
       {body}
     </section>

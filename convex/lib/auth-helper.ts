@@ -1,7 +1,17 @@
+import { CRPCError } from "better-convex/server";
+import { getSession } from "better-convex/auth";
+
 import { SessionUser } from "../shared/auth-shared";
 import type { QueryCtx } from "../functions/generated/server";
-import { getSession } from "better-convex/auth";
-import { Id } from "../functions/_generated/dataModel";
+
+export function requireAdmin(user: SessionUser) {
+  if (user.role !== "admin") {
+    throw new CRPCError({
+      code: "FORBIDDEN",
+      message: "ต้องมีสิทธิ์ผู้ดูแลระบบ",
+    });
+  }
+}
 
 export const getSessionData = async (ctx: QueryCtx) => {
   const session = await getSession(ctx);

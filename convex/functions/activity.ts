@@ -2,6 +2,7 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { authMutation, authQuery, publicQuery } from "../lib/crpc";
+import { awardSpecialPoints } from "../lib/points";
 
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
@@ -12,6 +13,43 @@ const activityCategory = z.enum([
   "internal_bu",
   "specials_point",
 ]);
+
+const slugList = z.array(z.string().min(1)).optional();
+
+function normalizeSlugList(value: (string | null)[] | null | undefined): string[] {
+  return (value ?? []).filter((item): item is string => item != null && item !== "");
+}
+
+function isEmployeeEligibleForActivity(
+  activity: {
+    category: z.infer<typeof activityCategory>;
+    allowedDivisions?: (string | null)[] | null;
+    allowedDepartments?: (string | null)[] | null;
+  },
+  employee: { division: string; department: string },
+): boolean {
+  if (
+    activity.category !== "internal_bu" &&
+    activity.category !== "specials_point"
+  ) {
+    return true;
+  }
+
+  const divisions = normalizeSlugList(activity.allowedDivisions);
+
+  if (divisions.length === 0) {
+    return true;
+  }
+
+  return divisions.includes(employee.division);
+}
+
+/** กิจกรรมที่กำหนด BU เจาะจง (ไม่ใช่เปิดทุก BU) */
+function hasSpecificBuRestriction(activity: {
+  allowedDivisions?: (string | null)[] | null;
+}): boolean {
+  return normalizeSlugList(activity.allowedDivisions).length > 0;
+}
 
 const ACTIVITY_EVIDENCE_IMAGE_MAX_BYTES = 1_048_576;
 const ACTIVITY_EVIDENCE_PDF_MAX_BYTES = 5_242_880;
@@ -271,8 +309,12 @@ async function approveActivityParticipantReward(input: {
     )
     .first();
 
-  if (!existingLedger) {
+  const isSpecialPointActivity = activity.category === "specials_point";
+  let pointAwarded = 0;
+
+  if (!existingLedger && !isSpecialPointActivity) {
     const newBalance = employeeWallet.receivingBudget + activity.point;
+
     await input.ctx.db.patch(employeeWallet._id, {
       receivingBudget: newBalance,
     });
@@ -286,11 +328,23 @@ async function approveActivityParticipantReward(input: {
       note: `Activity reward: ${activity.name}`,
       createdAt: Date.now(),
     });
+    pointAwarded = activity.point;
+  }
+
+  const specialApprove = await awardSpecialPoints(input.ctx, {
+    employeeId: participant.employeeId,
+    delta: 1,
+    sourceType: "activity",
+    sourceId: `approve:${participant._id}`,
+    note: `โบนัสอนุมัติกิจกรรม: ${activity.name}`,
+  });
+  if (specialApprove.awarded) {
+    pointAwarded += 1;
   }
 
   await input.ctx.db.patch(participant._id, {
     status: "rewarded",
-    pointAwarded: activity.point,
+    pointAwarded,
     awardedBy: input.reviewerUserId,
     awardedAt: Date.now(),
   });
@@ -306,6 +360,8 @@ const activityRow = z.object({
   startDate: z.number(),
   endDate: z.number().optional().nullable(),
   maxParticipants: z.number().int().positive().optional().nullable(),
+  allowedDivisions: slugList,
+  allowedDepartments: slugList,
 });
 
 export const create = authMutation
@@ -319,6 +375,8 @@ export const create = authMutation
       startDate: input.startDate,
       endDate: input.endDate ?? null,
       maxParticipants: input.maxParticipants ?? null,
+      allowedDivisions: input.allowedDivisions ?? [],
+      allowedDepartments: input.allowedDepartments ?? [],
       isActive: true,
     });
   });
@@ -335,6 +393,8 @@ export const update = authMutation
       endDate: z.number().optional().nullable(),
       maxParticipants: z.number().int().positive().optional().nullable(),
       isActive: z.boolean().optional(),
+      allowedDivisions: slugList,
+      allowedDepartments: slugList,
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -356,6 +416,8 @@ export const update = authMutation
       endDate?: number | null;
       maxParticipants?: number | null;
       isActive?: boolean;
+      allowedDivisions?: string[];
+      allowedDepartments?: string[];
     } = {};
     if (input.name !== undefined) patch.name = input.name;
     if (input.description !== undefined) patch.description = input.description;
@@ -366,6 +428,10 @@ export const update = authMutation
     if (input.maxParticipants !== undefined)
       patch.maxParticipants = input.maxParticipants;
     if (input.isActive !== undefined) patch.isActive = input.isActive;
+    if (input.allowedDivisions !== undefined)
+      patch.allowedDivisions = input.allowedDivisions;
+    if (input.allowedDepartments !== undefined)
+      patch.allowedDepartments = input.allowedDepartments;
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(activityId, patch);
     }
@@ -401,6 +467,8 @@ export const bulkCreate = authMutation
         startDate: row.startDate,
         endDate: row.endDate ?? null,
         maxParticipants: row.maxParticipants ?? null,
+        allowedDivisions: row.allowedDivisions ?? [],
+        allowedDepartments: row.allowedDepartments ?? [],
         isActive: true,
       });
       inserted += 1;
@@ -518,6 +586,95 @@ export const bulkAddParticipants = authMutation
     return { added, reactivated, skipped };
   });
 
+/** สถานะการเข้าร่วมของผู้ใช้ปัจจุบันในกิจกรรมหนึ่ง (null = ยังไม่เข้าร่วม) */
+async function getMyParticipationStatus(
+  ctx: QueryCtx,
+  activityId: Id<"activity">,
+  employeeId: Id<"employee">,
+) {
+  const me = await ctx.db
+    .query("activityParticipant")
+    .withIndex("by_activityId_employeeId", (q) =>
+      q.eq("activityId", activityId).eq("employeeId", employeeId),
+    )
+    .first();
+  if (!me || me.status === "cancelled") return null;
+  return me.status;
+}
+
+/**
+ * กิจกรรมแนะนำสำหรับ Carousel — เฉพาะ internal_bu / specials_point ที่กำหนด BU เจาะจง
+ * และพนักงานมีสิทธิ์เข้าร่วม (เรียงตาม startDate ล่าสุด)
+ */
+export const recommended = authQuery
+  .input(
+    z.object({
+      limit: z.number().int().min(1).max(20),
+      /** เวลาปัจจุบันจาก client (ปัดเป็นรายวัน) — ไม่ใช้ Date.now() ใน query เพื่อคง reactivity */
+      now: z.number().optional().nullable(),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    const employee = ctx.user.employee;
+    const now = input.now ?? null;
+
+    const pageResult = await ctx.orm.query.activity
+      .select()
+      .withIndex("by_startDate")
+      .orderBy({ startDate: "desc" })
+      .filter((row) => {
+        if (!row.isActive) return false;
+        if (
+          row.category !== "internal_bu" &&
+          row.category !== "specials_point"
+        ) {
+          return false;
+        }
+        if (!hasSpecificBuRestriction(row)) {
+          return false;
+        }
+        if (!isEmployeeEligibleForActivity(row, employee)) {
+          return false;
+        }
+        // ตัดกิจกรรมที่จบไปแล้ว (ไม่มี endDate = ยังเปิดอยู่)
+        if (
+          now != null &&
+          row.endDate != null &&
+          new Date(row.endDate).getTime() < now
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .map((row) => row)
+      .paginate({ cursor: null, limit: input.limit });
+
+    const items = await Promise.all(
+      pageResult.page.map(async (activity) => {
+        const activityId = activity.id as Id<"activity">;
+        const [{ joinedCount, participantsPreview }, myStatus] =
+          await Promise.all([
+            getActiveParticipantsMeta(ctx, activityId, 3),
+            getMyParticipationStatus(ctx, activityId, ctx.user.employeeId),
+          ]);
+        return {
+          ...activity,
+          joinedCount,
+          participantsPreview,
+          myStatus,
+        };
+      }),
+    );
+
+    return {
+      bu: {
+        department: employee.department,
+        division: employee.division,
+      },
+      items,
+    };
+  });
+
 export const getMany = authQuery
   .input(
     z.object({
@@ -527,12 +684,17 @@ export const getMany = authQuery
       view: z.array(activityCategory).optional().nullable(),
       minParticipants: z.number().optional().nullable(),
       maxParticipants: z.number().optional().nullable(),
+      /** หน้าผู้ใช้ (/events) — กรองตาม BU แม้เป็น admin */
+      eligibleOnly: z.boolean().optional().nullable(),
     }),
   )
   .query(async ({ ctx, input }) => {
     const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
     const minParticipants = input.minParticipants ?? null;
     const maxParticipants = input.maxParticipants ?? null;
+    const isAdmin = ctx.user.role === "admin";
+    const employee = ctx.user.employee;
+    const applyBuFilter = input.eligibleOnly === true || !isAdmin;
 
     const baseQuery = ctx.orm.query.activity
       .select()
@@ -541,6 +703,12 @@ export const getMany = authQuery
       .filter((row) => {
         if (!row.isActive) return false;
         if (input.view != null && !input.view.includes(row.category)) {
+          return false;
+        }
+        if (
+          applyBuFilter &&
+          !isEmployeeEligibleForActivity(row, employee)
+        ) {
           return false;
         }
         return matchesActivitySearch(row, normalizedQuery);
@@ -562,22 +730,24 @@ export const getMany = authQuery
           name: string;
           image: string | null;
         }>;
+        myStatus: "registered" | "attended" | "rewarded" | null;
       }
     > = [];
 
     while (page.length < input.limit) {
       const enrichedRows = await Promise.all(
         pageResult.page.map(async (activity) => {
-          const { joinedCount, participantsPreview } =
-            await getActiveParticipantsMeta(
-              ctx,
-              activity.id as Id<"activity">,
-              3,
-            );
+          const activityId = activity.id as Id<"activity">;
+          const [{ joinedCount, participantsPreview }, myStatus] =
+            await Promise.all([
+              getActiveParticipantsMeta(ctx, activityId, 3),
+              getMyParticipationStatus(ctx, activityId, ctx.user.employeeId),
+            ]);
           return {
             ...activity,
             joinedCount,
             participantsPreview,
+            myStatus,
           };
         }),
       );
@@ -803,12 +973,13 @@ export const join = authMutation
   .input(
     z.object({
       activityId: z.string(),
-      employeeId: z.string(),
+      /** ไม่ระบุ = เข้าร่วมด้วยตนเอง (ใช้ employee ของผู้ใช้ปัจจุบัน) */
+      employeeId: z.string().optional().nullable(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
     const activityId = input.activityId as Id<"activity">;
-    const employeeId = input.employeeId as Id<"employee">;
+    const employeeId = (input.employeeId ?? ctx.user.employeeId) as Id<"employee">;
 
     const activity = await ctx.db.get(activityId);
     if (!activity) {
@@ -821,6 +992,20 @@ export const join = authMutation
       throw new CRPCError({
         code: "BAD_REQUEST",
         message: "Activity is not active",
+      });
+    }
+
+    const employee = await ctx.db.get(employeeId);
+    if (!employee) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Employee not found",
+      });
+    }
+    if (!isEmployeeEligibleForActivity(activity, employee)) {
+      throw new CRPCError({
+        code: "FORBIDDEN",
+        message: "กิจกรรมนี้ไม่เปิดให้ BU/สังกัดของคุณเข้าร่วม",
       });
     }
 
@@ -856,18 +1041,30 @@ export const join = authMutation
       });
     }
 
+    let participantId: Id<"activityParticipant">;
+
     if (existing) {
       await ctx.db.patch(existing._id, {
         status: "registered",
       });
-      return { joined: true };
+      participantId = existing._id;
+    } else {
+      participantId = await ctx.db.insert("activityParticipant", {
+        activityId,
+        employeeId,
+        status: "registered",
+      });
     }
 
-    await ctx.db.insert("activityParticipant", {
-      activityId,
-      employeeId,
-      status: "registered",
-    });
+    if (activity.category === "specials_point") {
+      await awardSpecialPoints(ctx, {
+        employeeId,
+        delta: 5,
+        sourceType: "activity",
+        sourceId: `join:${participantId}`,
+        note: `เข้าร่วมกิจกรรมพิเศษ: ${activity.name}`,
+      });
+    }
 
     return { joined: true };
   });

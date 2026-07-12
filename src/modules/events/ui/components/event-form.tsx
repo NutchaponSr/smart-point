@@ -72,7 +72,7 @@ export const EventForm = () => {
             <FieldSet label="ประเภท" errorMessage={fieldState.error?.message}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" size="lg" className="w-full justify-between">
+                  <Button type="button" size="lg" className="w-full justify-between">
                     <span>{categories[field.value]?.th}</span>
                     <ChevronDownIcon className="size-4.5" />
                   </Button>
@@ -99,7 +99,7 @@ export const EventForm = () => {
             render={({ field, fieldState }) => (
               <FieldSet label="วันที่เริ่มต้น" errorMessage={fieldState.error?.message}>
                 <DatePicker output="number" value={field.value} onSelect={field.onChange}>
-                  <Button variant="outline" size="lg" type="button" className="justify-start px-4">
+                  <Button size="lg" type="button" className="justify-start px-4">
                     {format(new Date(field.value), "LLL dd, yyyy")}
                   </Button>
                 </DatePicker>
@@ -112,7 +112,7 @@ export const EventForm = () => {
             render={({ field, fieldState }) => (
               <FieldSet label="วันที่สิ้นสุด" errorMessage={fieldState.error?.message}>
                 <DatePicker output="number" value={field.value} onSelect={field.onChange}>
-                  <Button variant="outline" size="lg" type="button" className="justify-start px-4">
+                  <Button size="lg" type="button" className="justify-start px-4">
                     {format(new Date(field.value), "LLL dd, yyyy")}
                   </Button>
                 </DatePicker>

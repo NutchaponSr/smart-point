@@ -510,12 +510,99 @@ async function restoreFeedBuffer(
   return docs.filter((doc): doc is Doc<"transaction"> => doc !== null);
 }
 
+type FeedFilterBounds = {
+  query: string;
+  min: number | null;
+  max: number | null;
+  from: number | null;
+  to: number | null;
+};
+
+function buildCompletedFeedStreamQuery(
+  ctx: QueryCtx,
+  employeeId: Id<"employee">,
+  role: "sender" | "receiver",
+  from: number | null,
+  to: number | null,
+) {
+  if (role === "sender") {
+    return ctx.db
+      .query("transaction")
+      .withIndex("by_senderId_status", (q) => {
+        const range = q.eq("senderId", employeeId).eq("status", "completed");
+        if (from != null && to != null) {
+          return range.gte("_creationTime", from).lte("_creationTime", to);
+        }
+        if (from != null) {
+          return range.gte("_creationTime", from);
+        }
+        if (to != null) {
+          return range.lte("_creationTime", to);
+        }
+        return range;
+      })
+      .order("desc");
+  }
+
+  return ctx.db
+    .query("transaction")
+    .withIndex("by_receiverId_status", (q) => {
+      const range = q.eq("receiverId", employeeId).eq("status", "completed");
+      if (from != null && to != null) {
+        return range.gte("_creationTime", from).lte("_creationTime", to);
+      }
+      if (from != null) {
+        return range.gte("_creationTime", from);
+      }
+      if (to != null) {
+        return range.lte("_creationTime", to);
+      }
+      return range;
+    })
+    .order("desc");
+}
+
+async function filterFeedCandidates(
+  ctx: QueryCtx,
+  candidates: Doc<"transaction">[],
+  bounds: FeedFilterBounds,
+): Promise<Doc<"transaction">[]> {
+  if (candidates.length === 0) {
+    return candidates;
+  }
+
+  const needsNameLookup = bounds.query.length > 0;
+  const partyNamesById = needsNameLookup
+    ? await getPartyNamesByTransaction(ctx, candidates)
+    : null;
+
+  return candidates.filter((transaction) => {
+    const partyNames = partyNamesById?.get(transaction._id);
+    return filterTransaction(transaction, {
+      query: bounds.query,
+      min: bounds.min,
+      max: bounds.max,
+      from: bounds.from,
+      to: bounds.to,
+      senderName: partyNames?.senderName ?? null,
+      receiverName: partyNames?.receiverName ?? null,
+    });
+  });
+}
+
 async function collectMyCompletedFeedPage(
   ctx: QueryCtx,
   employeeId: Id<"employee">,
   limit: number,
   initialCursor: FeedsCursor,
   view: "all" | "sent" | "received" = "all",
+  bounds: FeedFilterBounds = {
+    query: "",
+    min: null,
+    max: null,
+    from: null,
+    to: null,
+  },
 ): Promise<{
   page: Doc<"transaction">[];
   nextCursor: FeedsCursor;
@@ -523,27 +610,33 @@ async function collectMyCompletedFeedPage(
 }> {
   let senderCursor = initialCursor.senderCursor;
   let receiverCursor = initialCursor.receiverCursor;
-  let sentBuffer = await restoreFeedBuffer(ctx, initialCursor.senderPendingIds);
-  let receivedBuffer = await restoreFeedBuffer(
+  let sentBuffer = await filterFeedCandidates(
     ctx,
-    initialCursor.receiverPendingIds,
+    await restoreFeedBuffer(ctx, initialCursor.senderPendingIds),
+    bounds,
+  );
+  let receivedBuffer = await filterFeedCandidates(
+    ctx,
+    await restoreFeedBuffer(ctx, initialCursor.receiverPendingIds),
+    bounds,
   );
   let senderExhausted = view === "received";
   let receiverExhausted = view === "sent";
 
-  const sentQuery = ctx.db
-    .query("transaction")
-    .withIndex("by_senderId_status", (q) =>
-      q.eq("senderId", employeeId).eq("status", "completed"),
-    )
-    .order("desc");
-
-  const receivedQuery = ctx.db
-    .query("transaction")
-    .withIndex("by_receiverId_status", (q) =>
-      q.eq("receiverId", employeeId).eq("status", "completed"),
-    )
-    .order("desc");
+  const sentQuery = buildCompletedFeedStreamQuery(
+    ctx,
+    employeeId,
+    "sender",
+    bounds.from,
+    bounds.to,
+  );
+  const receivedQuery = buildCompletedFeedStreamQuery(
+    ctx,
+    employeeId,
+    "receiver",
+    bounds.from,
+    bounds.to,
+  );
 
   const page: Doc<"transaction">[] = [];
 
@@ -554,7 +647,7 @@ async function collectMyCompletedFeedPage(
         senderCursor,
         limit,
       );
-      sentBuffer = [...senderResult.batch];
+      sentBuffer = await filterFeedCandidates(ctx, senderResult.batch, bounds);
       senderExhausted = senderResult.exhausted;
       senderCursor = advanceStreamCursor(senderCursor, senderResult.batch);
     }
@@ -565,7 +658,11 @@ async function collectMyCompletedFeedPage(
         receiverCursor,
         limit,
       );
-      receivedBuffer = [...receiverResult.batch];
+      receivedBuffer = await filterFeedCandidates(
+        ctx,
+        receiverResult.batch,
+        bounds,
+      );
       receiverExhausted = receiverResult.exhausted;
       receiverCursor = advanceStreamCursor(
         receiverCursor,
@@ -618,7 +715,7 @@ async function collectMyCompletedFeedPage(
 type ApproveTransactionResult =
   | {
       transactionId: Id<"transaction">;
-      status: "approved" | "alreadyCompleted";
+      status: "approved" | "rejected" | "alreadyCompleted" | "alreadyRejected";
       amount: number;
     }
   | {
@@ -651,6 +748,14 @@ async function approveTransactionById(
     };
   }
 
+  if (transaction.status === "rejected") {
+    return {
+      transactionId: transaction._id,
+      status: "alreadyRejected" as const,
+      amount: transaction.amount,
+    };
+  }
+
   if (transaction.status !== "pending") {
     return {
       transactionId: transaction._id,
@@ -669,63 +774,126 @@ async function approveTransactionById(
     };
   }
 
-  const receiverWallet = await ctx.db
-    .query("wallet")
-    .withIndex("by_employeeId", (q) =>
-      q.eq("employeeId", transaction.receiverId),
-    )
-    .first();
-
-  if (!receiverWallet) {
-    return {
-      transactionId: transaction._id,
-      status: "failed" as const,
-      code: "NOT_FOUND" as const,
-      message: "Wallet not found",
-    };
-  }
-
   const transactionSourceId = String(transaction._id);
-  const existingReceiverLedger = await ctx.db
+  const now = Date.now();
+  const reviewedBy = ctx.user.employeeId;
+
+  const ledgers = await ctx.db
     .query("pointLedger")
     .withIndex("by_sourceType_sourceId", (q) =>
       q.eq("sourceType", "transaction").eq("sourceId", transactionSourceId),
     )
-    .filter((q) =>
-      q.and(
-        q.eq(q.field("balanceType"), "receiving"),
-        q.eq(q.field("employeeId"), transaction.receiverId),
-      ),
+    .collect();
+
+  if (confirm) {
+    const receiverWallet = await ctx.db
+      .query("wallet")
+      .withIndex("by_employeeId", (q) =>
+        q.eq("employeeId", transaction.receiverId),
+      )
+      .first();
+
+    if (!receiverWallet) {
+      return {
+        transactionId: transaction._id,
+        status: "failed" as const,
+        code: "NOT_FOUND" as const,
+        message: "Receiver wallet not found",
+      };
+    }
+
+    const existingReceiverLedger = ledgers.find(
+      (ledger) =>
+        ledger.balanceType === "receiving" &&
+        ledger.employeeId === transaction.receiverId,
+    );
+
+    if (!existingReceiverLedger) {
+      const newReceivingBudget =
+        receiverWallet.receivingBudget + transaction.amount;
+
+      await ctx.db.patch(receiverWallet._id, {
+        receivingBudget: newReceivingBudget,
+      });
+
+      await ctx.db.insert("pointLedger", {
+        employeeId: transaction.receiverId,
+        delta: transaction.amount,
+        balanceAfter: newReceivingBudget,
+        balanceType: "receiving",
+        sourceType: "transaction",
+        sourceId: transactionSourceId,
+        note: `Received from ${transaction.senderId}`,
+        createdAt: now,
+      });
+    }
+
+    await ctx.db.patch(transaction._id, {
+      status: "completed",
+      reviewedAt: now,
+      reviewedBy,
+      updatedAt: now,
+    });
+
+    return {
+      transactionId: transaction._id,
+      status: "approved" as const,
+      amount: transaction.amount,
+    };
+  }
+
+  const senderWallet = await ctx.db
+    .query("wallet")
+    .withIndex("by_employeeId", (q) =>
+      q.eq("employeeId", transaction.senderId),
     )
     .first();
 
-  if (confirm && !existingReceiverLedger) {
-    await ctx.db.patch(receiverWallet._id, {
-      receivingBudget: receiverWallet.receivingBudget + transaction.amount,
+  if (!senderWallet) {
+    return {
+      transactionId: transaction._id,
+      status: "failed" as const,
+      code: "NOT_FOUND" as const,
+      message: "Sender wallet not found",
+    };
+  }
+
+  const existingRefundLedger = ledgers.find(
+    (ledger) =>
+      ledger.balanceType === "giving" &&
+      ledger.employeeId === transaction.senderId &&
+      ledger.delta > 0,
+  );
+
+  if (!existingRefundLedger) {
+    const newGivingBudget = senderWallet.givingBudget + transaction.amount;
+
+    await ctx.db.patch(senderWallet._id, {
+      givingBudget: newGivingBudget,
     });
 
     await ctx.db.insert("pointLedger", {
-      employeeId: transaction.receiverId,
+      employeeId: transaction.senderId,
       delta: transaction.amount,
-      balanceAfter: receiverWallet.receivingBudget + transaction.amount,
-      balanceType: "receiving",
+      balanceAfter: newGivingBudget,
+      balanceType: "giving",
       sourceType: "transaction",
       sourceId: transactionSourceId,
-      note: `Received from ${transaction.senderId}`,
-      createdAt: Date.now(),
+      note: "Refund: transaction rejected",
+      createdAt: now,
     });
   }
 
   await ctx.db.patch(transaction._id, {
-    status: confirm ? "completed" : "rejected",
-    reviewedAt: Date.now(),
-    reviewedBy: ctx.user.employeeId,
-    updatedAt: Date.now(),
+    status: "rejected",
+    reviewedAt: now,
+    reviewedBy,
+    updatedAt: now,
   });
 
   return {
     transactionId: transaction._id,
-    status: "approved" as const,
+    status: "rejected" as const,
     amount: transaction.amount,
   };
 }
@@ -1052,8 +1220,14 @@ export const bulkApprove = authMutation
     const approvedCount = results.filter(
       (item) => item.status === "approved",
     ).length;
+    const rejectedCount = results.filter(
+      (item) => item.status === "rejected",
+    ).length;
     const alreadyCompletedCount = results.filter(
       (item) => item.status === "alreadyCompleted",
+    ).length;
+    const alreadyRejectedCount = results.filter(
+      (item) => item.status === "alreadyRejected",
     ).length;
     const failedCount = results.filter(
       (item) => item.status === "failed",
@@ -1062,7 +1236,9 @@ export const bulkApprove = authMutation
     return {
       total: uniqueTransactionIds.length,
       approvedCount,
+      rejectedCount,
       alreadyCompletedCount,
+      alreadyRejectedCount,
       failedCount,
       results,
     };
@@ -1072,6 +1248,11 @@ export const feeds = authQuery
   .input(
     z.object({
       view: z.enum(["all", "sent", "received"]).optional().default("all"),
+      q: z.string().optional().nullable(),
+      min: z.number().optional().nullable(),
+      max: z.number().optional().nullable(),
+      from: z.number().optional().nullable(),
+      to: z.number().optional().nullable(),
     }),
   )
   .paginated({
@@ -1132,6 +1313,16 @@ export const feeds = authQuery
     }),
   })
   .query(async ({ ctx, input }) => {
+    const bounds: FeedFilterBounds = {
+      query: input.q?.trim().toLowerCase() ?? "",
+      min: input.min ?? null,
+      max: input.max ?? null,
+      from: input.from ?? null,
+      to: input.to ?? null,
+    };
+
+    assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
+
     const { page: transactions, nextCursor, exhausted } =
       await collectMyCompletedFeedPage(
         ctx,
@@ -1139,6 +1330,7 @@ export const feeds = authQuery
         input.limit,
         decodeFeedsCursor(input.cursor),
         input.view,
+        bounds,
       );
 
     const txMeta = await Promise.all(
@@ -1362,32 +1554,13 @@ export const comment = authMutation
       .withIndex("by_employeeId", (q) => q.eq("employeeId", employee._id))
       .first();
 
-    const existingComment = await ctx.db
-      .query("comment")
-      .withIndex("by_employeeId_transactionId", (q) =>
-        q
-          .eq("employeeId", ctx.user.employeeId)
-          .eq("transactionId", transactionId),
-      )
-      .first();
-
     const now = Date.now();
-    let commentId: Id<"comment">;
-
-    if (existingComment) {
-      await ctx.db.patch(existingComment._id, {
-        content: input.content,
-        updatedAt: now,
-      });
-      commentId = existingComment._id;
-    } else {
-      commentId = await ctx.db.insert("comment", {
-        employeeId: ctx.user.employeeId,
-        transactionId,
-        content: input.content,
-        createdAt: now,
-      });
-    }
+    const commentId = await ctx.db.insert("comment", {
+      employeeId: employee._id,
+      transactionId,
+      content: input.content,
+      createdAt: now,
+    });
 
     const saved = await ctx.db.get(commentId);
     if (!saved) {
@@ -1413,5 +1586,37 @@ export const comment = authMutation
         division: employee.division,
         image: user?.image ?? null,
       },
+    };
+  });
+
+export const getMonthlyQuestProgress = authQuery
+  .input(
+    z.object({
+      monthStart: z.number(),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    const sentTransactions = await ctx.db
+      .query("transaction")
+      .withIndex("by_senderId", (q) =>
+        q.eq("senderId", ctx.user.employeeId as Id<"employee">),
+      )
+      .collect();
+
+    const count = sentTransactions.filter((transaction) => {
+      return (
+        transaction.status === "completed" &&
+        transactionTimestamp(transaction) >= input.monthStart
+      );
+    }).length;
+
+    const goal = 20;
+    const reward = 5;
+
+    return {
+      count: Math.min(count, goal),
+      goal,
+      reward,
+      isComplete: count >= goal,
     };
   });

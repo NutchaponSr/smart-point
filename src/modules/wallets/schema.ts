@@ -12,8 +12,8 @@ export const sendTransactionSchema = z
       email: z.string().optional(),
       department: z.string(),
     }),
-    amount: z.union([z.literal(5), z.literal(10)], {
-      error: "กรุณาเลือก 5 หรือ 10 แต้ม",
+    amount: z.union([z.literal(5), z.literal(10), z.literal(20)], {
+      error: "กรุณาเลือก 5, 10 หรือ 20 แต้ม",
     }),
     message: z.string().min(1, "กรุณาระบุข้อความ"),
     tags: z
@@ -41,7 +41,6 @@ export const sendTransactionSchema = z
 
 export type SendTransactionSchema = z.infer<typeof sendTransactionSchema>;
 
-export const stepFields: Record<"send" | "options", (keyof SendTransactionSchema)[]> = {
-  send: ["employee", "tags", "amount"],
-  options: ["message"],
+export const stepFields: Record<"send", (keyof SendTransactionSchema)[]> = {
+  send: ["employee", "message", "amount", "tags"],
 };

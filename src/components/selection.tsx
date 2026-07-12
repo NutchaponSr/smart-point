@@ -71,10 +71,6 @@ export const Selection = ({
   selectedLabel,
   onClear,
 }: Props) => {
-  const log = (...args: unknown[]) => {
-    console.log("[Selection]", ...args);
-  };
-
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const onSearchRef = useRef<Props["onSearch"]>(onSearch);
@@ -99,13 +95,11 @@ export const Selection = ({
     if (!onSearchRef.current) return;
 
     const runSearch = async () => {
-      log("search:start", debouncedSearch);
       setIsLoading(true);
       try {
         await onSearchRef.current?.(debouncedSearch);
       } finally {
         setIsLoading(false);
-        log("search:end", debouncedSearch);
       }
     };
 
@@ -114,20 +108,17 @@ export const Selection = ({
 
   useEffect(() => {
     if (selectedValue) {
-      log("sync:selected", { selectedValue, selectedLabel });
       setSelected({
         value: selectedValue,
         label: selectedLabel ?? selectedValue,
       });
       return;
     }
-    log("sync:clear");
     setSelected(null);
     setInputValue("");
   }, [selectedValue, selectedLabel]);
 
   const handleUnSelect = useCallback(() => {
-    log("unselect");
     setSelected(null);
     setInputValue("");
     setOpen(false);
@@ -172,7 +163,7 @@ export const Selection = ({
     >
       <div
         className={cn(
-          "border-2 border-border min-h-10 w-full rounded-xs bg-background flex items-center px-4 gap-2 focus-within::outline-1 focus-within:outline-pink focus-within:border-pink focus-within:border-2",
+          "border-2 border-border min-h-12 w-full rounded-md bg-background flex items-center px-4 gap-2 focus-within::outline-1 focus-within:outline-pink focus-within:border-pink focus-within:border-2",
         )}
         onClick={() => {
           if (disabled) return;
@@ -198,12 +189,10 @@ export const Selection = ({
             value={inputValue}
             disabled={disabled}
             onValueChange={(value) => {
-              log("input:change", value);
               setInputValue(value);
               inputProps?.onValueChange?.(value);
             }}
             onBlur={(e) => {
-              log("input:blur", { onScrollbar });
               if (!onScrollbar) {
                 setOpen(false);
               }
@@ -211,11 +200,9 @@ export const Selection = ({
               inputProps?.onBlur?.(e);
             }}
             onFocus={(e) => {
-              log("input:focus -> open");
               setOpen(true);
 
               if (triggerSearchOnFocus) {
-                log("search:onFocus", debouncedSearch);
                 onSearch?.(debouncedSearch);
               }
 
@@ -272,7 +259,6 @@ export const Selection = ({
                         key={option.value}
                         value={option.label}
                         onSelect={() => {
-                          log("option:select", option);
                           setSelected(option);
                           setInputValue(option.label);
                           setOpen(false);

@@ -10,10 +10,10 @@ const font = Domine({
 
 export const Logo = ({ className }: { className?: string }) => {
   return (
-    <Link href="/" aria-label="Smart Point" className={cn("shrink-0 lg:gap-1 lg:px-6", className)}>
-      <span className={cn("inline-block aspect-115/22 shrink-0 text-2xl font-bold select-none text-white", font.className)}>
+    <Link href="/" aria-label="Smart Point" className={cn("shrink-0 gap-1 px-6", className)}>
+      <h1 className={cn("inline-block aspect-115/22 shrink-0 text-2xl font-bold select-none text-[#1cb0f6]", font.className)}>
         Smart Point
-      </span>
+      </h1>
     </Link>
   );
 }

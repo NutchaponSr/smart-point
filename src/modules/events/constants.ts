@@ -1,3 +1,16 @@
+const DAY_MS = 86_400_000;
+
+/** ปัดเวลาเป็นรายวัน (UTC) ให้ query key ของ carousel ตรงกันระหว่าง server prefetch และ client */
+export const getCarouselNow = () => Math.floor(Date.now() / DAY_MS) * DAY_MS;
+
+/** ประเภทกิจกรรมที่กำหนด BU/สังกัดผู้เข้าร่วมได้ */
+export const buRestrictedCategories = [
+  "internal_bu",
+  "specials_point",
+] as const;
+
+export type BuRestrictedCategory = (typeof buRestrictedCategories)[number];
+
 export const categories = {
   external: {
     th: "กิจกรรมภายนอก",

@@ -23,7 +23,7 @@ export const Pagination = ({
     >
       <Button
         type="button"
-        variant="outline"
+        variant="default"
         size="icon"
         disabled={!canGoBack}
         aria-label="Previous page"
@@ -33,7 +33,7 @@ export const Pagination = ({
       </Button>
       <Button
         type="button"
-        variant="outline"
+        variant="default"
         size="icon"
         disabled={!canGoForward}
         aria-label="Next page"

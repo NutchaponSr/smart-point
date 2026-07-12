@@ -26,5 +26,12 @@ export const links = [
       th: "กิจกรรม",
       en: "Event",
     },
-  }
+  },
+  {
+    slug: "news",
+    name: {
+      th: "ข่าวสาร",
+      en: "News",
+    },
+  },
 ];

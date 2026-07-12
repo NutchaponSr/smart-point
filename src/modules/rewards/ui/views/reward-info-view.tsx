@@ -1,15 +1,16 @@
 "use client";
 
+import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { GoStarFill } from "react-icons/go";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
+import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -19,13 +20,12 @@ import { Review } from "@/modules/rewards/ui/components/review";
 
 interface Props {
   rewardId: string;
+  className?: string;
 }
 
-export const RewardInfoView = ({ rewardId }: Props) => {
+export const RewardInfoView = ({ rewardId, className }: Props) => {
   const crpc = useCRPC();
   const router = useRouter();
-
-  const [quantity, setQuantity] = useState(0);
 
   const { data: reward } = useSuspenseQuery(crpc.reward.getOne.queryOptions({ rewardId }));
 
@@ -36,7 +36,7 @@ export const RewardInfoView = ({ rewardId }: Props) => {
 
     addCart.mutate({
       rewardId,
-      quantity,
+      quantity: 1,
     }, {
       onSuccess: () => {
         router.push("/checkout");
@@ -45,8 +45,13 @@ export const RewardInfoView = ({ rewardId }: Props) => {
   }
 
   return (
-    <section className="mx-auto w-full max-w-product-page lg:py-16 p-4 lg:px-32">
-      <article className="relative grid rounded-xs border-2 border-border bg-background lg:grid-cols-[2fr_1fr]">
+    <section
+      className={cn(
+        "mx-auto w-full max-w-product-page lg:py-16 p-4 lg:px-32",
+        className,
+      )}
+    >
+      <article className="relative grid rounded-xs border-2 border-border bg-background lg:grid-cols-[2fr_1.5fr]">
         <figure className="group relative col-span-full overflow-hidden rounded-t-xs border-b-2 border-border bg-cover">
           <img src={reward.image || placeholder.src} alt={reward.name} loading="lazy" className="w-full" />
         </figure>
@@ -57,14 +62,9 @@ export const RewardInfoView = ({ rewardId }: Props) => {
           </header>
           <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,1fr)]">
             <div className="px-6 py-4 outline-2 outline-offset-0 outline-border">
-              <div className="relative grid w-fit border-[1.5px] border-border">
-                <div
-                  className="bg-pink px-2 py-1"
-                  itemProp="point"
-                  content={String(reward.pointCost)}
-                >
-                  {reward.pointCost}
-                </div>
+              <div className="w-fit flex items-center gap-1">
+                <img src={Coin.src} alt="Coin" className="size-6" />
+                <span className="text-base font-medium text-[#1cb0f6]">{reward.pointCost}</span>
               </div>
             </div>
             <div className="flex items-center px-6 py-4 max-sm:col-span-full">
@@ -80,31 +80,7 @@ export const RewardInfoView = ({ rewardId }: Props) => {
         
         <section>
           <form onSubmit={onSubmit} className="grid gap-4 p-6 not-first:border-t-2">
-            <fieldset className="flex flex-col border-none gap-2">
-              <legend className="relative mb-2 flex w-full items-center justify-between text-base leading-snug font-bold [&_a]:font-normal">
-                <label className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30">
-                  จำนวน
-                </label>
-              </legend>
-              <Input 
-                required
-                placeholder="0"
-                type="number"
-                min={1}
-                max={reward.pointCost}
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value))}
-                onBlur={() => {
-                  if (quantity < 0) {
-                    setQuantity(0);
-                  }
-                  if (quantity > reward.pointCost) {
-                    setQuantity(reward.pointCost);
-                  }
-                }}
-              />
-            </fieldset>
-            <Button type="submit">
+            <Button type="submit" disabled={addCart.isPending}>
               เพิ่มลงรถเข็น
             </Button>
           </form>

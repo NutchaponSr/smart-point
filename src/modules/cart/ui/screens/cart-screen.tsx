@@ -5,14 +5,15 @@ import checkoutImage from "../../../../../public/checkout.png";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { RiShoppingBag3Line } from "react-icons/ri";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { Button } from "@/components/ui/button";
 
-import { PointHero } from "@/modules/wallets/ui/components/point-hero";
 import { CheckoutItem } from "@/modules/cart/ui/components/checkout-item";
 import { CheckoutSummary } from "@/modules/cart/ui/components/checkout-summary";
+import { Currencies } from "../components/currency";
 
 export const CartScreen = () => {
   const crpc = useCRPC();
@@ -23,82 +24,129 @@ export const CartScreen = () => {
 
   const checkout = useMutation(crpc.cart.redeemCart.mutationOptions());
   const remove = useMutation(crpc.cart.removeCartItem.mutationOptions());
-  const updateQty = useMutation(crpc.cart.updateCartItemQuantity.mutationOptions());
 
-  if (!cart.items.length) {
+  const itemCount = cart.items.length;
+  const canAfford = wallet.receivingBudget >= cart.totalPoints;
+  const pointsAfterCheckout = wallet.receivingBudget - cart.totalPoints;
+
+  if (!itemCount) {
     return (
-      <div className="grid gap-8 p-4 md:p-8 md:px-16">
-        <div className="grid justify-items-center gap-3 rounded border-2 border-dashed border-border bg-background p-6 text-center [&>.icon]:text-xl">
-          <figure className="w-full">
-            <img src={checkoutImage.src} alt="Checkout" className="w-full rounded-xs" />
-          </figure>
-          <h3 className="text-lg font-normal leading-snug">คุณยังไม่ได้เพิ่มอะไรเลย...ในตอนนี้!</h3>
-          <p>เมื่อคุณทำแล้ว รายการจะแสดงขึ้นที่นี่เพื่อให้คุณดำเนินการสั่งซื้อให้เสร็จสมบูรณ์</p>
+      <div className="flex flex-col items-center gap-6 rounded-xl border-2 border-dashed border-border bg-muted/30 px-6 py-10 text-center sm:px-10 sm:py-14">
+        <figure className="w-full max-w-sm overflow-hidden rounded-lg">
+          <img
+            src={checkoutImage.src}
+            alt=""
+            className="w-full object-cover"
+          />
+        </figure>
 
-          <Link href="/rewards">
-            <Button variant="elevated" size="lg" className="bg-pink hover:bg-pink">
-              ค้นหารางวัล
-            </Button>
-          </Link>
+        <div className="grid max-w-md gap-2">
+          <h2 className="text-xl font-semibold">รถเข็นว่างเปล่า</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            ยังไม่มีรางวัลในรถเข็น เลือกรางวัลที่ชอบแล้วกลับมาแลกพอยต์ได้ที่นี่
+          </p>
         </div>
+
+        <Link href="/rewards">
+          <Button size="lg" className="bg-pink hover:bg-pink">
+            <RiShoppingBag3Line className="size-5" />
+            ค้นหารางวัล
+          </Button>
+        </Link>
       </div>
     );
   }
 
+  const confirmButton = (
+    <Button
+      size="lg"
+      className="w-full"
+      disabled={checkout.isPending || !canAfford}
+      onClick={() =>
+        checkout.mutate(
+          {},
+          {
+            onSuccess: () => {
+              router.push("/purchases");
+              toast.success("แลกรางวัลสำเร็จ");
+            },
+            onError: (err) => {
+              const msg =
+                err instanceof Error ? err.message : "แลกรางวัลไม่สำเร็จ";
+              toast.error(msg);
+            },
+          },
+        )
+      }
+    >
+      {checkout.isPending ? "กำลังดำเนินการ..." : "ยืนยันแลกรางวัล"}
+    </Button>
+  );
+
   return (
-    <div className="grid gap-8 p-4 md:p-8 md:px-16">
-      <div className="grid grid-cols-1 items-start gap-x-16 gap-y-8 lg:grid-cols-[2fr_minmax(26rem,1fr)]">
-        <div className="grid gap-6">
-          <div role="list" className="rounded-xs border-2 border-border bg-background">
-            {cart.items.map((item) => (
-              <CheckoutItem
-                key={item._id}
-                item={item}
-                onRemove={() => remove.mutate({ cartItemId: item._id })}
-                onUpdateQuantity={(quantity) =>
-                  updateQty.mutate(
-                    { cartItemId: item._id, quantity },
-                    {
-                      onError: (err) => {
-                        const msg =
-                          err instanceof Error
-                            ? err.message
-                            : "อัปเดตจำนวนไม่สำเร็จ";
-                        toast.error(msg);
-                      },
+    <div className="grid grid-cols-1 items-start gap-6 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:gap-8 lg:pb-0">
+      <section className="grid gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">
+            รายการรางวัล
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({itemCount})
+            </span>
+          </h2>
+        </div>
+
+        <div className="overflow-hidden rounded-md border-2 bg-background">
+          {cart.items.map((item) => (
+            <CheckoutItem
+              key={item._id}
+              item={item}
+              onRemove={() =>
+                remove.mutate(
+                  { cartItemId: item._id },
+                  {
+                    onError: (err) => {
+                      const msg =
+                        err instanceof Error ? err.message : "ลบรายการไม่สำเร็จ";
+                      toast.error(msg);
                     },
-                  )
-                }
-                isUpdating={
-                  updateQty.isPending &&
-                  updateQty.variables?.cartItemId === item._id
-                }
-              />
-            ))}
-          </div>
-
-          <CheckoutSummary totalPoints={cart.totalPoints} />
+                  },
+                )
+              }
+              isRemoving={
+                remove.isPending && remove.variables?.cartItemId === item._id
+              }
+            />
+          ))}
         </div>
+      </section>
 
-        <div className="flex flex-col gap-6">
-          <PointHero 
-            title="ยอดพอยต์คงเหลือ"
-            points={wallet.receivingBudget}
-            variant="orange"
-          />
+      <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
+        <Currencies />
+        <CheckoutSummary
+          totalPoints={cart.totalPoints}
+          itemCount={itemCount}
+        />
 
-          
-          <Button onClick={() => 
-            checkout.mutate({}, { 
-              onSuccess: () => {
-                router.push("/purchases");
-                toast.success("จ่ายสำเร็จ");
-              } 
-            }
-          )}>
-            จ่าย
-          </Button>
-        </div>
+        {!canAfford ? (
+          <p className="rounded-md border-2 border-[#ff0000] px-4 py-3 text-sm font-semibold text-[#ff0000]">
+            พอยต์ไม่เพียงพอ ขาดอีก {cart.totalPoints - wallet.receivingBudget}{" "}
+            พอยต์
+          </p>
+        ) : (
+          <p className="px-1 text-sm text-muted-foreground">
+            หลังแลกจะเหลือ{" "}
+            <span className="font-semibold text-foreground tabular-nums">
+              {pointsAfterCheckout}
+            </span>{" "}
+            พอยต์
+          </p>
+        )}
+
+        <div className="hidden lg:block">{confirmButton}</div>
+      </aside>
+
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-[#e5e5e5] bg-background p-4 lg:hidden">
+        {confirmButton}
       </div>
     </div>
   );

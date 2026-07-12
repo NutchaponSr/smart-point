@@ -24,7 +24,9 @@ const Page = async ({ searchParams }: Props) => {
 
   return (
     <HydrateClient>
-      <LeaderboardView />
+      <div className="mx-auto max-w-[1058px] pt-6 w-full">
+        <LeaderboardView />
+      </div>
     </HydrateClient>
   );
 };

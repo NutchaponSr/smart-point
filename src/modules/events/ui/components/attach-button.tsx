@@ -1,11 +1,19 @@
 "use client";
 
+import CoinIcon from "../../../../../public/coin.svg";
+
 import { ApiOutputs } from "@convex/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  BsCheckCircleFill,
+  BsCloudUploadFill,
+} from "react-icons/bs";
 
 import { useCRPC } from "@/lib/convex/crpc";
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +26,17 @@ interface Props {
   event: ApiOutputs["activity"]["list"]["page"][0];
 }
 
-const IMAGE_MAX_BYTES = 1_048_576;
-const PDF_MAX_BYTES = 5_242_880;
+const PDF_MAX_BYTES = 5 * 1024 * 1024;
+
+const categoryBadgeClassName: Record<
+  ApiOutputs["activity"]["list"]["page"][0]["category"],
+  string
+> = {
+  external: "bg-[#ddf4ff] text-[#1899d6]",
+  internal: "bg-[#d7ffb8] text-[#58a700]",
+  internal_bu: "bg-[#f3e0ff] text-[#a568cc]",
+  specials_point: "bg-[#ffe8c2] text-[#cc7800]",
+};
 
 function formatBytesToMb(bytes: number) {
   return `${(bytes / 1_048_576).toFixed(0)} MB`;
@@ -39,26 +56,25 @@ export const AttachButton = ({ event }: Props) => {
     crpc.activity.attachEvidence.mutationOptions(),
   );
 
+  const evidenceFileName = event.myParticipation.evidenceFileName;
+  const points = event.myParticipation.pointAwarded ?? event.point;
+
   const onPick: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     setLocalError(null);
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
 
-    const isPdf = file.type === "application/pdf";
-    const isImage = file.type.startsWith("image/");
-    if (!isPdf && !isImage) {
-      setLocalError("รองรับเฉพาะไฟล์รูปภาพหรือ PDF");
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      setLocalError("รองรับเฉพาะไฟล์ PDF");
       return;
     }
 
-    const maxBytes = isPdf ? PDF_MAX_BYTES : IMAGE_MAX_BYTES;
-    if (file.size > maxBytes) {
-      setLocalError(
-        isPdf
-          ? `ไฟล์ PDF ต้องไม่เกิน ${formatBytesToMb(PDF_MAX_BYTES)}`
-          : `รูปภาพต้องไม่เกิน ${formatBytesToMb(IMAGE_MAX_BYTES)}`,
-      );
+    if (file.size > PDF_MAX_BYTES) {
+      setLocalError(`ไฟล์ PDF ต้องไม่เกิน ${formatBytesToMb(PDF_MAX_BYTES)}`);
       return;
     }
 
@@ -68,7 +84,7 @@ export const AttachButton = ({ event }: Props) => {
       const uploadResponse = await fetch(postUrl, {
         method: "POST",
         headers: {
-          "Content-Type": file.type || "application/octet-stream",
+          "Content-Type": "application/pdf",
         },
         body: file,
       });
@@ -103,60 +119,104 @@ export const AttachButton = ({ event }: Props) => {
   return (
     <Dialog>
       <DialogTrigger
-        className="rounded-xs border-2 border-border bg-background px-2 py-1 text-sm font-normal"
+        type="button"
         disabled={isUploading}
+        className={cn(
+          buttonVariants({ variant: "secondary" }),
+          "w-full tracking-wide",
+        )}
       >
-        แนบหลักฐาน
+        {isUploading ? "กำลังอัปโหลด..." : "แนบหลักฐาน"}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="overflow-hidden rounded-md border-2 border-[#e5e5e5] p-0 sm:max-w-md gap-0 shadow-none ring-0">
         <DialogHidden />
-        <div className="flex flex-col gap-4 py-2 px-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-start gap-2">
-              <p className="text-sm md:text-base font-bold whitespace-pre-wrap wrap-break-word">
-                {event.name}
-              </p>
-              <div className="bg-pink border-[1.5px] border-border px-2 py-1 text-sm font-normal">
-                {event.point}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground rounded-lg bg-muted px-2 py-1">
-                <div className="size-2 rounded-full bg-orange shrink-0" />
-                {categories[event.category].th}
-              </div>
-            </div>
-          </div>
 
+        <header className="border-b-2 border-[#e5e5e5] bg-[#ddf4ff] px-4 py-4">
+          <h2 className="text-base font-bold text-[#1cb0f6]">แนบหลักฐาน</h2>
+          <p className="mt-1 text-sm font-medium text-[#777]">
+            อัปโหลดไฟล์ PDF เพื่อยืนยันการเข้าร่วม
+          </p>
+        </header>
+
+        <div className="flex flex-col gap-3 border-b-2 border-[#e5e5e5] px-4 py-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "rounded-md px-2 py-1.5 text-xs font-bold",
+                categoryBadgeClassName[event.category],
+              )}
+            >
+              {categories[event.category].th}
+            </span>
+            <span className="flex items-center gap-1 rounded-md px-2 py-1.5 text-[#1cb0f6] font-semibold">
+              <img
+                src={CoinIcon.src}
+                alt="Coin"
+                className="size-5 fill-current"
+              />
+              {points}
+            </span>
+          </div>
+          <h3 className="text-base font-bold text-[#4b4b4b] break-all">
+            {event.name}
+          </h3>
+        </div>
+
+        <div className="px-4 py-4">
+          {evidenceFileName ? (
+            <div className="flex items-start gap-2.5 rounded-md border-2 border-[#e5e5e5] bg-[#d7ffb8] px-3 py-3">
+              <BsCheckCircleFill className="mt-0.5 size-4 shrink-0 text-[#58a700]" />
+              <div className="min-w-0 grid gap-0.5">
+                <p className="text-sm font-bold text-[#58a700]">แนบหลักฐานแล้ว</p>
+                <p className="truncate text-sm font-medium text-[#4b4b4b]">
+                  {evidenceFileName}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid justify-items-center gap-3 rounded-md border-2 border-dashed border-[#e5e5e5] bg-[#fafafa] p-6 text-center">
+              <BsCloudUploadFill className="size-10 text-[#afafaf]" />
+              <div className="grid gap-1">
+                <h3 className="text-base font-bold text-[#4b4b4b]">
+                  ยังไม่มีไฟล์หลักฐาน
+                </h3>
+                <p className="text-sm text-[#777]">
+                  รองรับเฉพาะไฟล์ PDF ขนาดไม่เกิน {formatBytesToMb(PDF_MAX_BYTES)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {localError ? (
+            <p className="mt-3 text-sm font-semibold text-rose-500">
+              {localError}
+            </p>
+          ) : null}
+        </div>
+
+        <footer className="border-t-2 border-[#e5e5e5] bg-white p-4">
           <input
             ref={inputRef}
             type="file"
-            accept="image/*,.pdf,application/pdf"
+            accept=".pdf,application/pdf"
             className="sr-only"
             onChange={onPick}
             disabled={isUploading}
           />
-          <button
+          <Button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            variant="secondary"
+            className="w-full tracking-wide"
             disabled={isUploading}
-            className="rounded-xs border-2 border-border bg-pink px-3 py-2 text-sm font-medium disabled:opacity-50"
+            onClick={() => inputRef.current?.click()}
           >
-            {isUploading ? "กำลังอัปโหลด..." : "เลือกไฟล์หลักฐาน"}
-          </button>
-          <p className="text-xs text-muted-foreground">
-            รองรับรูปภาพไม่เกิน {formatBytesToMb(IMAGE_MAX_BYTES)} และ PDF ไม่เกิน{" "}
-            {formatBytesToMb(PDF_MAX_BYTES)}
-          </p>
-          {event.myParticipation.evidenceFileName ? (
-            <p className="text-xs text-muted-foreground">
-              แนบล่าสุด: {event.myParticipation.evidenceFileName}
-            </p>
-          ) : null}
-          {localError ? (
-            <p className="text-sm text-destructive">{localError}</p>
-          ) : null}
-        </div>
+            {isUploading
+              ? "กำลังอัปโหลด..."
+              : evidenceFileName
+                ? "เปลี่ยนไฟล์หลักฐาน"
+                : "เลือกไฟล์หลักฐาน"}
+          </Button>
+        </footer>
       </DialogContent>
     </Dialog>
   );

@@ -1,51 +1,51 @@
 import { endOfDay, startOfDay } from "date-fns";
-import { BsCalendar2Event } from "react-icons/bs";
 import { type DateRange } from "react-day-picker";
 
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 
-import { useTransactionFilters } from "@/modules/transactions/stores/use-transaction-filter";
+type DateFilterProps = {
+  children: React.ReactNode;
+  from: number | null;
+  to: number | null;
+  onChange: (range: { from: number | null; to: number | null }) => void;
+};
 
-export const DateFilter = ({ children }: { children: React.ReactNode }) => {
-  const [filters, setFilters] = useTransactionFilters();
-
+export const DateFilter = ({
+  children,
+  from,
+  to,
+  onChange,
+}: DateFilterProps) => {
   const date: DateRange | undefined =
-    filters.from || filters.to
+    from != null || to != null
       ? {
-        from: filters.from ? new Date(filters.from) : undefined,
-        to: filters.to ? new Date(filters.to) : undefined,
-      }
+          from: from != null ? new Date(from) : undefined,
+          to: to != null ? new Date(to) : undefined,
+        }
       : undefined;
 
   const onSelect = (range: DateRange | undefined) => {
     if (!range?.from) {
-      void setFilters({ ...filters, from: null, to: null, page: 0 });
+      onChange({ from: null, to: null });
       return;
     }
     const fromMs = startOfDay(range.from).getTime();
     const endDate = range.to ?? range.from;
     const toMs = endOfDay(endDate).getTime();
-    void setFilters({
-      ...filters,
-      from: fromMs,
-      to: toMs,
-      page: 0,
-    });
+    onChange({ from: fromMs, to: toMs });
   };
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        {children}
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent align="end" sideOffset={12} className="w-fit">
-        <div className="flex items-center justify-end p-2 border-b-2 border-border border-dashed">
+        <div className="flex items-center justify-end border-b-2 border-dashed border-border p-2">
           <Button variant="ghost" size="sm" onClick={() => onSelect(undefined)}>
             Clear
           </Button>

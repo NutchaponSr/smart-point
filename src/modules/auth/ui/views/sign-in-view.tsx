@@ -34,8 +34,8 @@ export const SignInView = () => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="grid gap-8">
-        <fieldset className="flex min-w-0 flex-col gap-2 border-none"> 
+      <div className="flex flex-col text-base relative text-start w-full">
+        <fieldset className="flex min-w-0 flex-col gap-1 border-none"> 
           <legend className="relative mb-2 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
             <Label 
               htmlFor="username"
@@ -51,11 +51,11 @@ export const SignInView = () => {
             value={username}
             placeholder="รหัสพนักงาน"
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full rounded-lg bg-brand-sky/60 px-6 py-4 text-lg font-medium text-brand-navy placeholder:text-brand-navy/70 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="caret-[#49c0f8] placeholder:text-[#f1f7fb] min-w-0 text-white bg-[#202f36] border-2 border-[#37464f] flex rounded-md overflow-hidden"
           />
         </fieldset>
 
-        <fieldset className="flex min-w-0 flex-col gap-2 border-none"> 
+        <fieldset className="flex min-w-0 flex-col gap-1 border-none"> 
           <legend className="relative mb-2 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
             <Label 
               htmlFor="password"
@@ -71,12 +71,13 @@ export const SignInView = () => {
             value={password}
             placeholder="รหัสผ่าน"
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg bg-brand-sky/60 px-6 py-4 text-lg font-medium text-brand-navy placeholder:text-brand-navy/70 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="caret-[#49c0f8] placeholder:text-[#f1f7fb] min-w-0 text-white bg-[#202f36] border-2 border-[#37464f] flex rounded-md overflow-hidden"
           />
+          <span className="text-[#52656d]">5 ตัวท้ายของหมายเลขประจำตัวประชาชน</span>
         </fieldset>
 
-        <Button variant="elevated" type="submit" className="bg-pink">
-          Login
+        <Button variant="secondary" type="submit" className="mt-4">
+          เข้าสู่ระบบ
         </Button>
       </div>
     </form>

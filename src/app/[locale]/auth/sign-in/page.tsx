@@ -3,7 +3,7 @@ import { AuthScreen } from "@/modules/auth/ui/screens/auth-screen";
 
 const SignInPage = () => {
   return (
-    <AuthScreen title="Log in">
+    <AuthScreen title="เข้าสู่ระบบ">
       <SignInView />
     </AuthScreen>
   );

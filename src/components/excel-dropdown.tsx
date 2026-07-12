@@ -32,7 +32,7 @@ export const ExcelDropdown = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="elevated" size="iconLg">
+        <Button size="iconLg">
           <GoFileSymlinkFile className="size-5 stroke-[0.25]" />
         </Button>
       </DropdownMenuTrigger>

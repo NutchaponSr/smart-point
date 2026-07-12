@@ -20,6 +20,7 @@ export const PERMISSIONS = {
   REWARD_MANAGE: "reward:manage",
   TRANSACTION_MANAGE: "transaction:manage",
   EVENT_MANAGE: "event:manage",
+  NEWS_MANAGE: "news:manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -32,6 +33,7 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     PERMISSIONS.REWARD_MANAGE,
     PERMISSIONS.TRANSACTION_MANAGE,
     PERMISSIONS.EVENT_MANAGE,
+    PERMISSIONS.NEWS_MANAGE,
   ],
   user: [],
 };

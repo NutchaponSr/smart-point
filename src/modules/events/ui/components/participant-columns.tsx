@@ -77,7 +77,6 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
           <Button
             type="button"
             size="sm"
-            variant="outline"
             onClick={() => options.onOpenEvidence(row.original)}
           >
             ดูไฟล์

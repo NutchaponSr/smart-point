@@ -50,6 +50,8 @@ export declare const api: {
       "public",
       {
         rows: Array<{
+          allowedDepartments?: Array<string>;
+          allowedDivisions?: Array<string>;
           category: "external" | "internal" | "internal_bu" | "specials_point";
           description?: string | null;
           endDate?: number | null;
@@ -78,6 +80,8 @@ export declare const api: {
       "mutation",
       "public",
       {
+        allowedDepartments?: Array<string>;
+        allowedDivisions?: Array<string>;
         category: "external" | "internal" | "internal_bu" | "specials_point";
         description?: string | null;
         endDate?: number | null;
@@ -106,6 +110,7 @@ export declare const api: {
       "public",
       {
         cursor?: string | null;
+        eligibleOnly?: boolean | null;
         limit: number;
         maxParticipants?: number | null;
         minParticipants?: number | null;
@@ -120,7 +125,7 @@ export declare const api: {
     join: FunctionReference<
       "mutation",
       "public",
-      { activityId: string; employeeId: string },
+      { activityId: string; employeeId?: string | null },
       any
     >;
     leave: FunctionReference<
@@ -143,6 +148,12 @@ export declare const api: {
       },
       any
     >;
+    recommended: FunctionReference<
+      "query",
+      "public",
+      { limit: number; now?: number | null },
+      any
+    >;
     remove: FunctionReference<
       "mutation",
       "public",
@@ -154,6 +165,8 @@ export declare const api: {
       "public",
       {
         activityId: string;
+        allowedDepartments?: Array<string>;
+        allowedDivisions?: Array<string>;
         category?: "external" | "internal" | "internal_bu" | "specials_point";
         description?: string | null;
         endDate?: number | null;
@@ -278,6 +291,48 @@ export declare const api: {
       "query",
       "public",
       { period: "24hr" | "7d" | "30d" | "fullTime" },
+      any
+    >;
+  };
+  news: {
+    bulkDelete: FunctionReference<
+      "mutation",
+      "public",
+      { ids: Array<string> },
+      any
+    >;
+    create: FunctionReference<
+      "mutation",
+      "public",
+      {
+        body: string;
+        isPinned?: boolean;
+        isPublished: boolean;
+        summary?: string | null;
+        title: string;
+      },
+      any
+    >;
+    getLatest: FunctionReference<"query", "public", { limit?: number }, any>;
+    getList: FunctionReference<
+      "query",
+      "public",
+      { cursor?: string | null; limit: number; q?: string | null },
+      any
+    >;
+    getOne: FunctionReference<"query", "public", { newsId: string }, any>;
+    remove: FunctionReference<"mutation", "public", { newsId: string }, any>;
+    update: FunctionReference<
+      "mutation",
+      "public",
+      {
+        body?: string;
+        isPinned?: boolean;
+        isPublished?: boolean;
+        newsId: string;
+        summary?: string | null;
+        title?: string;
+      },
       any
     >;
   };
@@ -471,7 +526,12 @@ export declare const api: {
       "public",
       {
         cursor?: string | null;
+        from?: number | null;
         limit?: number;
+        max?: number | null;
+        min?: number | null;
+        q?: string | null;
+        to?: number | null;
         view?: "all" | "sent" | "received";
       },
       {
@@ -546,6 +606,12 @@ export declare const api: {
       },
       any
     >;
+    getMonthlyQuestProgress: FunctionReference<
+      "query",
+      "public",
+      { monthStart: number },
+      any
+    >;
     like: FunctionReference<
       "mutation",
       "public",
@@ -572,6 +638,8 @@ export declare const api: {
     getCurrentUser: FunctionReference<"query", "public", {}, any>;
   };
   wallet: {
+    dailyBonusHistory: FunctionReference<"query", "public", {}, any>;
+    dailyLogin: FunctionReference<"mutation", "public", {}, any>;
     getOne: FunctionReference<"query", "public", {}, any>;
   };
 };
@@ -769,6 +837,8 @@ export declare const internal: {
       "mutation",
       "internal",
       {
+        allowedDepartments?: Array<string>;
+        allowedDivisions?: Array<string>;
         category: "external" | "internal" | "internal_bu" | "specials_point";
         description?: string;
         endDate?: number;

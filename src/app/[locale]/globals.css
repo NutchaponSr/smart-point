@@ -62,7 +62,7 @@
   --brand-green: oklch(0.78 0.14 165);
   --brand-navy: oklch(0.38 0.11 262);
   --brand-orange: oklch(0.76 0.16 60);
-  --brand-mint: oklch(0.95 0.04 165);
+  --brand-mint: oklch(0.75 0.23 137.62);
   --brand-cream: oklch(0.96 0.015 85);
 }
 
@@ -73,7 +73,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: #4b4b4b;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -82,7 +82,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.59 0.21 31.01);
-  --border: oklch(0.205 0 0);
+  --border: #e5e5e5;
   --input: oklch(0.205 0 0);
   --ring: oklch(0.205 0 0);
   --chart-1: oklch(0.87 0 0);
@@ -152,7 +152,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground h-full;
+    @apply bg-background text-primary h-full;
   }
   html {
     @apply font-sans;

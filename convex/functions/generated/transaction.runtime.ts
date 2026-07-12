@@ -25,6 +25,7 @@ function createProcedureRegistry() {
   "exportAll": ["mutation", typedProcedureResolver(api["transaction"]["exportAll"], () => (require("../transaction") as Record<string, unknown>)["exportAll"])],
   "feeds": ["query", typedProcedureResolver(api["transaction"]["feeds"], () => (require("../transaction") as Record<string, unknown>)["feeds"])],
   "getMany": ["query", typedProcedureResolver(api["transaction"]["getMany"], () => (require("../transaction") as Record<string, unknown>)["getMany"])],
+  "getMonthlyQuestProgress": ["query", typedProcedureResolver(api["transaction"]["getMonthlyQuestProgress"], () => (require("../transaction") as Record<string, unknown>)["getMonthlyQuestProgress"])],
   "like": ["mutation", typedProcedureResolver(api["transaction"]["like"], () => (require("../transaction") as Record<string, unknown>)["like"])],
   "send": ["mutation", typedProcedureResolver(api["transaction"]["send"], () => (require("../transaction") as Record<string, unknown>)["send"])],
 } as const;

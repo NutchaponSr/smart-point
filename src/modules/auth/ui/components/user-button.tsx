@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "./user-avatar";
+import { Button } from "@/components/ui/button";
 
 export const UserButton = () => {
   const router = useRouter();
@@ -57,35 +58,30 @@ export const UserButtonDropdown = () => {
 
   const { data: session } = authClient.useSession();
 
-  const fallback = useMemo(
-    () => getAvatarInitialFromName(session?.user?.name ?? ""),
-    [session?.user?.name],
-  );
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div role="button" className="flex items-center gap-2 w-full px-6 py-4">
-          <UserAvatar 
-            name={fallback}
+        <Button variant="sidebar" size="lg" className="w-full justify-start">
+          <UserAvatar
+            name={session?.user?.name ?? ""}
             className={{
-              container: "size-6",
-              fallback: "text-sm font-medium rounded-full!",
+              container: "size-7",
             }}
           />
-          <span className="text-base text-white font-normal">{session?.user?.name.split(" ")[0]}</span>
-        </div>
+          <span className="text-lg font-medium text-[#777]">{session?.user?.name.split(" ")[0]}</span>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" alignOffset={4} side="bottom" sideOffset={6}>
         <DropdownMenuItem
+          className="h-8"
           onClick={() => {
             router.push("/settings");
           }}
         >
-          <BsGearFill className="size-5" />
           Settings
         </DropdownMenuItem>
         <DropdownMenuItem
+          className="h-8"
           onClick={() => {
             authClient.signOut({
               fetchOptions: {
@@ -96,7 +92,6 @@ export const UserButtonDropdown = () => {
             })
           }}
         >
-          <BsDoorOpen className="size-5" />
           Logout
         </DropdownMenuItem>
       </DropdownMenuContent>

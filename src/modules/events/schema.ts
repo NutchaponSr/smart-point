@@ -8,6 +8,8 @@ export const eventSchema = z.object({
   startDate: z.number(),
   endDate: z.number(),
   maxParticipants: z.number().min(1, { message: "กรุณากรอกจำนวนผู้เข้าร่วม" }),
+  allowedDivisions: z.array(z.string()),
+  allowedDepartments: z.array(z.string()),
 }).refine((data) => data.startDate <= data.endDate, {
   message: "วันที่เริ่มต้นต้องน้อยกว่าวันที่สิ้นสุด",
   path: ["startDate"],

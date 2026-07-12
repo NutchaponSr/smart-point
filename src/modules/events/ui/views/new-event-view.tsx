@@ -11,6 +11,7 @@ import { useCRPC } from "@/lib/convex/crpc";
 import { Button } from "@/components/ui/button";
 
 import { EventForm } from "@/modules/events/ui/components/event-form";
+import { EventBuSelector } from "@/modules/events/ui/components/event-bu-selector";
 import { EventPreview } from "@/modules/events/ui/components/event-preview";
 
 import { eventSchema, EventSchema } from "@/modules/events/schema";
@@ -26,10 +27,12 @@ export const NewEventView = () => {
       name: "",
       description: "",
       point: 0,
-      category: "internal",
+      category: "specials_point",
       startDate: new Date().getTime(),
       endDate: new Date().getTime(),
       maxParticipants: 0,
+      allowedDivisions: [],
+      allowedDepartments: [],
     },
   });
 
@@ -42,6 +45,8 @@ export const NewEventView = () => {
       startDate: data.startDate,
       endDate: data.endDate,
       maxParticipants: data.maxParticipants,
+      allowedDivisions: data.allowedDivisions,
+      allowedDepartments: data.allowedDepartments,
     }, {
       onSuccess: () => {
         form.reset();
@@ -56,12 +61,12 @@ export const NewEventView = () => {
           <div className="flex min-h-8 items-center justify-between gap-2">
             <h1 className="line-clamp-2 text-2xl hidden! sm:block!">เพิ่มกิจกรรม</h1>
             <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
-              <Link href={`/dashboard/events`}>
-                <Button variant="elevated" type="button">
+              <Link href={`/meta/events`}>
+                <Button type="button">
                   ยกเลิก
                 </Button>
               </Link>
-              <Button variant="elevated" className="bg-pink" type="submit">
+              <Button variant="secondary" type="submit">
                 บันทึกข้อมูล
               </Button>
             </div>
@@ -70,6 +75,7 @@ export const NewEventView = () => {
         <section className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <EventForm />
+            <EventBuSelector />
           </div>
           <aside className="sticky top-0 hidden h-screen flex-col gap-4 self-start overflow-y-auto bg-background p-6 lg:flex lg:border-l-2 lg:border-border">
             <div className="flex items-start justify-between gap-4">

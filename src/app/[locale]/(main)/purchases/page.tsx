@@ -13,6 +13,7 @@ interface Props {
 const Page = async ({ searchParams }: Props) => {
   const params = await loadPurchaseFilters(searchParams);
 
+  prefetch(crpc.wallet.getOne.queryOptions());
   prefetch(crpc.redemption.getMany.queryOptions({
     q: params.q,
     limit: params.limit,
@@ -24,7 +25,9 @@ const Page = async ({ searchParams }: Props) => {
 
   return (
     <HydrateClient>
-      <PurchasesView />
+      <div className="mx-auto max-w-[1058px] pt-6 w-full">
+        <PurchasesView />
+      </div>
     </HydrateClient>
   );
 };

@@ -16,10 +16,10 @@ import { SearchInput } from "@/components/search-input";
 
 type EventView = keyof typeof categories;
 const filterContainerClassName =
-  "grid divide-y-2 divide-solid divide-border rounded-xs border-2 border-border bg-background overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)] select-none";
+  "grid divide-y-2 divide-solid divide-border rounded-md border-2 bg-background overflow-y-auto lg:sticky lg:inset-y-4 lg:max-h-[calc(100vh-2rem)] select-none";
 
 const checkboxClassName =
-  "appearance-none size-[calc(1lh+0.125rem)] border-[1.5px] border-border bg-background text-base leading-snug shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 checked:bg-pink rounded-xs peer";
+  "appearance-none size-[calc(1lh+0.125rem)] border-[1.5px] bg-background text-base leading-snug shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 checked:bg-pink rounded-xs peer";
 
 const labelClassName =
   "inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 items-center";
@@ -87,7 +87,7 @@ export const EventFiltersPopover = () => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="iconLg">
+        <Button size="iconLg">
           <FilterIcon className="size-5" />
         </Button>
       </PopoverTrigger>
@@ -131,12 +131,43 @@ export const EventFiltersPopover = () => {
 export const EventFilters = () => {
   const [filters, setFilters] = useEventFilters();
 
+  const hasActiveFilters =
+    (filters.view?.length ?? 0) > 0 ||
+    (filters.status?.length ?? 0) > 0 ||
+    filters.q.length > 0;
+
+  const onClear = () => {
+    setFilters({
+      ...filters,
+      view: null,
+      status: null,
+      q: "",
+      page: 0,
+    });
+  };
+
   return (
     <div className={filterContainerClassName}>
+      <header className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <h2 className="relative z-1 text-base font-bold leading-snug">
+          ตัวกรอง
+        </h2>
+        {hasActiveFilters && (
+          <div className="grow text-right">
+            <button
+              type="button"
+              className="cursor-pointer underline"
+              onClick={onClear}
+            >
+              รีเซ็ต
+            </button>
+          </div>
+        )}
+      </header>
       <div className="flex flex-wrap items-center justify-between gap-4 p-4">
         <SearchInput
           value={filters.q}
-          placeholder="Search events"
+          placeholder="ค้นหากิจกรรม"
           onChange={(q) => updateFilter(filters, setFilters, "q", q)}
         />
       </div>

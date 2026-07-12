@@ -30,6 +30,19 @@ export const filterSearchParams = {
 
 export const loadTransactionFilters = createLoader(filterSearchParams);
 
+const feedViewValues = ["all", "sent", "received"] as const;
+
+export const feedFilterSearchParams = {
+  feedView: parseAsStringLiteral(feedViewValues).withDefault("all"),
+  feedQ: parseAsString.withDefault(""),
+  feedMin: parseAsFloat.withDefault(0),
+  feedMax: parseAsFloat.withDefault(0),
+  feedFrom: parseAsInteger,
+  feedTo: parseAsInteger,
+};
+
+export const loadFeedFilters = createLoader(feedFilterSearchParams);
+
 const params = {
   q: parseAsString.withDefault(""),
   period: parseAsStringLiteral(periodValues).withDefault("24hr"),

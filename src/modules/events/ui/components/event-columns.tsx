@@ -7,7 +7,8 @@ import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 import { EventActions } from "@/modules/events/ui/components/event-actions";
 
-import { categories } from "@/modules/events/constants";
+import { categories, buRestrictedCategories } from "@/modules/events/constants";
+import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
 
 type Event = ApiOutputs["activity"]["getMany"]["page"][0];
 
@@ -49,6 +50,35 @@ export const columns = (): ColumnDef<Event>[] => {
       cell: ({ row }) => (
         <span className="text-base font-normal">{categories[row.original.category].th}</span>
       ),
+    },
+    {
+      id: "allowedBu",
+      header: "BU",
+      cell: ({ row }) => {
+        if (
+          !buRestrictedCategories.includes(
+            row.original.category as (typeof buRestrictedCategories)[number],
+          )
+        ) {
+          return <span className="text-sm text-muted-foreground">—</span>;
+        }
+        const labels = formatAllowedBuLabels(
+          row.original.allowedDivisions,
+          row.original.allowedDepartments,
+        );
+        return (
+          <div className="flex max-w-xs flex-wrap gap-1">
+            {labels.map((label) => (
+              <span
+                key={label}
+                className="rounded-md bg-[#f3e0ff] px-2 py-0.5 text-xs font-medium text-[#a568cc]"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "joinedCount",

@@ -11,8 +11,6 @@ interface Props {
 
 export const RewardScreen = ({ hasNextPage, initialRecommends, initialRewards, onLoad }: Props) => {
   return (
-    <div className="grid gap-16! px-4 py-16 lg:ps-16 lg:pe-16">
-      <RewardContent rewards={initialRewards} hasNextPage={hasNextPage} onLoad={onLoad} />
-    </div>
+    <RewardContent rewards={initialRewards} hasNextPage={hasNextPage} onLoad={onLoad} />
   );
 };

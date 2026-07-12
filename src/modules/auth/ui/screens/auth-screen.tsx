@@ -5,15 +5,12 @@ interface Props {
   children: React.ReactNode;
 }
 
-export const AuthScreen = ({ children }: Props) => {
+export const AuthScreen = ({ title, children }: Props) => {
   return (
-    <div className="mx-auto w-full min-w-0 max-w-lg rounded-lg border-2 bg-card p-6 sm:p-12">
-      <h2 className="text-center text-3xl font-extrabold text-brand-navy sm:text-4xl">
-        ยินดีต้อนรับ
-      </h2>
-      <p className="mt-3 text-center text-base font-semibold text-brand-navy/80 sm:text-lg">
-        กรุณากรอกข้อมูลเพื่อเข้าสู่ระบบ
-      </p>
+    <div className="text-center relative mt-0 w-100">
+      <h1 className="text-2xl my-4 text-center font-bold leading-[40px] text-white">
+        {title}
+      </h1>
 
       {children}
     </div>

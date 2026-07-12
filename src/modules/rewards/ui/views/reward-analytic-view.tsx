@@ -4,14 +4,11 @@ import {
   useReactTable,
   getCoreRowModel,
   RowSelectionState,
-  flexRender,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { useConfirm } from "@/hooks/use-confirm";
@@ -20,16 +17,16 @@ import { usePagination } from "@/hooks/use-pagination";
 import { Button } from "@/components/ui/button";
 
 import { Main } from "@/components/main";
+import { DataTable } from "@/components/data-table";
 import { Pagination } from "@/components/pagniation";
+import { Navigations } from "@/components/navigations";
 
 import { columns } from "@/modules/rewards/ui/components/reward-columns";
+import { RewardFilters } from "@/modules/rewards/ui/components/reward-filters";
 
+import { links } from "@/modules/dashboard/constants";
 import { useRewardExcel } from "@/modules/rewards/hooks/use-reward-excel";
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
-import { DataTable } from "@/components/data-table";
-import { RewardFilters } from "../components/reward-filters";
-import { Navigations } from "@/components/navigations";
-import { links } from "@/modules/dashboard/constants";
 
 export const RewardAnalyticView = () => {
   const crpc = useCRPC();
@@ -124,8 +121,7 @@ export const RewardAnalyticView = () => {
               />
               {(table.getIsAllPageRowsSelected() || table.getIsSomePageRowsSelected()) && (
                 <Button 
-                  variant="elevated" 
-                  className="bg-destructive text-white"
+                  variant="dangerOutline"
                   onClick={onRemove}
                 >
                   ลบ

@@ -1,19 +1,35 @@
+import { startOfMonth } from "date-fns";
 import { SearchParams } from "nuqs/server";
 
 import { crpc, HydrateClient, prefetch } from "@/lib/convex/rsc";
 
+import { getCarouselNow } from "@/modules/events/constants";
 import { OverviewsView } from "@/modules/overviews/ui/views/overviews-view";
-import { loadTransactionFilters } from "@/modules/transactions/search-params";
+import {
+  loadFeedFilters,
+  loadTransactionFilters,
+} from "@/modules/transactions/search-params";
 
 interface Props {
   searchParams: Promise<SearchParams>;
 };
 
 const Page = async ({ searchParams }: Props) => {
-  const params = await loadTransactionFilters(searchParams);
+  const [params, feedParams] = await Promise.all([
+    loadTransactionFilters(searchParams),
+    loadFeedFilters(searchParams),
+  ]);
 
   prefetch(crpc.wallet.getOne.queryOptions());
+  prefetch(crpc.news.getLatest.queryOptions({ limit: 5 }));
   prefetch(crpc.reward.getMany.queryOptions());
+  prefetch(crpc.transaction.getMonthlyQuestProgress.queryOptions({ monthStart: startOfMonth(new Date()).getTime() }));  
+  prefetch(
+    crpc.activity.recommended.queryOptions({
+      limit: 10,
+      now: getCarouselNow(),
+    }),
+  );
   prefetch(
     crpc.transaction.getMany.queryOptions({
       q: params.q,
@@ -29,10 +45,22 @@ const Page = async ({ searchParams }: Props) => {
       by: params.by,
     })
   );
+  prefetch(
+    crpc.transaction.feeds.infiniteQueryOptions({
+      view: feedParams.feedView,
+      q: feedParams.feedQ || null,
+      min: feedParams.feedMin > 0 ? feedParams.feedMin : null,
+      max: feedParams.feedMax > 0 ? feedParams.feedMax : null,
+      from: feedParams.feedFrom,
+      to: feedParams.feedTo,
+    }),
+  );
 
   return (
     <HydrateClient>
-      <OverviewsView />
+      <div className="mx-auto w-full max-w-[1058px] pt-6">
+        <OverviewsView />
+      </div>
     </HydrateClient>
   );
 }

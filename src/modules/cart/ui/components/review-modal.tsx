@@ -87,7 +87,6 @@ export const ReviewModal = () => {
             <Button
               type="submit"
               className="w-full bg-pink hover:bg-pink"
-              variant="elevated"
               disabled={disableSubmit}
             >
               Post Review

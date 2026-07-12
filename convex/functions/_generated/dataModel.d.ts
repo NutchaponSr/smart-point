@@ -72,6 +72,8 @@ export type DataModel = {
   };
   activity: {
     document: {
+      allowedDepartments?: null | Array<null | string>;
+      allowedDivisions?: null | Array<null | string>;
       category: "external" | "internal" | "internal_bu" | "specials_point";
       createdAt?: number;
       description?: null | string;
@@ -86,6 +88,8 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "allowedDepartments"
+      | "allowedDivisions"
       | "category"
       | "createdAt"
       | "_creationTime"
@@ -639,16 +643,63 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  news: {
+    document: {
+      body: string;
+      createdAt?: number;
+      createdBy: Id<"user">;
+      isPinned?: null | boolean;
+      isPublished: boolean;
+      publishedAt?: null | number;
+      summary?: null | string;
+      title: string;
+      updatedAt?: null | number;
+      _id: Id<"news">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "body"
+      | "createdAt"
+      | "createdBy"
+      | "_creationTime"
+      | "_id"
+      | "isPinned"
+      | "isPublished"
+      | "publishedAt"
+      | "summary"
+      | "title"
+      | "updatedAt";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_createdBy: ["createdBy", "_creationTime"];
+      by_isPublished: ["isPublished", "_creationTime"];
+      by_isPublished_publishedAt: [
+        "isPublished",
+        "publishedAt",
+        "_creationTime",
+      ];
+      by_publishedAt: ["publishedAt", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   pointLedger: {
     document: {
       balanceAfter: number;
-      balanceType: "giving" | "receiving";
+      balanceType: "giving" | "receiving" | "special";
       createdAt?: number;
       delta: number;
       employeeId: Id<"employee">;
       note?: null | string;
       sourceId?: null | string;
-      sourceType: "transaction" | "redemption" | "activity" | "monthly_reset";
+      sourceType:
+        | "transaction"
+        | "redemption"
+        | "activity"
+        | "monthly_reset"
+        | "daily_login"
+        | "monthly_quest";
       _id: Id<"pointLedger">;
       _creationTime: number;
     };
@@ -667,6 +718,7 @@ export type DataModel = {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
       by_employeeId: ["employeeId", "_creationTime"];
+      by_employeeId_sourceType: ["employeeId", "sourceType", "_creationTime"];
       by_sourceType_sourceId: ["sourceType", "sourceId", "_creationTime"];
     };
     searchIndexes: {};
@@ -923,7 +975,9 @@ export type DataModel = {
       employeeId: Id<"employee">;
       givingBudget: number;
       lastBudgetUpdate: number;
+      lastDailyBonus?: null | number;
       receivingBudget: number;
+      specialBudget?: null | number;
       _id: Id<"wallet">;
       _creationTime: number;
     };
@@ -933,7 +987,9 @@ export type DataModel = {
       | "givingBudget"
       | "_id"
       | "lastBudgetUpdate"
-      | "receivingBudget";
+      | "lastDailyBonus"
+      | "receivingBudget"
+      | "specialBudget";
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];

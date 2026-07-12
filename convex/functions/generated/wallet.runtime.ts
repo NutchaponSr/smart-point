@@ -19,6 +19,8 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
+  "dailyBonusHistory": ["query", typedProcedureResolver(api["wallet"]["dailyBonusHistory"], () => (require("../wallet") as Record<string, unknown>)["dailyBonusHistory"])],
+  "dailyLogin": ["mutation", typedProcedureResolver(api["wallet"]["dailyLogin"], () => (require("../wallet") as Record<string, unknown>)["dailyLogin"])],
   "getOne": ["query", typedProcedureResolver(api["wallet"]["getOne"], () => (require("../wallet") as Record<string, unknown>)["getOne"])],
   "initial": ["mutation", typedProcedureResolver(internal["wallet"]["initial"], () => (require("../wallet") as Record<string, unknown>)["initial"])],
   "monthlyReset": ["mutation", typedProcedureResolver(internal["wallet"]["monthlyReset"], () => (require("../wallet") as Record<string, unknown>)["monthlyReset"])],

@@ -1,24 +1,41 @@
-import { RiCopperCoinFill } from "react-icons/ri";
+import Coin from "../../../../../public/coin.svg";
+
+import { cn } from "@/lib/utils";
 
 interface Props {
   totalPoints: number;
+  itemCount: number;
+  className?: string;
 }
 
-export const CheckoutSummary = ({ totalPoints }: Props) => {
+export const CheckoutSummary = ({
+  totalPoints,
+  itemCount,
+  className,
+}: Props) => {
   return (
-    <div role="list" className="rounded-xs border-2 border-border bg-background">
-      {/* TODO: Discount code */}
-      <footer className="grid gap-4 p-4 sm:px-5">
-        <div className="grid grid-flow-col justify-between gap-4">
-          <h4 className="inline-flex flex-wrap gap-2 text-base font-bold sm:text-xl">
-            รวม
-          </h4>
-          <div className="text-base sm:text-lg font-bold flex items-center gap-1">
-            <RiCopperCoinFill className="size-5" />
+    <div
+      className={cn(
+        "grid gap-4 rounded-md border-2 bg-background p-5",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>จำนวนรายการ</span>
+        <span className="font-medium text-foreground">{itemCount} รายการ</span>
+      </div>
+
+      <div className="h-0.5 bg-border" />
+
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-base font-semibold sm:text-lg">รวมทั้งหมด</span>
+        <div className="flex items-center gap-2">
+          <img src={Coin.src} alt="" className="size-6" aria-hidden />
+          <span className="text-xl font-bold text-[#1cb0f6] tabular-nums sm:text-2xl">
             {totalPoints}
-          </div>
+          </span>
         </div>
-      </footer>
+      </div>
     </div>
   );
 };

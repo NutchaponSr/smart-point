@@ -55,7 +55,7 @@ export const Main = ({
             )}
             {newLink && (
               <Link href={newLink}>
-                <Button variant="elevated" className="bg-pink">
+                <Button variant="secondary" className="bg-pink">
                   เพิ่มข้อมูล
                 </Button>
               </Link>

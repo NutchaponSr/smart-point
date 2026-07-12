@@ -5,13 +5,9 @@ import { useCRPC } from "@/lib/convex/crpc";
 
 import { usePagination } from "@/hooks/use-pagination";
 
-import { DataTable } from "@/components/data-table";
 import { Pagination } from "@/components/pagniation";
-import { SearchInput } from "@/components/search-input";
 
-import { LeaderCard } from "@/modules/transactions/ui/components/leader-card";
-import { columns } from "@/modules/transactions/ui/components/leaderboard-columns";
-import { CurrentUserRankBar } from "@/modules/transactions/ui/components/current-user-rank-bar";
+import { LeaderboardList } from "@/modules/transactions/ui/components/leaderboard-list";
 
 import { useLeaderboardFilters } from "@/modules/transactions/stores/use-leaderboard-filters";
 
@@ -48,20 +44,7 @@ export const LeaderboardScreen = () => {
   const canGoForward = leaderboard.hasNextPage && leaderboard.continueCursor != null;
 
   return (
-    <section className="grid gap-4 p-4 md:p-8">
-      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
-        {leaderboard.page.slice(0, 3).map((item, index) => (
-          <LeaderCard
-            key={item.employeeId}
-            name={item.employeeName}
-            src={item.employeeCode}
-            rank={item.rank}
-            podiumPlace={(index + 1) as 1 | 2 | 3}
-            score={item.points}
-          />
-        ))}
-      </div>
-
+    <section className="grid gap-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 grow">
           <Pagination 
@@ -74,25 +57,11 @@ export const LeaderboardScreen = () => {
             }}
           />
         </div>
-
-        <SearchInput
-          variant="popover"
-          value={filters.q}
-          onChange={(q) => setFilters({ ...filters, q })}
-          placeholder="ค้นหา"
-        />
       </div>
       
-      <DataTable 
-        data={leaderboard.page.slice(3)}
-        columns={columns()}
-        footer={myEntry ? (
-          <CurrentUserRankBar
-            rank={myEntry.rank}
-            name={myEntry.employeeName}
-            points={myEntry.points}
-          />
-        ) : null}
+      <LeaderboardList 
+        entries={leaderboard.page}
+        myEmployeeId={myEntry?.employeeId ?? null}
       />
     </section>
   );

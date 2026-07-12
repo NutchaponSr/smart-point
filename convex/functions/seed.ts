@@ -49,6 +49,7 @@ export const insertEmployee = privateMutation
       employeeId: employeeDocId,
       givingBudget: 100,
       receivingBudget: 0,
+      specialBudget: 5,
       lastBudgetUpdate: Date.now(),
     });
 
@@ -95,6 +96,8 @@ export const insertActivity = privateMutation
       maxParticipants: z.number().int().positive().optional(),
       isActive: z.boolean(),
       category: z.enum(["external", "internal", "internal_bu", "specials_point"]),
+      allowedDivisions: z.array(z.string()).optional(),
+      allowedDepartments: z.array(z.string()).optional(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -105,8 +108,12 @@ export const insertActivity = privateMutation
 
     if (existing) return null;
 
+    const { allowedDivisions, allowedDepartments, ...rest } = input;
+
     return await ctx.db.insert("activity", {
-      ...input,
+      ...rest,
+      allowedDivisions: allowedDivisions ?? [],
+      allowedDepartments: allowedDepartments ?? [],
     });
   });
 
@@ -274,7 +281,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       endDate: now + week * 4,
       maxParticipants: 200,
       isActive: true,
-      category: "internal",
+      category: "internal" as const,
     },
     {
       name: "Safety Walk ประจำเดือน",
@@ -284,7 +291,8 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       endDate: now + week * 2,
       maxParticipants: 40,
       isActive: true,
-      category: "internal_bu",
+      category: "internal_bu" as const,
+      allowedDivisions: ["SBM3", "SFT3"],
     },
     {
       name: "Wellness Week — ส่วนลดแลกของรางวัล",
@@ -295,7 +303,93 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       endDate: now + week * 8,
       maxParticipants: undefined,
       isActive: true,
-      category: "specials_point",
+      category: "specials_point" as const,
+      allowedDivisions: ["SBM3", "SFT3", "ICP2", "SFT", "SAT1", "SFT2", "ICP1"],
+    },
+    {
+      name: "BU Hackathon 2026",
+      description: "แข่งขันไอเดียนวัตกรรมภายใน BU ทีมละ 3-5 คน",
+      point: 120,
+      startDate: now + week,
+      endDate: now + week * 3,
+      maxParticipants: 60,
+      isActive: true,
+      category: "internal_bu" as const,
+      allowedDivisions: ["ICP1", "ICP2"],
+    },
+    {
+      name: "BU Knowledge Sharing — Lunch & Learn",
+      description: "แชร์ความรู้ช่วงพักเที่ยงประจำ BU เดือนนี้",
+      point: 20,
+      startDate: now,
+      endDate: now + week * 2,
+      maxParticipants: 30,
+      isActive: true,
+      category: "internal_bu" as const,
+      allowedDivisions: ["SFT", "SFT2", "SFT3"],
+    },
+    {
+      name: "BU Team Building — Outing ประจำปี",
+      description: "กิจกรรมสานสัมพันธ์ภายใน BU ณ ต่างจังหวัด 2 วัน 1 คืน",
+      point: 80,
+      startDate: now + week * 2,
+      endDate: now + week * 4,
+      maxParticipants: 50,
+      isActive: true,
+      category: "internal_bu" as const,
+      allowedDivisions: ["SAT1"],
+    },
+    {
+      name: "BU 5ส Big Cleaning Day",
+      description: "ร่วมกิจกรรม 5ส ประจำไตรมาสของ BU",
+      point: 25,
+      startDate: now - week,
+      endDate: now + week,
+      maxParticipants: undefined,
+      isActive: true,
+      category: "internal_bu" as const,
+      allowedDivisions: ["SBM3"],
+    },
+    {
+      name: "วิ่งการกุศล Charity Run 10K",
+      description: "ร่วมวิ่งการกุศลกับพันธมิตรภายนอก พร้อมส่งหลักฐาน BIB",
+      point: 60,
+      startDate: now + week,
+      endDate: now + week * 5,
+      maxParticipants: 100,
+      isActive: true,
+      category: "external" as const,
+    },
+    {
+      name: "บริจาคโลหิตประจำไตรมาส",
+      description: "บริจาคโลหิตกับสภากาชาดไทย แนบใบรับรองการบริจาค",
+      point: 40,
+      startDate: now,
+      endDate: now + week * 6,
+      maxParticipants: undefined,
+      isActive: true,
+      category: "external" as const,
+    },
+    {
+      name: "อบรม First Aid & CPR",
+      description: "อบรมปฐมพยาบาลเบื้องต้นและ CPR โดยวิทยากรภายใน",
+      point: 45,
+      startDate: now + week,
+      endDate: now + week * 2,
+      maxParticipants: 25,
+      isActive: true,
+      category: "internal" as const,
+    },
+    {
+      name: "โครงการพนักงานดีเด่นประจำปี",
+      description: "แต้มพิเศษสำหรับพนักงานที่ได้รับคัดเลือกดีเด่นประจำปี",
+      point: 200,
+      startDate: now - week,
+      endDate: now + week * 12,
+      maxParticipants: 10,
+      isActive: true,
+      category: "specials_point" as const,
+      allowedDivisions: ["SFT3", "ICP2"],
     },
   ];
 
@@ -303,10 +397,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
   let skipped = 0;
 
   for (const row of activities) {
-    const id = await ctx.runMutation(internal.seed.insertActivity, {
-      ...row,
-      category: row.category as "external" | "internal" | "internal_bu" | "specials_point",
-    });
+    const id = await ctx.runMutation(internal.seed.insertActivity, row);
     if (id) created++;
     else skipped++;
   }

@@ -89,8 +89,6 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
 
               <div className="flex flex-col gap-4">
                 <Button 
-                  variant="elevated" 
-                  className="bg-pink" 
                   type="button"
                   onClick={() => router.push(`/meta/transactions?by=${employee._id}`)}
                 >
@@ -107,7 +105,7 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
               </div>
 
               <div className="flex flex-col gap-4">
-                <Button variant="elevated" className="bg-destructive" type="button" onClick={handleRemove}>
+                <Button className="bg-destructive" type="button" onClick={handleRemove}>
                   ลบบัญชีผู้ใช้งาน
                 </Button>
               </div>

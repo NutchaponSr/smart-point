@@ -8,11 +8,13 @@ interface Props {
   className?: {
     container?: string;
     input?: string;
+    placeholder?: string;
   };
   onChange: (value: string) => void;
+  onBlur?: () => void;
 }
 
-export default function ElementEditable({ value, placeholder, className, onChange }: Props) {
+export default function ElementEditable({ value, placeholder, className, onChange, onBlur }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -20,7 +22,7 @@ export default function ElementEditable({ value, placeholder, className, onChang
   return (
     <div className={cn("relative p-6 border-2 border-border rounded-xs bg-background", className?.container)}>
       {!isEditing && !value && (
-        <div className="absolute top-6 left-6 text-sm text-muted-foreground pointer-events-none select-none">
+        <div className={cn("absolute top-6 left-6 text-sm text-muted-foreground pointer-events-none select-none", className?.placeholder)}>
           {placeholder}
         </div>
       )}
@@ -29,9 +31,12 @@ export default function ElementEditable({ value, placeholder, className, onChang
         ref={editorRef}
         role="textbox"
         aria-multiline="true"
-        onInput={(e) => onChange(e.currentTarget.textContent)}
+        onInput={(e) => onChange(e.currentTarget.textContent ?? "")}
         onFocus={() => setIsEditing(true)}
-        onBlur={() => setIsEditing(false)}
+        onBlur={() => {
+          setIsEditing(false);
+          onBlur?.();
+        }}
         className={cn(
           "w-full min-h-16 outline-none focus:outline-none focus-visible:outline-none leading-relaxed text-sm transition-all duration-200",
           className?.input
