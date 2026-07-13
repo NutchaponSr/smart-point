@@ -50,7 +50,7 @@ export const LeaderboardList = ({ entries, myEmployeeId }: Props) => {
         <ul>
           {entries.map((entry) => (
             <li
-              key={`${entry.rank}-${entry.employeeCode}`}
+              key={entry.employeeId}
               className={cn(
                 "flex items-center gap-4 px-4 py-3 transition-colors hover:bg-[#F7F7F7] rounded-md",
                 myEmployeeId != null && entry.employeeId === myEmployeeId && "bg-[#e5e5e5]"

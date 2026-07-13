@@ -253,27 +253,45 @@ export const getMany = authQuery
   )
   .query(async ({ ctx, input }) => {
     const nowMs = Date.now();
-    const ranked = await buildRankedRows(ctx, input.period, nowMs, {
-      query: input.q,
-      division: input.division,
-    });
+
+    const [globalRanked, filteredRanked] = await Promise.all([
+      buildRankedRows(ctx, input.period, nowMs, {
+        query: null,
+        division: null,
+      }),
+      buildRankedRows(ctx, input.period, nowMs, {
+        query: input.q,
+        division: input.division,
+      }),
+    ]);
+
+    const globalRankByEmployeeId = new Map(
+      globalRanked.map((row, index) => [String(row.employeeId), index + 1]),
+    );
 
     const startIndex = parseOffsetCursor(input.cursor ?? null);
     const endIndex = startIndex + input.limit;
-    const pageSlice = ranked.slice(startIndex, endIndex);
+    const pageSlice = filteredRanked.slice(startIndex, endIndex);
 
-    const rows = pageSlice.map((row, index) => ({
-      rank: startIndex + index + 1,
-      employeeId: row.employeeId,
-      employeeCode: row.employeeCode,
-      employeeName: row.employeeName,
-      department: row.department,
-      points: row.points,
-      transactionCount: row.transactionCount,
-      lastReceivedAt: row.lastReceivedAt,
-    }));
+    const rows = pageSlice.flatMap((row) => {
+      const rank = globalRankByEmployeeId.get(String(row.employeeId));
+      if (rank == null) return [];
 
-    const continueCursor = endIndex >= ranked.length ? null : String(endIndex);
+      return [
+        {
+          rank,
+          employeeId: row.employeeId,
+          employeeCode: row.employeeCode,
+          employeeName: row.employeeName,
+          department: row.department,
+          points: row.points,
+          transactionCount: row.transactionCount,
+          lastReceivedAt: row.lastReceivedAt,
+        },
+      ];
+    });
+
+    const continueCursor = endIndex >= filteredRanked.length ? null : String(endIndex);
     const hasNextPage = continueCursor !== null;
 
     return {

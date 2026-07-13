@@ -40,11 +40,13 @@ export const LeaderboardScreen = () => {
     resetKey: filterResetKey,
   });
 
+  const normalizedQuery = debouncedQuery.trim() || undefined;
+
   const { data: leaderboard } = useSuspenseQuery(crpc.leaderboard.getMany.queryOptions({
     period: filters.period,
     limit: filters.limit,
     cursor: requestCursor,
-    q: debouncedQuery,
+    q: normalizedQuery,
     division: filters.division.length > 0 ? filters.division : null,
   }));
 
