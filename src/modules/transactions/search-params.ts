@@ -46,6 +46,7 @@ export const loadFeedFilters = createLoader(feedFilterSearchParams);
 const params = {
   q: parseAsString.withDefault(""),
   period: parseAsStringLiteral(periodValues).withDefault("24hr"),
+  division: parseAsArrayOf(parseAsString).withDefault([]),
   limit: parseAsInteger.withDefault(25),
   cursor: parseAsInteger.withDefault(0),
   page: parseAsInteger.withDefault(0),

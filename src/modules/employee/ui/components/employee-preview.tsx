@@ -1,10 +1,26 @@
 "use client";
 
+import Image from "next/image";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import type { EmployeeSchema } from "@/modules/employee/schema";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 import { departments, divisions, positions, ranks } from "../../constants";
+
+import BrickCorner from "../../../../../public/brick_high_slope_inverted_left_yellow_2.svg";
+
+function DetailRow({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="grid gap-1 border-t-2 border-[#e5e5e5] px-4 py-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-[#afafaf]">
+        {label}
+      </p>
+      <p className="text-sm font-bold text-[#4b4b4b]">
+        {value || "—"}
+      </p>
+    </div>
+  );
+}
 
 export const EmployeePreview = () => {
   const { control } = useFormContext<EmployeeSchema>();
@@ -15,55 +31,60 @@ export const EmployeePreview = () => {
   const rank = useWatch({ control, name: "rank" });
   const division = useWatch({ control, name: "division" });
 
+  const departmentLabel = departments.find((d) => d.slug === department)?.name
+    .th;
+  const positionLabel = positions.find((p) => p.slug === position)?.name.th;
+  const rankLabel = ranks.find((r) => r.slug === rank)?.name.th;
+  const divisionLabel = divisions.find((d) => d.slug === division)?.name.th;
+
   return (
-    <article className="relative grid rounded-xs border-[1.5px] border-border bg-background">
-      <section>
-        <header className="grid gap-4 p-3 not-first:border-t">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <UserAvatar 
-              name={name}
-              className={{
-                container: "size-8 after:border-[1.5px]",
-                fallback: "text-sm font-medium",
-              }}
-            />
-            <h1 className="text-lg font-normal leading-[1.2] truncate">
-              {name}
+    <article className="relative overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white">
+      <header className="relative border-b-2 border-[#e5e5e5] bg-[#fff4d9] px-4 py-3">
+        <Image
+          src={BrickCorner}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-px -bottom-px size-10"
+        />
+        <p className="relative z-1 text-base font-semibold text-[#ff9600]">
+          บัตรพนักงาน
+        </p>
+      </header>
+
+      <section className="grid gap-3 p-4">
+        <div className="flex items-center gap-3 overflow-hidden min-h-14">
+          <UserAvatar
+            name={name || "?"}
+            className={{
+              container:
+                "size-12 ring-[#58a700]! shadow-[0_3px_0_#58a700]!",
+              fallback: "bg-[#58cc02]! text-xl font-bold text-white",
+            }}
+          />
+          <div className="min-w-0 grid gap-0.5">
+            <h1 className="truncate text-lg font-extrabold leading-tight text-[#4b4b4b]">
+              {name || "ชื่อพนักงาน"}
             </h1>
+            <p className="truncate text-sm font-medium text-[#777]">
+              {email || "email@example.com"}
+            </p>
           </div>
-        </header>
-        <section className="grid grid-cols-[auto_1fr] gap-px border-t-[1.5px] border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,1fr)]">
-          <div className="p-3 outline-[1.5px] outline-offset-0 outline-border">
-            <div className="relative grid w-fit border-[1.5px] border-border">
-              <div
-                className="bg-pink px-2 py-1 text-sm"
-                itemProp="point"
-                content={String(department)}
-              >
-                {departments.find((d) => d.slug === department)?.name.th}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center px-4 py-3 max-sm:col-span-full">
-            {email}
-          </div>
-        </section>
-        <section className="border-t-[1.5px] border-border p-3">
-          <p className="text-xs">
-            {positions.find((p) => p.slug === position)?.name.th}
-          </p>
-        </section>
-        <section className="border-t-[1.5px] border-border p-3">
-          <p className="text-xs">
-            {ranks.find((r) => r.slug === rank)?.name.th}
-          </p>
-        </section>
-        <section className="border-t-[1.5px] border-border p-3">
-          <p className="text-xs">
-            {divisions.find((d) => d.slug === division)?.name.th}
-          </p>
-        </section>
+        </div>
+
+        {departmentLabel ? (
+          <span className="inline-flex w-fit items-center rounded-xl border-2 border-[#0003] bg-[#58cc02] px-3 py-1 text-sm font-bold text-white">
+            {departmentLabel}
+          </span>
+        ) : (
+          <span className="inline-flex w-fit items-center rounded-xl border-2 border-dashed border-[#e5e5e5] px-3 py-1 text-sm font-bold text-[#afafaf]">
+            แผนก
+          </span>
+        )}
       </section>
+
+      <DetailRow label="ตำแหน่ง" value={positionLabel} />
+      <DetailRow label="ระดับ" value={rankLabel} />
+      <DetailRow label="BU / สังกัด" value={divisionLabel} />
     </article>
   );
 };

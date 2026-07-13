@@ -17,13 +17,15 @@ export const columns = (): ColumnDef<Employee>[] => {
             <UserAvatar
               name={row.original.name}
               className={{
-                container: "size-8 after:border-[1.5px]",
-                fallback: "text-sm font-medium",
+                container: "size-8",
+                fallback: "text-sm",
               }}
             />
             <div className="flex flex-col">
-              <span className="text-sm font-medium">{row.original.name}</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm font-bold text-[#4b4b4b]">
+                {row.original.name}
+              </span>
+              <span className="text-xs font-medium text-[#777]">
                 {row.original.email}
               </span>
             </div>

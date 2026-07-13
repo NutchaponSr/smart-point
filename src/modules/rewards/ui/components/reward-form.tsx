@@ -15,15 +15,47 @@ function intFromCurrencyValue(raw: string | undefined) {
 }
 
 const currencyIntClassName =
-  "font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-xs block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-pink focus:border-pink focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3";
+  "font-[inherit] min-h-10 px-4 text-sm leading-snug border-2 border-border rounded-md block w-full bg-background placeholder:text-muted-foreground focus:outline-1 focus:outline-[#49c0f8] focus:border-[#49c0f8] focus:border-2 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-3";
+
+function FormSection({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="grid gap-4 border-t-2 border-border p-4 first:border-t-0 md:p-8">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border-2 border-[#84d8ff] bg-[#ddf4ff] text-sm font-extrabold text-[#1cb0f6]">
+          {step}
+        </span>
+        <div className="grid gap-0.5">
+          <h2 className="text-xl font-extrabold leading-snug text-[#4b4b4b]">
+            {title}
+          </h2>
+          <p className="text-sm font-medium text-[#777]">{description}</p>
+        </div>
+      </div>
+      <div className="grid gap-4 bg-background p-4 md:p-5">{children}</div>
+    </section>
+  );
+}
 
 export const RewardForm = () => {
   const { control } = useFormContext<RewardFormInput>();
 
   return (
     <>
-      <section className="grid gap-4 p-4! md:p-8!">
-        <h2 className="text-xl leading-snug">รางวัล</h2>
+      <FormSection
+        step="1"
+        title="รางวัล"
+        description="ข้อมูลพื้นฐานที่แสดงบนหน้ารางวัล"
+      >
         <Controller
           control={control}
           name="name"
@@ -93,15 +125,19 @@ export const RewardForm = () => {
                 intlConfig={{ locale: "th-TH" }}
                 className={currencyIntClassName}
               />
-              <small className="text-muted-foreground text-sm">
+              <small className="text-sm font-medium text-[#777]">
                 -1 = ไม่จำกัดจำนวนคงเหลือ (มิฉะนั้นกรอกจำนวนเต็ม ≥ 1)
               </small>
             </FieldSet>
           )}
         />
-      </section>
-      <section className="grid gap-4 p-4! md:p-8! border-t-2 border-border">
-        <h2 className="text-xl leading-snug">รูปภาพ (ตัวเลือก)</h2>
+      </FormSection>
+
+      <FormSection
+        step="2"
+        title="รูปภาพ"
+        description="รูปปกของรางวัล (ตัวเลือก)"
+      >
         <Controller
           control={control}
           name="image"
@@ -116,9 +152,13 @@ export const RewardForm = () => {
             </FieldSet>
           )}
         />
-      </section>
-      <section className="grid gap-4 p-4! md:p-8! border-t-2 border-border">
-        <h2 className="text-xl leading-snug">จำกัดต่อชิ้น</h2>
+      </FormSection>
+
+      <FormSection
+        step="3"
+        title="การตั้งค่า"
+        description="จำกัดการแลกและสถานะการแสดงผล"
+      >
         <Controller
           control={control}
           name="onePerOrder"
@@ -129,14 +169,13 @@ export const RewardForm = () => {
                   checked={field.value as boolean}
                   onCheckedChange={(value) => field.onChange(!!value)}
                 />
-                <span className="text-base">แลกรางวัลได้เพียง 1 ครั้งต่อคำสั่งซื้อ</span>
+                <span className="text-base font-medium text-[#4b4b4b]">
+                  แลกรางวัลได้เพียง 1 ครั้งต่อคำสั่งซื้อ
+                </span>
               </div>
             </FieldSet>
           )}
         />
-      </section>
-      <section className="grid gap-4 p-4! md:p-8! border-t-2 border-border">
-        <h2 className="text-xl leading-snug">จำกัดการใช้งาน</h2>
         <Controller
           control={control}
           name="isActive"
@@ -147,12 +186,14 @@ export const RewardForm = () => {
                   checked={field.value as boolean}
                   onCheckedChange={(value) => field.onChange(!!value)}
                 />
-                <span className="text-base">แสดงผลบนหน้ารางวัล</span>
+                <span className="text-base font-medium text-[#4b4b4b]">
+                  แสดงผลบนหน้ารางวัล
+                </span>
               </div>
             </FieldSet>
           )}
         />
-      </section>
+      </FormSection>
     </>
   );
 };

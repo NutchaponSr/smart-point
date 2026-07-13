@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useReactTable,
-  getCoreRowModel,
-  RowSelectionState,
-} from "@tanstack/react-table";
+import { RowSelectionState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -72,25 +68,16 @@ export const RewardAnalyticView = () => {
   const bulkDelete = useMutation(crpc.reward.bulkDelete.mutationOptions());
 
   const tableColumnDefs = useMemo(() => columns(), []);
-
-  const table = useReactTable({
-    data: rewards.page,
-    columns: tableColumnDefs,
-    getRowId: (row) => row._id,
-    getCoreRowModel: getCoreRowModel(),
-    onRowSelectionChange: setRowSelection,
-    state: {
-      rowSelection,
-    },
-  });
+  const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
 
   const onRemove = async () => {
     const ok = await confirm();
 
     if (ok) {
-      bulkDelete.mutate({
-        ids: table.getSelectedRowModel().rows.map((row) => row.original._id),
-      });
+      bulkDelete.mutate(
+        { ids: selectedIds },
+        { onSuccess: () => setRowSelection({}) },
+      );
     }
   };
 
@@ -119,9 +106,9 @@ export const RewardAnalyticView = () => {
                   if (c != null) goForward(c);
                 }}
               />
-              {(table.getIsAllPageRowsSelected() || table.getIsSomePageRowsSelected()) && (
+              {selectedIds.length > 0 && (
                 <Button 
-                  variant="dangerOutline"
+                  variant="danger"
                   onClick={onRemove}
                 >
                   ลบ
@@ -129,7 +116,14 @@ export const RewardAnalyticView = () => {
               )}
             </div>
             
-            <DataTable data={rewards.page} columns={columns()} />
+            <DataTable
+              data={rewards.page}
+              columns={tableColumnDefs}
+              enableRowSelection
+              getRowId={(row) => row._id}
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
+            />
           </div>
         </div>
       </section>

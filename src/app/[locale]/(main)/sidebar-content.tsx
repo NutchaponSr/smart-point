@@ -9,8 +9,9 @@ import ComputerIcon from "../../../../public/computer.svg";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 
+import { cn } from "@/lib/utils";
+
 import { metadata, navigations } from "@/constants";
-import { canShowByRole, usePermission } from "@/modules/auth/hooks/use-permisson";
 
 import {
   DropdownMenu,
@@ -19,9 +20,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+
 import { Logo } from "@/components/logo";
+
 import { UserButtonDropdown } from "@/modules/auth/ui/components/user-button";
-import { cn } from "@/lib/utils";
+
+import { canShowByRole, usePermission } from "@/modules/auth/hooks/use-permisson";
 
 interface SidebarContentProps {
   onNavigate?: () => void;

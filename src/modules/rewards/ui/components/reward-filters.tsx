@@ -87,7 +87,7 @@ export const RewardFilters = (props: Props) => {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="primaryOutline" size="iconLg">
+          <Button size="iconLg" className={cn(hasActiveFilters && "text-[#1cb0f6]")}>
             <ListFilterIcon className="size-5" />
           </Button>
         </PopoverTrigger>

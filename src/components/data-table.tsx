@@ -48,7 +48,7 @@ export const DataTable = <T,>({
   });
 
   return (
-    <table className="grid w-full border-spacing-0 gap-4 lg:table lg:border-separate lg:rounded-xs lg:border-2 lg:border-border lg:overflow-hidden">
+    <table className="grid w-full border-spacing-0 gap-4 lg:table lg:border-separate lg:rounded-md lg:border-2 lg:border-border lg:overflow-hidden">
       <thead className="hidden lg:table-header-group">
         {table.getHeaderGroups().map((headerGroup) => (
           <tr key={headerGroup.id} className="block border-2 border-border lg:table-row">
@@ -77,22 +77,22 @@ export const DataTable = <T,>({
         ))}
       </thead>
 
-      <tbody className="contents lg:table-row-group lg:rounded-xs">
+      <tbody className="contents lg:table-row-group lg:rounded-md">
         {table.getRowModel().rows.length > 0 ? 
           table.getRowModel().rows.map((row) => (
-          <tr key={row.id} className="block rounded-xs border-2 border-border lg:table-row bg-background even:bg-muted">
+          <tr key={row.id} className="block rounded-md border-2 border-border lg:table-row bg-background even:bg-muted">
             {row.getVisibleCells().map((cell) => (
               <td
                 key={cell.id}
-                className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border has-[input[type=checkbox]]:border-r-2 has-[input[type=checkbox]]:border-border has-data-[slot=checkbox]:border-r-2 has-data-[slot=checkbox]:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs has-[input[type=checkbox]]:w-[48px]! has-data-[slot=checkbox]:w-[48px]!"
+                className="block p-4 text-left align-middle not-first:border-t-2 not-first:border-border has-[input[type=checkbox]]:border-r-2 has-[input[type=checkbox]]:border-border has-data-[slot=checkbox]:border-r-2 has-data-[slot=checkbox]:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-md lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-md has-[input[type=checkbox]]:w-[48px]! has-data-[slot=checkbox]:w-[48px]!"
               >
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </td>
             ))}
           </tr>
         )) : (
-          <tr className="block rounded-xs border-2 border-border lg:table-row bg-background">
-            <td colSpan={table.getAllColumns().length} className="block p-4 text-left align-middle not-first:border-t not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs"> 
+          <tr className="block rounded-md border-2 border-border lg:table-row bg-background">
+            <td colSpan={table.getAllColumns().length} className="block p-4 text-left align-middle not-first:border-t not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-md lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-md"> 
               Nothing yet
             </td>
           </tr>

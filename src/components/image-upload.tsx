@@ -133,11 +133,11 @@ export const ImageUpload = ({
       />
       <Button
         type="button"
-        className="bg-pink"
+        variant="primary"
         onClick={() => inputRef.current?.click()}
         disabled={disabled || isUploading}
       >
-        <GoPlus className="size-5 stroke-[0.25]" />
+        <GoPlus className="size-5 stroke-[0.5]" />
         {isUploading ? "กำลังอัปโหลด…" : "อัปโหลดรูปภาพ"}
       </Button>
       <small className="text-sm text-muted-foreground">

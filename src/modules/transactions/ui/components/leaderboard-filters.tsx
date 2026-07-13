@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/accordion";
 import { SearchInput } from "@/components/search-input";
 
+import { divisions } from "@/modules/employee/constants";
 import {
   periodValues,
   useLeaderboardFilters,
@@ -28,8 +29,62 @@ const PERIOD_LABELS: Record<(typeof periodValues)[number], string> = {
   fullTime: "ทั้งหมด",
 };
 
+const checkboxClassName =
+  "appearance-none size-[calc(1lh+0.125rem)] border-[1.5px] border-border bg-background text-base leading-snug shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 checked:bg-[#58cc02] rounded-xs peer";
+
+const labelClassName =
+  "inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 items-center";
+
+type FilterOptionCheckboxProps = {
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+};
+
+const FilterOptionCheckbox = ({
+  label,
+  checked,
+  onCheckedChange,
+}: FilterOptionCheckboxProps) => (
+  <label className={labelClassName}>
+    <span className="relative inline-flex shrink-0 items-center justify-center">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onCheckedChange(event.target.checked)}
+        className={checkboxClassName}
+      />
+      <CheckIcon className="pointer-events-none absolute hidden size-4.5 text-white peer-checked:block" />
+    </span>
+    {label}
+  </label>
+);
+
 export const LeaderboardFilters = () => {
   const [filters, setFilters] = useLeaderboardFilters();
+
+  const toggleDivision = (value: string, checked: boolean) => {
+    const current = filters.division ?? [];
+    const next = checked
+      ? [...current, value]
+      : current.filter((item) => item !== value);
+
+    void setFilters({
+      ...filters,
+      division: next,
+      page: 1,
+    });
+  };
+
+  const onClear = () => {
+    void setFilters({
+      ...filters,
+      division: [],
+      page: 1,
+    });
+  };
+
+  const hasActiveFilters = filters.division.length > 0;
 
   return (
     <section
@@ -38,6 +93,17 @@ export const LeaderboardFilters = () => {
     >
       <header className="flex flex-wrap items-center justify-between gap-4 p-4">
         <h2 className="text-base font-bold leading-snug">ตัวกรอง</h2>
+        {hasActiveFilters && (
+          <div className="grow text-right">
+            <button
+              type="button"
+              className="cursor-pointer underline"
+              onClick={onClear}
+            >
+              รีเซ็ต
+            </button>
+          </div>
+        )}
       </header>
 
       <div className="p-4">
@@ -79,6 +145,19 @@ export const LeaderboardFilters = () => {
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+      </Accordion>
+
+      <Accordion title="BU / สังกัด">
+        {divisions.map((division) => (
+          <FilterOptionCheckbox
+            key={division.slug}
+            label={division.name.th}
+            checked={filters.division.includes(division.slug)}
+            onCheckedChange={(checked) =>
+              toggleDivision(division.slug, checked)
+            }
+          />
+        ))}
       </Accordion>
 
       <Accordion title="จำนวนรายการ">

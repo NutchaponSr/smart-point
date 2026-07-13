@@ -55,7 +55,7 @@ export const Main = ({
             )}
             {newLink && (
               <Link href={newLink}>
-                <Button variant="secondary" className="bg-pink">
+                <Button variant="secondary" size="lg">
                   เพิ่มข้อมูล
                 </Button>
               </Link>
@@ -64,7 +64,7 @@ export const Main = ({
         </div>
 
         {menu && (
-          <div className="flex items-center gap-3 overflow-x-auto grow">
+          <div className="flex items-center gap-3 overflow-x-auto grow h-full">
             {menu}
           </div>
         )}

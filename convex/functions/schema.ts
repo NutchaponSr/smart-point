@@ -80,6 +80,14 @@ export const employee = convexTable("employee", {
   division: text().notNull(),
 }, (t) => [
   index("by_department").on(t.department),
+  index("by_division_employeeId").on(t.division, t.employeeId),
+  index("by_department_employeeId").on(t.department, t.employeeId),
+  index("by_rank_employeeId").on(t.rank, t.employeeId),
+  index("by_division_department_employeeId").on(
+    t.division,
+    t.department,
+    t.employeeId,
+  ),
   uniqueIndex("by_employeeId").on(t.employeeId),
   searchIndex("search_name").on(t.name),
   searchIndex("search_email").on(t.email),
@@ -115,6 +123,7 @@ export const transaction = convexTable("transaction", {
   index("by_status").on(t.status),
   index("by_senderId_status").on(t.senderId, t.status),
   index("by_receiverId_status").on(t.receiverId, t.status),
+  index("by_senderId_receiverId").on(t.senderId, t.receiverId),
 ]);
 
 export const like = convexTable("like", {
@@ -262,6 +271,28 @@ export const news = convexTable("news", {
   index("by_createdBy").on(t.createdBy),
 ]);
 
+/** Feed สำหรับดูการกระทำ (โอนแต้ม / อนุมัติ / ล็อกอิน / อีเวนต์) — ไม่ใช่ตาราง activity */
+export const activityLog = convexTable("activityLog", {
+  actorEmployeeId: id("employee").notNull(),
+  subjectEmployeeId: id("employee"),
+  type: textEnum([
+    "point_transfer_sent",
+    "point_transfer_approved",
+    "point_transfer_rejected",
+    "daily_login",
+    "event_joined",
+    "event_completed",
+  ] as const).notNull(),
+  sourceId: text().notNull(),
+  summary: text().notNull(),
+  meta: text(),
+}, (t) => [
+  index("by_actor").on(t.actorEmployeeId),
+  index("by_subject").on(t.subjectEmployeeId),
+  index("by_type").on(t.type),
+  uniqueIndex("by_type_sourceId").on(t.type, t.sourceId),
+]);
+
 export const pointLedger = convexTable("pointLedger", {
   employeeId: id("employee").notNull(),
   delta: integer().notNull(), // บวก = รับ, ลบ = จ่าย
@@ -290,6 +321,7 @@ export const tables = {
   redemption,
   activity,
   activityParticipant,
+  activityLog,
   pointLedger,
   cart,
   cartItem,

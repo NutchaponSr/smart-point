@@ -71,8 +71,8 @@ export function useTransactionExcel({
           reviewedAt: format(new Date(e.reviewedAt), "LLL dd, y"),
         })),
         {
-          filename: "event-export",
-          sheetName: "Event Export",
+          filename: "transaction-export",
+          sheetName: "Transaction Export",
           headers: transactionHeaders as Record<string, string>,
         }
       );

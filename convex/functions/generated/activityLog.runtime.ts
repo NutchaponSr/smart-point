@@ -19,16 +19,7 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
-  "approve": ["mutation", typedProcedureResolver(api["transaction"]["approve"], () => (require("../transaction") as Record<string, unknown>)["approve"])],
-  "bulkApprove": ["mutation", typedProcedureResolver(api["transaction"]["bulkApprove"], () => (require("../transaction") as Record<string, unknown>)["bulkApprove"])],
-  "comment": ["mutation", typedProcedureResolver(api["transaction"]["comment"], () => (require("../transaction") as Record<string, unknown>)["comment"])],
-  "exportAll": ["mutation", typedProcedureResolver(api["transaction"]["exportAll"], () => (require("../transaction") as Record<string, unknown>)["exportAll"])],
-  "feeds": ["query", typedProcedureResolver(api["transaction"]["feeds"], () => (require("../transaction") as Record<string, unknown>)["feeds"])],
-  "getMany": ["query", typedProcedureResolver(api["transaction"]["getMany"], () => (require("../transaction") as Record<string, unknown>)["getMany"])],
-  "getMonthlyQuestProgress": ["query", typedProcedureResolver(api["transaction"]["getMonthlyQuestProgress"], () => (require("../transaction") as Record<string, unknown>)["getMonthlyQuestProgress"])],
-  "getMonthlyTransferQuota": ["query", typedProcedureResolver(api["transaction"]["getMonthlyTransferQuota"], () => (require("../transaction") as Record<string, unknown>)["getMonthlyTransferQuota"])],
-  "like": ["mutation", typedProcedureResolver(api["transaction"]["like"], () => (require("../transaction") as Record<string, unknown>)["like"])],
-  "send": ["mutation", typedProcedureResolver(api["transaction"]["send"], () => (require("../transaction") as Record<string, unknown>)["send"])],
+  "getLatest": ["query", typedProcedureResolver(api["activityLog"]["getLatest"], () => (require("../activityLog") as Record<string, unknown>)["getLatest"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;
@@ -76,7 +67,7 @@ type GeneratedProcedureHandler<
 >;
 
 
-export function createTransactionCaller<TCtx extends ProcedureCallerContext>(
+export function createActivityLogCaller<TCtx extends ProcedureCallerContext>(
   ctx: TCtx
 ): GeneratedProcedureCaller<TCtx> {
   return generatedRuntime.getCallerFactory()(
@@ -84,7 +75,7 @@ export function createTransactionCaller<TCtx extends ProcedureCallerContext>(
   ) as GeneratedProcedureCaller<TCtx>;
 }
 
-export function createTransactionHandler<TCtx extends ProcedureHandlerContext>(
+export function createActivityLogHandler<TCtx extends ProcedureHandlerContext>(
   ctx: TCtx
 ): GeneratedProcedureHandler<TCtx> {
   return generatedRuntime.getHandlerFactory()(ctx) as GeneratedProcedureHandler<TCtx>;

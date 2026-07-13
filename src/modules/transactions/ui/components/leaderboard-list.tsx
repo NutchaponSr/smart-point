@@ -1,12 +1,11 @@
 import Image from "next/image";
 
-import CoinGiveIcon from "../../../../../public/coin-give.svg";
 import GoldMedalIcon from "../../../../../public/1st.svg";
 import SilverMedalIcon from "../../../../../public/2nd.svg";
 import BronzeMedalIcon from "../../../../../public/3rd.svg";
+import CoinGiveIcon from "../../../../../public/coin-give.svg";
 
 import { ApiOutputs } from "@convex/api";
-import { RiMedalFill } from "react-icons/ri";
 import type { StaticImageData } from "next/image";
 
 import { cn } from "@/lib/utils";

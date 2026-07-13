@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -17,6 +18,14 @@ export const LeaderboardScreen = () => {
   const [filters, setFilters] = useLeaderboardFilters();
 
   const debouncedQuery = useDebounce(filters.q, 400);
+  const filterResetKey = [filters.division.join(","), filters.period].join("|");
+
+  const onPageChange = useCallback(
+    (page: number) => {
+      void setFilters({ page });
+    },
+    [setFilters],
+  );
 
   const {
     requestCursor,
@@ -27,7 +36,8 @@ export const LeaderboardScreen = () => {
     debouncedQuery,
     limit: filters.limit,
     urlPage: filters.page,
-    onPageChange: (page) => setFilters({ ...filters, page }),
+    onPageChange,
+    resetKey: filterResetKey,
   });
 
   const { data: leaderboard } = useSuspenseQuery(crpc.leaderboard.getMany.queryOptions({
@@ -35,6 +45,7 @@ export const LeaderboardScreen = () => {
     limit: filters.limit,
     cursor: requestCursor,
     q: debouncedQuery,
+    division: filters.division.length > 0 ? filters.division : null,
   }));
 
   const { data: myEntry } = useSuspenseQuery(crpc.leaderboard.getMyEntry.queryOptions({

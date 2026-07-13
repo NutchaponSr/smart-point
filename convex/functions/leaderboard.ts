@@ -16,17 +16,37 @@ function getPeriodStartMs(period: Period, nowMs: number): number | null {
   return null;
 }
 
+type EmployeeListRow = {
+  employeeId: string;
+  name: string;
+  email: string | null;
+  department: string;
+  position: string;
+  rank: string;
+  division: string;
+};
+
+type LeaderboardEmployeeFilters = {
+  query?: string | null;
+  division?: string[] | null;
+};
+
+function normalizeFilterArray(
+  value: string[] | null | undefined,
+): string[] {
+  if (value == null || value.length === 0) return [];
+  return [
+    ...new Set(
+      value
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0),
+    ),
+  ];
+}
+
 /** Same rules as `employee.getMany` — filter leaderboard rows by searchable fields. */
 function matchesEmployeeSearch(
-  row: {
-    employeeId: string;
-    name: string;
-    email: string | null;
-    department: string;
-    position: string;
-    rank: string;
-    division: string;
-  },
+  row: EmployeeListRow,
   normalizedQuery: string,
 ): boolean {
   if (!normalizedQuery) return true;
@@ -41,22 +61,59 @@ function matchesEmployeeSearch(
   );
 }
 
-function leaderboardEmployeeBaseQuery(ctx: QueryCtx, normalizedQuery: string | null | undefined) {
+function matchesLeaderboardEmployeeFilters(
+  row: EmployeeListRow,
+  filters: {
+    divisions: string[];
+    normalizedQuery: string;
+  },
+): boolean {
+  if (
+    filters.divisions.length > 0 &&
+    !filters.divisions.includes(row.division)
+  ) {
+    return false;
+  }
+  return (
+    row.rank !== "Admin" &&
+    matchesEmployeeSearch(row, filters.normalizedQuery)
+  );
+}
+
+function leaderboardEmployeeBaseQuery(
+  ctx: QueryCtx,
+  input: LeaderboardEmployeeFilters,
+) {
+  const divisions = normalizeFilterArray(input.division);
+  const normalizedQuery = input.query?.trim().toLowerCase() ?? "";
+  const matches = (row: EmployeeListRow) =>
+    matchesLeaderboardEmployeeFilters(row, {
+      divisions,
+      normalizedQuery,
+    });
+
+  if (divisions.length === 1) {
+    return ctx.orm.query.employee
+      .select()
+      .withIndex("by_division_employeeId", (q) =>
+        q.eq("division", divisions[0]!),
+      )
+      .orderBy({ employeeId: "asc" })
+      .filter(matches)
+      .map((row) => row);
+  }
+
   return ctx.orm.query.employee
     .select()
     .withIndex("by_employeeId")
     .orderBy({ employeeId: "asc" })
-    .filter(
-      (row) =>
-        row.rank !== "Admin" &&
-        (normalizedQuery == null || matchesEmployeeSearch(row, normalizedQuery)),
-    )
+    .filter(matches)
     .map((row) => row);
 }
 
 async function collectFilteredEmployees(
   ctx: QueryCtx,
-  normalizedQuery: string | null | undefined,
+  filters: LeaderboardEmployeeFilters,
 ): Promise<
   Array<{
     _id: Id<"employee">;
@@ -65,7 +122,7 @@ async function collectFilteredEmployees(
     department: string | null;
   }>
 > {
-  const baseQuery = leaderboardEmployeeBaseQuery(ctx, normalizedQuery);
+  const baseQuery = leaderboardEmployeeBaseQuery(ctx, filters);
   const out: Array<{
     _id: Id<"employee">;
     employeeCode: string;
@@ -119,12 +176,12 @@ async function buildRankedRows(
   ctx: QueryCtx,
   period: Period,
   nowMs: number,
-  normalizedQuery: string | null | undefined,
+  filters: LeaderboardEmployeeFilters,
 ): Promise<RankedRow[]> {
   const startMs = getPeriodStartMs(period, nowMs);
 
   const [employees, completedTransactions] = await Promise.all([
-    collectFilteredEmployees(ctx, normalizedQuery),
+    collectFilteredEmployees(ctx, filters),
     ctx.db
       .query("transaction")
       .withIndex("by_status", (q) => q.eq("status", "completed"))
@@ -191,17 +248,15 @@ export const getMany = authQuery
       limit: z.number().min(1).max(100),
       cursor: z.string().nullish(),
       q: z.string().optional().nullable(),
+      division: z.array(z.string()).optional().nullable(),
     }),
   )
   .query(async ({ ctx, input }) => {
     const nowMs = Date.now();
-    const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
-    const ranked = await buildRankedRows(
-      ctx,
-      input.period,
-      nowMs,
-      normalizedQuery,
-    );
+    const ranked = await buildRankedRows(ctx, input.period, nowMs, {
+      query: input.q,
+      division: input.division,
+    });
 
     const startIndex = parseOffsetCursor(input.cursor ?? null);
     const endIndex = startIndex + input.limit;
@@ -237,12 +292,9 @@ export const getMyEntry = authQuery
   )
   .query(async ({ ctx, input }) => {
     const nowMs = Date.now();
-    const ranked = await buildRankedRows(
-      ctx,
-      input.period,
-      nowMs,
-      null,
-    );
+    const ranked = await buildRankedRows(ctx, input.period, nowMs, {
+      query: null,
+    });
     const myId = String(ctx.user.employee.id);
 
     const index = ranked.findIndex((row) => String(row.employeeId) === myId);

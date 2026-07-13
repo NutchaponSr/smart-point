@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Image from "next/image";
 
 import { ApiOutputs } from "@convex/api";
@@ -69,6 +69,29 @@ export const SendStep = ({ points }: Props) => {
     name: "message",
   });
 
+  const selectedEmployeeId = employeeField.value?.id?.trim() ?? "";
+
+  const { data: monthlyQuota } = useQuery({
+    ...crpc.transaction.getMonthlyTransferQuota.queryOptions({
+      receiverId: selectedEmployeeId,
+    }),
+    enabled: selectedEmployeeId.length > 0,
+  });
+
+  const remainingToReceiver = monthlyQuota?.remaining ?? null;
+
+  useEffect(() => {
+    if (remainingToReceiver == null) return;
+    if (amountField.value > remainingToReceiver) {
+      const next = sendAmountOptions
+        .filter((value) => value <= remainingToReceiver && value <= points)
+        .at(-1);
+      if (next != null) {
+        amountField.onChange(next);
+      }
+    }
+  }, [remainingToReceiver, amountField, points]);
+
   const tagId = tagsField.value ?? "";
 
   const levelSummary = useMemo(() => {
@@ -100,9 +123,7 @@ export const SendStep = ({ points }: Props) => {
   return (
     <div className="grid gap-4">
       <section className="grid gap-1.5">
-        <h3 className="text-sm font-bold text-[#4b4b4b]">
-          เลือกพนักงาน
-        </h3>
+        <h3 className="text-sm font-bold text-[#4b4b4b]">เลือกพนักงาน</h3>
         <div
           className={cn(
             "[&_[class*='rounded-xs']]:rounded-xl",
@@ -154,14 +175,26 @@ export const SendStep = ({ points }: Props) => {
           />
         </div>
         {employeeErrorMessage && (
-          <p className="text-xs font-medium text-[#ea2b2b]">{employeeErrorMessage}</p>
+          <p className="text-xs font-medium text-[#ea2b2b]">
+            {employeeErrorMessage}
+          </p>
         )}
+        {monthlyQuota && selectedEmployeeId ? (
+          <p
+            className={cn(
+              "text-xs font-medium",
+              monthlyQuota.remaining === 0 ? "text-[#ea2b2b]" : "text-[#777]",
+            )}
+          >
+            {monthlyQuota.remaining === 0
+              ? `เดือนนี้โอนให้ ${monthlyQuota.receiverName ?? "พนักงานคนนี้"} ครบ ${monthlyQuota.cap} พอยต์แล้ว`
+              : `เดือนนี้โอนให้ ${monthlyQuota.receiverName ?? "พนักงานคนนี้"} ไปแล้ว ${monthlyQuota.used}/${monthlyQuota.cap} เหลือ ${monthlyQuota.remaining}`}
+          </p>
+        ) : null}
       </section>
 
       <section className="grid gap-1.5">
-        <h3 className="text-sm font-bold text-[#4b4b4b]">
-          ข้อความชื่นชม
-        </h3>
+        <h3 className="text-sm font-bold text-[#4b4b4b]">ข้อความชื่นชม</h3>
         <ElementEditable
           value={messageField.value ?? ""}
           placeholder="บอกเล่าสิ่งที่คุณชื่นชม..."
@@ -179,36 +212,48 @@ export const SendStep = ({ points }: Props) => {
           }}
         />
         {messageErrorMessage && (
-          <p className="text-xs font-medium text-[#ea2b2b]">{messageErrorMessage}</p>
+          <p className="text-xs font-medium text-[#ea2b2b]">
+            {messageErrorMessage}
+          </p>
         )}
       </section>
 
       <div className="grid gap-1.5" key={formBlockKey}>
         <section className="grid gap-1.5">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-bold text-[#4b4b4b]">
-              คะแนนที่มอบให้
-            </h3>
+            <h3 className="text-sm font-bold text-[#4b4b4b]">คะแนนที่มอบให้</h3>
             <SendPointHelpPopover />
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             {sendAmountOptions.map((value) => {
               const isSelected = amountField.value === value;
+              const exceedsBudget = value > points;
+              const exceedsQuota =
+                remainingToReceiver != null && value > remainingToReceiver;
+              const disabled = exceedsBudget || exceedsQuota;
 
               return (
                 <button
                   key={value}
                   type="button"
+                  disabled={disabled}
                   onClick={() => amountField.onChange(value)}
                   className={cn(
                     "flex items-center justify-center gap-1.5 rounded-md border-2 px-3 py-2.5 font-medium transition-colors",
-                    isSelected
+                    disabled && "cursor-not-allowed opacity-40 hover:bg-white",
+                    isSelected && !disabled
                       ? "border-[#84d8ff] bg-[#ddf4ff] text-[#4b4b4b]"
                       : "border-[#e5e5e5] bg-white text-[#4b4b4b] hover:bg-[#f7f7f7]",
                   )}
                 >
-                  <Image src={CoinGivingIcon} alt="" width={20} height={20} className="shrink-0" />                  
+                  <Image
+                    src={CoinGivingIcon}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="shrink-0"
+                  />
                   <span className="text-base text-[#f1c40f]">{value}</span>
                 </button>
               );
@@ -216,7 +261,9 @@ export const SendStep = ({ points }: Props) => {
           </div>
 
           {amountState.error?.message && (
-            <p className="text-xs font-medium text-[#ea2b2b]">{amountState.error.message}</p>
+            <p className="text-xs font-medium text-[#ea2b2b]">
+              {amountState.error.message}
+            </p>
           )}
         </section>
 
@@ -225,10 +272,14 @@ export const SendStep = ({ points }: Props) => {
             className="space-y-0.5 rounded-xl border-2 border-[#e5e5e5] bg-[#f7f7f7] p-3 text-xs"
             key={`summary-${formBlockKey}`}
           >
-            <p className="font-bold text-[#4b4b4b]">{levelSummary.pillar.nameTh}</p>
+            <p className="font-bold text-[#4b4b4b]">
+              {levelSummary.pillar.nameTh}
+            </p>
             <p className="text-[#4b4b4b]/90">
               {levelSummary.level.title}{" "}
-              <span className="text-[#afafaf]">({levelSummary.level.points} แต้ม)</span>
+              <span className="text-[#afafaf]">
+                ({levelSummary.level.points} แต้ม)
+              </span>
             </p>
           </div>
         )}

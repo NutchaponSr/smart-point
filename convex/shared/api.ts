@@ -30,6 +30,9 @@ export const api = {
     remove: createApiLeaf<"mutation", typeof import("../functions/activity").remove>(convexApi["activity"]["remove"], { auth: "required", type: "mutation" }),
     update: createApiLeaf<"mutation", typeof import("../functions/activity").update>(convexApi["activity"]["update"], { auth: "required", type: "mutation" }),
   },
+  activityLog: {
+    getLatest: createApiLeaf<"query", typeof import("../functions/activityLog").getLatest>(convexApi["activityLog"]["getLatest"], { auth: "required", type: "query" }),
+  },
   cart: {
     addCart: createApiLeaf<"mutation", typeof import("../functions/cart").addCart>(convexApi["cart"]["addCart"], { auth: "required", type: "mutation" }),
     getCart: createApiLeaf<"query", typeof import("../functions/cart").getCart>(convexApi["cart"]["getCart"], { auth: "required", type: "query" }),
@@ -90,6 +93,7 @@ export const api = {
     feeds: createApiLeaf<"query", typeof import("../functions/transaction").feeds>(convexApi["transaction"]["feeds"], { auth: "required", limit: 10, type: "query" }),
     getMany: createApiLeaf<"query", typeof import("../functions/transaction").getMany>(convexApi["transaction"]["getMany"], { auth: "required", type: "query" }),
     getMonthlyQuestProgress: createApiLeaf<"query", typeof import("../functions/transaction").getMonthlyQuestProgress>(convexApi["transaction"]["getMonthlyQuestProgress"], { auth: "required", type: "query" }),
+    getMonthlyTransferQuota: createApiLeaf<"query", typeof import("../functions/transaction").getMonthlyTransferQuota>(convexApi["transaction"]["getMonthlyTransferQuota"], { auth: "required", type: "query" }),
     like: createApiLeaf<"mutation", typeof import("../functions/transaction").like>(convexApi["transaction"]["like"], { auth: "required", type: "mutation" }),
     send: createApiLeaf<"mutation", typeof import("../functions/transaction").send>(convexApi["transaction"]["send"], { auth: "required", type: "mutation" }),
   },

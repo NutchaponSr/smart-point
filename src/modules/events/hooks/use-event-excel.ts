@@ -4,14 +4,16 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
+import { defaultCRPCTransformer } from "better-convex/crpc";
 
 import { useCRPC } from "@/lib/convex/crpc";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 
 import type { ValidationError } from "@/types/excel";
 
-import { eventSchema } from "@/modules/events/schema";
+import { eventExcelSchema } from "@/modules/events/schema";
 import { eventHeaderMapping, eventHeaders } from "@/modules/events/constants";
+import { formatBuExcelColumn } from "@/modules/events/utils/bu-labels";
 
 type EventCategory = "external" | "internal" | "internal_bu" | "specials_point";
 
@@ -45,11 +47,12 @@ export function useEventExcel({
 
     try {
       const result = await importExcelWithValidation(file, {
-        schema: eventSchema,
+        schema: eventExcelSchema,
         headerMapping: eventHeaderMapping,
       });
 
       if (result.errors.length > 0) {
+        console.error("[event-excel] import validation failed", result.errors);
         setState({ status: "error", errors: result.errors });
         return;
       }
@@ -61,25 +64,30 @@ export function useEventExcel({
           point: row.point,
           category: row.category,
           startDate: row.startDate,
-          endDate: row.endDate,
+          endDate: row.endDate ?? null,
           maxParticipants: row.maxParticipants,
+          allowedDivisions: row.allowedDivisions,
+          allowedDepartments: row.allowedDepartments ?? [],
         })),
       });
 
       setState({ status: "success", operation: "import" });
     } catch (error) {
+      console.error("[event-excel] import failed", error);
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
       setState({
         status: "error",
         errors: [
           {
             row: 0,
             field: "file",
-            message:
-              error instanceof Error ? error.message : "Something went wrong",
+            message,
             value: null,
           },
         ],
       });
+      toast.error(message);
     }
   };
 
@@ -87,12 +95,13 @@ export function useEventExcel({
     setState({ status: "loading", operation: "export" });
 
     try {
-      const data = await exportMutation.mutateAsync({
+      const raw = await exportMutation.mutateAsync({
         q: searchQuery,
         view,
         minParticipants,
         maxParticipants,
       });
+      const data = defaultCRPCTransformer.deserialize(raw) as typeof raw;
 
       exportToExcel(
         data.map((e) => ({
@@ -100,9 +109,10 @@ export function useEventExcel({
           description: e.description,
           point: e.point,
           category: e.category,
-          startDate: format(new Date(e.startDate), "LLL dd, y"),
-          endDate: e.endDate ? format(new Date(e.endDate), "LLL dd, y") : "",
+          startDate: format(e.startDate, "LLL dd, y"),
+          endDate: e.endDate ? format(e.endDate, "LLL dd, y") : "",
           maxParticipants: e.maxParticipants ?? "Unlimited",
+          allowedDivisions: formatBuExcelColumn(e.allowedDivisions),
         })),
         {
           filename: "event-export",
@@ -113,6 +123,7 @@ export function useEventExcel({
 
       setState({ status: "success", operation: "export" });
     } catch (error) {
+      console.error("[event-excel] export failed", error);
       const message =
         error instanceof Error ? error.message : "Something went wrong";
       setState({

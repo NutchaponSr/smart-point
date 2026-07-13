@@ -4,7 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 
-
 import { useCRPC } from "@/lib/convex/crpc";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 
@@ -29,6 +28,9 @@ export type ExcelOperationState =
 
 interface Props {
   searchQuery: string;
+  division?: string[];
+  department?: string[];
+  rank?: string[];
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -39,7 +41,12 @@ function chunkArray<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-export function useEmployeeExcel({ searchQuery }: Props) {
+export function useEmployeeExcel({
+  searchQuery,
+  division = [],
+  department = [],
+  rank = [],
+}: Props) {
   const crpc = useCRPC();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
@@ -131,7 +138,12 @@ export function useEmployeeExcel({ searchQuery }: Props) {
     setState({ status: "loading", operation: "export" });
 
     try {
-      const data = await exportMutation.mutateAsync({ query: searchQuery });
+      const data = await exportMutation.mutateAsync({
+        query: searchQuery,
+        division: division.length > 0 ? division : null,
+        department: department.length > 0 ? department : null,
+        rank: rank.length > 0 ? rank : null,
+      });
 
       exportToExcel(
         data.map((e) => ({

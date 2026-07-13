@@ -86,18 +86,37 @@ async function getAdminEmployeeDocIds(
   return new Set(adminUsers.map((user) => user.employeeId));
 }
 
-function matchesEmployeeSearch(
-  row: {
-    employeeId: string;
-    name: string;
-    email: string | null;
-    department: string;
-    position: string;
-    rank: string;
-    division: string;
-  },
-  normalizedQuery: string,
-) {
+type EmployeeListRow = {
+  employeeId: string;
+  name: string;
+  email: string | null;
+  department: string;
+  position: string;
+  rank: string;
+  division: string;
+};
+
+type EmployeeListFilters = {
+  query?: string | null;
+  division?: string[] | null;
+  department?: string[] | null;
+  rank?: string[] | null;
+};
+
+function normalizeFilterArray(
+  value: string[] | null | undefined,
+): string[] {
+  if (value == null || value.length === 0) return [];
+  return [
+    ...new Set(
+      value
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0),
+    ),
+  ];
+}
+
+function matchesEmployeeSearch(row: EmployeeListRow, normalizedQuery: string) {
   if (!normalizedQuery) return true;
   return (
     row.employeeId.toLowerCase().includes(normalizedQuery) ||
@@ -108,6 +127,107 @@ function matchesEmployeeSearch(
     row.division.toLowerCase().includes(normalizedQuery) ||
     (row.email ?? "").toLowerCase().includes(normalizedQuery)
   );
+}
+
+function matchesEmployeeListFilters(
+  row: EmployeeListRow,
+  filters: {
+    divisions: string[];
+    departments: string[];
+    ranks: string[];
+    normalizedQuery: string;
+  },
+) {
+  if (
+    filters.divisions.length > 0 &&
+    !filters.divisions.includes(row.division)
+  ) {
+    return false;
+  }
+  if (
+    filters.departments.length > 0 &&
+    !filters.departments.includes(row.department)
+  ) {
+    return false;
+  }
+  if (filters.ranks.length > 0 && !filters.ranks.includes(row.rank)) {
+    return false;
+  }
+  return matchesEmployeeSearch(row, filters.normalizedQuery);
+}
+
+const employeeListFilterInput = {
+  query: z.string().optional().nullable(),
+  division: z.array(z.string()).optional().nullable(),
+  department: z.array(z.string()).optional().nullable(),
+  rank: z.array(z.string()).optional().nullable(),
+};
+
+function buildEmployeeListQuery(
+  ctx: Pick<QueryCtx, "orm"> | Pick<MutationCtx, "orm">,
+  input: EmployeeListFilters,
+) {
+  const divisions = normalizeFilterArray(input.division);
+  const departments = normalizeFilterArray(input.department);
+  const ranks = normalizeFilterArray(input.rank);
+  const normalizedQuery = input.query?.trim().toLowerCase() ?? "";
+  const matches = (row: EmployeeListRow) =>
+    matchesEmployeeListFilters(row, {
+      divisions,
+      departments,
+      ranks,
+      normalizedQuery,
+    });
+
+  // ใช้ equality index ได้เมื่อเลือกค่าเดียวในมิตินั้น
+  if (divisions.length === 1 && departments.length === 1) {
+    return ctx.orm.query.employee
+      .select()
+      .withIndex("by_division_department_employeeId", (q) =>
+        q.eq("division", divisions[0]!).eq("department", departments[0]!),
+      )
+      .orderBy({ employeeId: "asc" })
+      .filter(matches)
+      .map((row) => row);
+  }
+
+  if (divisions.length === 1) {
+    return ctx.orm.query.employee
+      .select()
+      .withIndex("by_division_employeeId", (q) =>
+        q.eq("division", divisions[0]!),
+      )
+      .orderBy({ employeeId: "asc" })
+      .filter(matches)
+      .map((row) => row);
+  }
+
+  if (departments.length === 1) {
+    return ctx.orm.query.employee
+      .select()
+      .withIndex("by_department_employeeId", (q) =>
+        q.eq("department", departments[0]!),
+      )
+      .orderBy({ employeeId: "asc" })
+      .filter(matches)
+      .map((row) => row);
+  }
+
+  if (ranks.length === 1) {
+    return ctx.orm.query.employee
+      .select()
+      .withIndex("by_rank_employeeId", (q) => q.eq("rank", ranks[0]!))
+      .orderBy({ employeeId: "asc" })
+      .filter(matches)
+      .map((row) => row);
+  }
+
+  return ctx.orm.query.employee
+    .select()
+    .withIndex("by_employeeId")
+    .orderBy({ employeeId: "asc" })
+    .filter(matches)
+    .map((row) => row);
 }
 
 async function deleteLikesAndCommentsForTransaction(
@@ -131,19 +251,13 @@ async function deleteLikesAndCommentsForTransaction(
 export const getMany = authQuery
   .input(
     z.object({
-      query: z.string().optional().nullable(),
+      ...employeeListFilterInput,
       limit: z.number().min(1).max(100),
       cursor: z.string().nullish(),
     }),
   )
   .query(async ({ ctx, input }) => {
-    const normalizedQuery = input.query?.trim().toLowerCase() ?? "";
-    const baseQuery = ctx.orm.query.employee
-      .select()
-      .withIndex("by_employeeId")
-      .orderBy({ employeeId: "asc" })
-      .filter((row) => matchesEmployeeSearch(row, normalizedQuery))
-      .map((row) => row);
+    const baseQuery = buildEmployeeListQuery(ctx, input);
 
     const pageResult = await baseQuery.paginate({
       cursor: input.cursor ?? null,
@@ -168,23 +282,14 @@ export const getMany = authQuery
 const MAX_EXPORT_ROWS = 10000;
 const EXPORT_PAGE_SIZE = 100;
 
-/** ดึงรายชื่อพนักงานทั้งหมดที่ตรง `query` — ใช้ logic เดียวกับ getMany (ค้นหาข้ามฟิลด์) */
+/** ดึงรายชื่อพนักงานทั้งหมดที่ตรง filter — ใช้ logic เดียวกับ getMany */
 export const exportAll = authMutation
-  .input(
-    z.object({
-      query: z.string().optional().nullable(),
-    }),
-  )
+  .input(z.object(employeeListFilterInput))
   .mutation(async ({ ctx, input }) => {
-    const normalizedQuery = input.query?.trim().toLowerCase() ?? "";
-    const baseQuery = ctx.orm.query.employee
-      .select()
-      .withIndex("by_employeeId")
-      .orderBy({ employeeId: "asc" })
-      .filter((row) => matchesEmployeeSearch(row, normalizedQuery))
-      .map((row) => row);
+    const baseQuery = buildEmployeeListQuery(ctx, input);
 
-    const rows: Awaited<ReturnType<(typeof baseQuery)["paginate"]>>["page"] = [];
+    const rows: Awaited<ReturnType<(typeof baseQuery)["paginate"]>>["page"] =
+      [];
     let cursor: string | null = null;
 
     while (true) {

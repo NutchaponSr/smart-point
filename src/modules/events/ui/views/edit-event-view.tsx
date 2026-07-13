@@ -35,6 +35,9 @@ export const EditEventView = ({ eventId }: Props) => {
   });
 
   const { data: activity } = useSuspenseQuery(crpc.activity.getOne.queryOptions({ activityId: eventId }));
+  const hasEnded =
+    activity.endDate != null && new Date(activity.endDate).getTime() < Date.now();
+  const canDelete = activity.joinedCount <= 0 || hasEnded;
 
   const form = useForm<EventSchema>({
     resolver: zodResolver(eventSchema),
@@ -99,6 +102,7 @@ export const EditEventView = ({ eventId }: Props) => {
             <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
               <Button  
                 type="button" 
+                size="lg"
                 onClick={() => router.push(`/meta/events/${eventId}/join`)}
               >
                 ผู้เข้าร่วม
@@ -108,25 +112,40 @@ export const EditEventView = ({ eventId }: Props) => {
               <h2 className="text-xl leading-snug text-destructive">
                 โซนอันตราย
               </h2>
-              <Button 
-                className="bg-destructive" 
-                type="button" 
+              <Button
+                type="button"
+                variant="danger"
+                size="lg"
+                disabled={!canDelete || remove.isPending}
+                title={
+                  canDelete
+                    ? undefined
+                    : "มีพนักงานเข้าร่วมอยู่ — ลบได้หลังกิจกรรมสิ้นสุด"
+                }
                 onClick={async () => {
+                  if (!canDelete) return;
+
                   const ok = await confirm();
 
                   if (ok) {
-                    remove.mutate({ 
-                      activityId: eventId 
-                    }, {
-                      onSuccess: () => {
-                        router.push("/dashboard/events");
-                      }
-                    });
+                    remove.mutate(
+                      { activityId: eventId },
+                      {
+                        onSuccess: () => {
+                          router.push("/dashboard/events");
+                        },
+                      },
+                    );
                   }
                 }}
               >
                 ลบ
               </Button>
+              {!canDelete ? (
+                <p className="text-sm text-muted-foreground">
+                  มีพนักงานเข้าร่วมอยู่ — ลบได้หลังกิจกรรมสิ้นสุด
+                </p>
+              ) : null}
             </div>
           </aside>
         </div>
