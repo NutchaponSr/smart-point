@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { Controller, useFormContext } from "react-hook-form";
 
 import {
@@ -16,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FieldSet } from "@/components/fieldset";
 import { PriceInput } from "@/components/price-input";
 import { DatePicker } from "@/components/date-picker";
+import { formatThaiDate } from "@/lib/format-thai-date";
 
 import { EventSchema } from "../../schema";
 import { ChevronDownIcon } from "lucide-react";
@@ -100,7 +100,7 @@ export const EventForm = () => {
               <FieldSet label="วันที่เริ่มต้น" errorMessage={fieldState.error?.message}>
                 <DatePicker output="number" value={field.value} onSelect={field.onChange}>
                   <Button size="lg" type="button" className="justify-start px-4">
-                    {format(new Date(field.value), "LLL dd, yyyy")}
+                    {formatThaiDate(field.value)}
                   </Button>
                 </DatePicker>
               </FieldSet>
@@ -113,7 +113,7 @@ export const EventForm = () => {
               <FieldSet label="วันที่สิ้นสุด" errorMessage={fieldState.error?.message}>
                 <DatePicker output="number" value={field.value} onSelect={field.onChange}>
                   <Button size="lg" type="button" className="justify-start px-4">
-                    {format(new Date(field.value), "LLL dd, yyyy")}
+                    {formatThaiDate(field.value)}
                   </Button>
                 </DatePicker>
               </FieldSet>

@@ -3,6 +3,17 @@ const DAY_MS = 86_400_000;
 /** ปัดเวลาเป็นรายวัน (UTC) ให้ query key ของ carousel ตรงกันระหว่าง server prefetch และ client */
 export const getCarouselNow = () => Math.floor(Date.now() / DAY_MS) * DAY_MS;
 
+/** กิจกรรมสิ้นสุดหลัง endDate ครบทั้งวัน (endDate เก็บเป็น 00:00 ของวันนั้น) */
+export function hasActivityEnded(
+  endDate: number | null | undefined,
+  now = Date.now(),
+) {
+  if (endDate == null) return false;
+  const endOfDay = new Date(endDate);
+  endOfDay.setHours(23, 59, 59, 999);
+  return now > endOfDay.getTime();
+}
+
 /** ประเภทกิจกรรมที่กำหนด BU/สังกัดผู้เข้าร่วมได้ */
 export const buRestrictedCategories = [
   "internal_bu",

@@ -1,32 +1,43 @@
+import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
 import { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { cn } from "@/lib/utils";
-import { statuses } from "@/modules/rewards/constants";
+import {
+  shippingStatuses,
+  statuses,
+  type ShippingStatus,
+} from "@/modules/rewards/constants";
 import { PurchaseActions } from "./purchase-actions";
 
 type Purchase = ApiOutputs["redemption"]["getMany"]["page"][0];
 
-export const purchaseColumns = (startRank = 4): ColumnDef<Purchase>[] => {
+function PurchaseShippingStatusBadge({
+  status,
+  shippingStatus,
+}: {
+  status: Purchase["redemption"]["status"];
+  shippingStatus: ShippingStatus;
+}) {
+  if (status === "cancelled") {
+    return (
+      <span className="text-sm font-medium text-muted-foreground">
+        {statuses.cancelled}
+      </span>
+    );
+  }
+
+  const meta = shippingStatuses[shippingStatus];
+
+  return (
+    <span className={cn("text-sm font-medium", meta.color)}>{meta.label}</span>
+  );
+}
+
+export const purchaseColumns = (): ColumnDef<Purchase>[] => {
   return [
-    {
-      id: "rank",
-      header: "ลำดับ",
-      cell: ({ row }) => {
-        const rank = startRank + row.index;
-        return (
-          <div
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-xs border-2 border-border bg-muted text-base font-bold tabular-nums",
-            )}
-          >
-            {rank}
-          </div>
-        );
-      },
-    },
     {
       accessorKey: "reward",
       header: "รางวัล",
@@ -71,20 +82,22 @@ export const purchaseColumns = (startRank = 4): ColumnDef<Purchase>[] => {
       header: "พอยต์ที่ใช้",
       cell: ({ row }) => {
         return (
-          <span className="text-base font-bold tabular-nums">
-            {row.original.redemption.pointSpent.toLocaleString("th-TH")}
+          <span className="flex items-center gap-1 text-base font-medium tabular-nums text-[#1cb0f6]">
+            <img src={Coin.src} alt="Coin" className="size-6" />
+            {row.original.redemption.pointSpent}
           </span>
         );
       },
     },
     {
       accessorKey: "status",
-      header: "สถานะ",
+      header: "สถานะจัดส่ง",
       cell: ({ row }) => {
         return (
-          <span className="text-sm text-muted-foreground">
-            {statuses[row.original.redemption.status]}
-          </span>
+          <PurchaseShippingStatusBadge
+            status={row.original.redemption.status}
+            shippingStatus={row.original.redemption.shippingStatus}
+          />
         );
       },
     },
@@ -99,7 +112,10 @@ export const purchaseColumns = (startRank = 4): ColumnDef<Purchase>[] => {
             <PurchaseActions
               redemptionId={row.original.redemption._id}
               reward={row.original.reward}
-              reviewDisabled={!!row.original.review}
+              reviewDisabled={
+                !!row.original.review ||
+                row.original.redemption.shippingStatus !== "delivered"
+              }
             />
           </div>
         );

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 
 import emptyIllustration from "../../../../../public/extra_character_e.svg";
 
@@ -20,7 +21,6 @@ import { Pagination } from "@/components/pagniation";
 import { Currencies } from "@/modules/cart/ui/components/currency";
 import { purchaseColumns } from "@/modules/cart/ui/components/purchase-columns";
 import { PurchaseFilters } from "@/modules/cart/ui/components/purchase-filters";
-import { PurchaseHighlightCard } from "@/modules/cart/ui/components/purchase-highlight-card";
 
 import { usePurchaseFilters } from "@/modules/cart/stores/use-purchase-filters";
 
@@ -53,14 +53,7 @@ export const PurchasesView = () => {
   const canGoForward =
     purchases.hasNextPage && purchases.continueCursor != null;
 
-  const topPurchases = purchases.page.slice(0, 3);
-  const tablePurchases = purchases.page.slice(3);
-  const tableStartRank = filters.page * filters.limit + 4;
-
-  const totalPointsOnPage = purchases.page.reduce(
-    (sum, item) => sum + item.redemption.pointSpent,
-    0,
-  );
+  const tableColumns = useMemo(() => purchaseColumns(), []);
 
   const illustrationSrc =
     typeof emptyIllustration === "string"
@@ -85,23 +78,6 @@ export const PurchasesView = () => {
                 {t("title")}
               </h1>
             </header>
-
-            {topPurchases.length > 0 && (
-              <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                {topPurchases.map((item, index) => (
-                  <PurchaseHighlightCard
-                    key={item.redemption._id}
-                    rank={filters.page * filters.limit + index + 1}
-                    podiumPlace={(index + 1) as 1 | 2 | 3}
-                    rewardName={item.reward.name}
-                    rewardImage={item.reward.image}
-                    pointSpent={item.redemption.pointSpent}
-                    quantity={item.redemption.quantity}
-                    createdAt={item.redemption.createdAt}
-                  />
-                ))}
-              </div>
-            )}
 
             {purchases.page.length > 0 && (
               <div className="flex items-center justify-between gap-4">
@@ -134,54 +110,8 @@ export const PurchasesView = () => {
                   </Button>
                 </Link>
               </div>
-            ) : tablePurchases.length > 0 ? (
-              <div className="overflow-x-auto">
-                <DataTable
-                  data={tablePurchases}
-                  columns={purchaseColumns(tableStartRank)}
-                  footer={
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          รายการในหน้านี้
-                        </p>
-                        <p className="text-base font-medium">
-                          {purchases.page.length} รายการ
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">
-                          พอยต์รวมในหน้านี้
-                        </p>
-                        <p className="text-2xl font-bold tracking-tight tabular-nums sm:text-3xl">
-                          {totalPointsOnPage.toLocaleString("th-TH")}
-                        </p>
-                      </div>
-                    </div>
-                  }
-                />
-              </div>
             ) : (
-              <div className="rounded-xs border-2 border-border bg-background p-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      รายการในหน้านี้
-                    </p>
-                    <p className="text-base font-medium">
-                      {purchases.page.length} รายการ
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">
-                      พอยต์รวมในหน้านี้
-                    </p>
-                    <p className="text-2xl font-bold tracking-tight tabular-nums sm:text-3xl">
-                      {totalPointsOnPage.toLocaleString("th-TH")}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <DataTable data={purchases.page} columns={tableColumns} />
             )}
           </div>
         </div>

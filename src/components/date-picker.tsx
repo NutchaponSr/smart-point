@@ -5,6 +5,8 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { th } from "date-fns/locale";
+import { thaiDayPickerFormatters } from "@/lib/format-thai-date";
 
 type DatePickerProps = {
   children: React.ReactNode;
@@ -44,6 +46,8 @@ export const DatePicker = (props: DatePickerProps) => {
         <div className="p-2">
           <Calendar
             mode="single"
+            locale={th}
+            formatters={thaiDayPickerFormatters}
             defaultMonth={selectedDate ?? new Date()}
             selected={selectedDate}
             onSelect={(date) => {

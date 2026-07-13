@@ -772,7 +772,9 @@ export type DataModel = {
   };
   redemption: {
     document: {
+      carrier?: null | string;
       createdAt?: number;
+      deliveredAt?: null | number;
       employeeId: Id<"employee">;
       fulfilledAt?: null | number;
       fulfilledBy?: null | Id<"employee">;
@@ -781,14 +783,24 @@ export type DataModel = {
       pointSpent: number;
       quantity: number;
       rewardId: Id<"reward">;
+      shippedAt?: null | number;
+      shippingStatus?:
+        | null
+        | "pending"
+        | "processing"
+        | "shipped"
+        | "delivered";
       status: "pending" | "fulfilled" | "cancelled";
+      trackingNumber?: null | string;
       updatedAt?: null | number;
       _id: Id<"redemption">;
       _creationTime: number;
     };
     fieldPaths:
+      | "carrier"
       | "createdAt"
       | "_creationTime"
+      | "deliveredAt"
       | "employeeId"
       | "fulfilledAt"
       | "fulfilledBy"
@@ -798,14 +810,23 @@ export type DataModel = {
       | "pointSpent"
       | "quantity"
       | "rewardId"
+      | "shippedAt"
+      | "shippingStatus"
       | "status"
+      | "trackingNumber"
       | "updatedAt";
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
       by_employeeId: ["employeeId", "_creationTime"];
+      by_employeeId_shippingStatus: [
+        "employeeId",
+        "shippingStatus",
+        "_creationTime",
+      ];
       by_employeeId_status: ["employeeId", "status", "_creationTime"];
       by_rewardId: ["rewardId", "_creationTime"];
+      by_shippingStatus: ["shippingStatus", "_creationTime"];
       by_status: ["status", "_creationTime"];
     };
     searchIndexes: {};

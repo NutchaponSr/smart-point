@@ -26,6 +26,7 @@ function createProcedureRegistry() {
   "bulkCreate": ["mutation", typedProcedureResolver(api["activity"]["bulkCreate"], () => (require("../activity") as Record<string, unknown>)["bulkCreate"])],
   "bulkDelete": ["mutation", typedProcedureResolver(api["activity"]["bulkDelete"], () => (require("../activity") as Record<string, unknown>)["bulkDelete"])],
   "bulkLeave": ["mutation", typedProcedureResolver(api["activity"]["bulkLeave"], () => (require("../activity") as Record<string, unknown>)["bulkLeave"])],
+  "bulkReject": ["mutation", typedProcedureResolver(api["activity"]["bulkReject"], () => (require("../activity") as Record<string, unknown>)["bulkReject"])],
   "count": ["query", typedProcedureResolver(api["activity"]["count"], () => (require("../activity") as Record<string, unknown>)["count"])],
   "create": ["mutation", typedProcedureResolver(api["activity"]["create"], () => (require("../activity") as Record<string, unknown>)["create"])],
   "exportAll": ["mutation", typedProcedureResolver(api["activity"]["exportAll"], () => (require("../activity") as Record<string, unknown>)["exportAll"])],
@@ -35,6 +36,7 @@ function createProcedureRegistry() {
   "leave": ["mutation", typedProcedureResolver(api["activity"]["leave"], () => (require("../activity") as Record<string, unknown>)["leave"])],
   "list": ["query", typedProcedureResolver(api["activity"]["list"], () => (require("../activity") as Record<string, unknown>)["list"])],
   "recommended": ["query", typedProcedureResolver(api["activity"]["recommended"], () => (require("../activity") as Record<string, unknown>)["recommended"])],
+  "reject": ["mutation", typedProcedureResolver(api["activity"]["reject"], () => (require("../activity") as Record<string, unknown>)["reject"])],
   "remove": ["mutation", typedProcedureResolver(api["activity"]["remove"], () => (require("../activity") as Record<string, unknown>)["remove"])],
   "update": ["mutation", typedProcedureResolver(api["activity"]["update"], () => (require("../activity") as Record<string, unknown>)["update"])],
 } as const;
