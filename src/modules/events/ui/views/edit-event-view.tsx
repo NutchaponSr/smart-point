@@ -102,6 +102,7 @@ export const EditEventView = ({ eventId }: Props) => {
             <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
               <Button  
                 type="button" 
+                size="lg"
                 onClick={() => router.push(`/meta/events/${eventId}/join`)}
               >
                 ผู้เข้าร่วม
@@ -112,8 +113,9 @@ export const EditEventView = ({ eventId }: Props) => {
                 โซนอันตราย
               </h2>
               <Button
-                className="bg-destructive"
                 type="button"
+                variant="danger"
+                size="lg"
                 disabled={!canDelete || remove.isPending}
                 title={
                   canDelete

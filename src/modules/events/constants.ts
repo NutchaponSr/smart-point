@@ -53,6 +53,7 @@ export const eventHeaderMapping: Record<string, string> = {
   "Start Date": "startDate",
   "End Date": "endDate",
   "Max Participants": "maxParticipants",
+  BU: "allowedDivisions",
 }
 
 export const eventHeaders: Record<string, string> = {
@@ -63,6 +64,7 @@ export const eventHeaders: Record<string, string> = {
   "startDate": "Start Date",
   "endDate": "End Date",
   "maxParticipants": "Max Participants",
+  "allowedDivisions": "BU",
 }
 
 export const participantHeaderMapping: Record<string, string> = {
