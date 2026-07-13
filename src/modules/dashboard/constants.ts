@@ -21,6 +21,13 @@ export const links = [
     },
   },
   {
+    slug: "redemptions?shippingStatus=pending&shippingStatus=processing",
+    name: {
+      th: "จัดส่งรางวัล",
+      en: "Redemptions",
+    },
+  },
+  {
     slug: "events",
     name: {
       th: "กิจกรรม",

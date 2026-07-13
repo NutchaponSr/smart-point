@@ -25,7 +25,7 @@ const Page = async ({ searchParams }: Props) => {
 
   return (
     <HydrateClient>
-      <div className="mx-auto max-w-[1058px] pt-6 w-full">
+      <div className="mx-auto max-w-7xl pt-6 w-full">
         <PurchasesView />
       </div>
     </HydrateClient>

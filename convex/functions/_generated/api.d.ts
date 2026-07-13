@@ -25,7 +25,11 @@ export declare const api: {
       "mutation",
       "public",
       { activityId: string; participantId: string },
-      { approved: boolean; skipped: boolean }
+      {
+        approved: boolean;
+        payoutBalanceType?: "giving" | "receiving";
+        skipped: boolean;
+      }
     >;
     attachEvidence: FunctionReference<
       "mutation",
@@ -74,6 +78,12 @@ export declare const api: {
       "public",
       { activityId: string; participantIds: Array<string> },
       { left: number; skipped: number }
+    >;
+    bulkReject: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; participantIds: Array<string> },
+      { rejected: number; skipped: number }
     >;
     count: FunctionReference<"query", "public", {}, any>;
     create: FunctionReference<
@@ -153,6 +163,12 @@ export declare const api: {
       "public",
       { limit: number; now?: number | null },
       any
+    >;
+    reject: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; participantId: string },
+      { rejected: boolean; skipped: boolean }
     >;
     remove: FunctionReference<
       "mutation",
@@ -366,10 +382,40 @@ export declare const api: {
       },
       any
     >;
+    getManyAdmin: FunctionReference<
+      "query",
+      "public",
+      {
+        by?: string | null;
+        cursor?: string | null;
+        from?: number | null;
+        limit: number;
+        q?: string | null;
+        shippingStatus?: Array<
+          "pending" | "processing" | "shipped" | "delivered"
+        > | null;
+        sort?: "recently-updated" | "purchase-date" | null;
+        status?: Array<"pending" | "fulfilled" | "cancelled"> | null;
+        to?: number | null;
+      },
+      any
+    >;
     reviewRedemption: FunctionReference<
       "mutation",
       "public",
       { comment?: string; redemptionId: string; stars: number },
+      any
+    >;
+    updateShippingStatus: FunctionReference<
+      "mutation",
+      "public",
+      {
+        carrier?: string;
+        note?: string;
+        redemptionId: string;
+        shippingStatus: "pending" | "processing" | "shipped" | "delivered";
+        trackingNumber?: string;
+      },
       any
     >;
   };

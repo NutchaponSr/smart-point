@@ -1,5 +1,6 @@
 "use client";
 
+import Coin from "../../../../../public/coin.svg";
 
 import { 
   ColumnFiltersState,
@@ -34,7 +35,7 @@ import { ExcelDropdown } from "@/components/excel-dropdown";
 
 import { columns } from "@/modules/events/ui/components/participant-columns";
 
-import { categories } from "@/modules/events/constants";
+import { categories, hasActivityEnded } from "@/modules/events/constants";
 import { joinEventSchema, JoinEventSchema } from "@/modules/events/schema";
 import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
 import { useParticipantExcel } from "@/modules/events/hooks/use-participant-excel";
@@ -66,6 +67,8 @@ export const JoinEventView = ({ eventId }: Props) => {
   const join = useMutation(crpc.activity.join.mutationOptions());
   const approve = useMutation(crpc.activity.approve.mutationOptions());
   const bulkApprove = useMutation(crpc.activity.bulkApprove.mutationOptions());
+  const reject = useMutation(crpc.activity.reject.mutationOptions());
+  const bulkReject = useMutation(crpc.activity.bulkReject.mutationOptions());
   const form = useForm<JoinEventSchema>({
     resolver: zodResolver(joinEventSchema),
     defaultValues: {
@@ -79,6 +82,7 @@ export const JoinEventView = ({ eventId }: Props) => {
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
+  const [rejectingIds, setRejectingIds] = useState<Set<string>>(new Set());
   const [selectedEvidence, setSelectedEvidence] = useState<
     ApiOutputs["activity"]["getOne"]["joinedEmployees"][0] | null
   >(null);
@@ -88,10 +92,16 @@ export const JoinEventView = ({ eventId }: Props) => {
     onExport,
   } = useParticipantExcel({ activityId: eventId, data: activity.joinedEmployees });
 
+  const activityHasEnded = hasActivityEnded(activity.endDate);
+
+  const approveSuccessMessage = () =>
+    "อนุมัติสำเร็จ — บวก receivingBudget ให้พนักงานแล้ว";
+
   const table = useReactTable({
     data: activity.joinedEmployees,
     columns: columns({
       approvingIds,
+      rejectingIds,
       onOpenEvidence: (participant) => setSelectedEvidence(participant),
       onApprove: (participantId) => {
         setApprovingIds((prev) => new Set(prev).add(participantId));
@@ -100,7 +110,7 @@ export const JoinEventView = ({ eventId }: Props) => {
           {
             onSuccess: (result) => {
               if (result.approved) {
-                toast.success("อนุมัติสำเร็จ");
+                toast.success(approveSuccessMessage());
               } else {
                 toast.error("ไม่สามารถอนุมัติรายการนี้ได้");
               }
@@ -113,6 +123,34 @@ export const JoinEventView = ({ eventId }: Props) => {
             },
             onSettled: () => {
               setApprovingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(participantId);
+                return next;
+              });
+            },
+          },
+        );
+      },
+      onReject: (participantId) => {
+        setRejectingIds((prev) => new Set(prev).add(participantId));
+        reject.mutate(
+          { activityId: eventId, participantId },
+          {
+            onSuccess: (result) => {
+              if (result.rejected) {
+                toast.success("ปฏิเสธหลักฐานแล้ว — พนักงานสามารถแนบใหม่ได้");
+              } else {
+                toast.error("ไม่สามารถปฏิเสธรายการนี้ได้");
+              }
+              queryClient.invalidateQueries({
+                queryKey: crpc.activity.getOne.queryKey({ activityId: eventId }),
+              });
+            },
+            onError: () => {
+              toast.error("ปฏิเสธไม่สำเร็จ");
+            },
+            onSettled: () => {
+              setRejectingIds((prev) => {
                 const next = new Set(prev);
                 next.delete(participantId);
                 return next;
@@ -214,17 +252,12 @@ export const JoinEventView = ({ eventId }: Props) => {
               </h1>
             </header>
             <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,full)]">
-              <div className="p-3 outline-2 outline-offset-0 outline-border">
-                <div className="relative grid w-fit border-2 border-border">
-                  <div
-                    className="bg-pink px-2 py-1 text-sm"
-                    itemProp="point"
-                    content={String(activity.point)}
-                  >
-                    {activity.point}
-                  </div>
-                </div>
+            <div className="p-3 outline-2outline-offset-0 outline-border border-r-2">
+              <div className="flex items-center gap-1 text-base font-medium text-[#1cb0f6]">
+                <img src={Coin.src} alt="Coin" className="size-6" />
+                {activity.point}
               </div>
+            </div>
               <div className="flex items-center justify-between w-full grow px-4 py-3 max-sm:col-span-full">
                 <div className="flex items-center gap-1 grow">
                   <GoPersonFill className="size-4 stroke-[0.25]" />
@@ -238,6 +271,10 @@ export const JoinEventView = ({ eventId }: Props) => {
             <section className="border-t-2 border-border p-3">
               <p className="text-xs">
                 {activity.description}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                เข้าร่วมแล้วได้ special point 5 แต้ม · แนบหลักฐานแล้วรอ admin อนุมัติ/ปฏิเสธ · อนุมัติจะบวก receivingBudget
+                {activityHasEnded ? " · กิจกรรมสิ้นสุดแล้ว" : null}
               </p>
             </section>
           </section>
@@ -378,7 +415,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                     {
                       onSuccess: (result) => {
                         toast.success(
-                          `อนุมัติสำเร็จ ${result.approved} รายการ (ข้าม ${result.skipped})`,
+                          `อนุมัติสำเร็จ ${result.approved} รายการ (ข้าม ${result.skipped}) — receivingBudget`,
                         );
                         queryClient.invalidateQueries({
                           queryKey: crpc.activity.getOne.queryKey({
@@ -391,6 +428,35 @@ export const JoinEventView = ({ eventId }: Props) => {
                 }}
               >
                 อนุมัติทั้งหมด
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                disabled={bulkReject.isPending}
+                onClick={() => {
+                  bulkReject.mutate(
+                    {
+                      activityId: eventId,
+                      participantIds: table
+                        .getSelectedRowModel()
+                        .rows.map((row) => row.original.participantId),
+                    },
+                    {
+                      onSuccess: (result) => {
+                        toast.success(
+                          `ปฏิเสธสำเร็จ ${result.rejected} รายการ (ข้าม ${result.skipped})`,
+                        );
+                        queryClient.invalidateQueries({
+                          queryKey: crpc.activity.getOne.queryKey({
+                            activityId: eventId,
+                          }),
+                        });
+                      },
+                    },
+                  );
+                }}
+              >
+                ปฏิเสธทั้งหมด
               </Button>
               <h2 className="text-xl leading-snug text-destructive">โซนอันตราย</h2>
               <Button 

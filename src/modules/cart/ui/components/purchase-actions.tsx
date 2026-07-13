@@ -49,9 +49,9 @@ export const PurchaseActions = ({
             })
           }
         >
-          Review
+          รีวิว
         </DropdownMenuItem>
-        <DropdownMenuItem>Receipt</DropdownMenuItem>
+        <DropdownMenuItem disabled>ใบเสร็จ</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

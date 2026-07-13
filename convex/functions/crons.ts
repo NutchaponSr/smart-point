@@ -8,6 +8,6 @@ crons.monthly(
   "reset-giving-budget",
   { day: 1, hourUTC: 0, minuteUTC: 0 },
   internal.wallet.monthlyReset,
-)
+);
 
 export default crons;

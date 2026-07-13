@@ -189,6 +189,16 @@ export const redemption = convexTable("redemption", {
   pointCostPerItem: integer().notNull(),
   pointSpent: integer().notNull(),
   status: textEnum(["pending", "fulfilled", "cancelled"] as const).notNull(),
+  shippingStatus: textEnum([
+    "pending",
+    "processing",
+    "shipped",
+    "delivered",
+  ] as const),
+  trackingNumber: text(),
+  carrier: text(),
+  shippedAt: timestamp(),
+  deliveredAt: timestamp(),
   fulfilledBy: id("employee"),
   fulfilledAt: timestamp(),
   note: text(),
@@ -199,6 +209,8 @@ export const redemption = convexTable("redemption", {
   index("by_rewardId").on(t.rewardId),
   index("by_status").on(t.status),
   index("by_employeeId_status").on(t.employeeId, t.status),
+  index("by_shippingStatus").on(t.shippingStatus),
+  index("by_employeeId_shippingStatus").on(t.employeeId, t.shippingStatus),
 ]);
 
 export const activity = convexTable("activity", {

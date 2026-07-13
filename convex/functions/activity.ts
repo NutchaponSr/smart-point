@@ -246,14 +246,19 @@ async function listJoinedEmployeeDetails(
   };
 }
 
-/** กิจกรรมสิ้นสุดแล้วเมื่อมี endDate และเลยเวลานั้นแล้ว (ไม่มี endDate = ยังไม่สิ้นสุด) */
+/** กิจกรรมสิ้นสุดแล้วเมื่อเลย endDate ครบทั้งวัน (ไม่มี endDate = ยังไม่สิ้นสุด) */
 function hasActivityEnded(
-  activity: { endDate?: number | null },
+  activity: { endDate?: number | Date | null },
   now: number,
 ) {
-  return (
-    activity.endDate != null && new Date(activity.endDate).getTime() < now
-  );
+  if (activity.endDate == null) return false;
+  const endTimestamp =
+    activity.endDate instanceof Date
+      ? activity.endDate.getTime()
+      : activity.endDate;
+  const endOfDay = new Date(endTimestamp);
+  endOfDay.setHours(23, 59, 59, 999);
+  return now > endOfDay.getTime();
 }
 
 /**
@@ -388,19 +393,18 @@ async function approveActivityParticipantReward(input: {
     )
     .first();
 
-  const isSpecialPointActivity = activity.category === "specials_point";
   let pointAwarded = 0;
 
-  if (!existingLedger && !isSpecialPointActivity) {
-    const newBalance = employeeWallet.receivingBudget + activity.point;
+  if (!existingLedger) {
+    const newReceivingBudget = employeeWallet.receivingBudget + activity.point;
 
     await input.ctx.db.patch(employeeWallet._id, {
-      receivingBudget: newBalance,
+      receivingBudget: newReceivingBudget,
     });
     await input.ctx.db.insert("pointLedger", {
       employeeId: participant.employeeId,
       delta: activity.point,
-      balanceAfter: newBalance,
+      balanceAfter: newReceivingBudget,
       balanceType: "receiving",
       sourceType: "activity",
       sourceId,
@@ -408,17 +412,6 @@ async function approveActivityParticipantReward(input: {
       createdAt: Date.now(),
     });
     pointAwarded = activity.point;
-  }
-
-  const specialApprove = await awardSpecialPoints(input.ctx, {
-    employeeId: participant.employeeId,
-    delta: 1,
-    sourceType: "activity",
-    sourceId: `approve:${participant._id}`,
-    note: `โบนัสอนุมัติกิจกรรม: ${activity.name}`,
-  });
-  if (specialApprove.awarded) {
-    pointAwarded += 1;
   }
 
   await input.ctx.db.patch(participant._id, {
@@ -442,7 +435,58 @@ async function approveActivityParticipantReward(input: {
     },
   });
 
-  return { approved: true as const, skipped: false as const };
+  return {
+    approved: true as const,
+    skipped: false as const,
+    payoutBalanceType: "receiving" as const,
+  };
+}
+
+async function awardJoinSpecialPoints(
+  ctx: MutationCtx,
+  input: {
+    employeeId: Id<"employee">;
+    participantId: Id<"activityParticipant">;
+    activityName: string;
+  },
+) {
+  await awardSpecialPoints(ctx, {
+    employeeId: input.employeeId,
+    delta: 5,
+    sourceType: "activity",
+    sourceId: `join:${input.participantId}`,
+    note: `เข้าร่วมกิจกรรม: ${input.activityName}`,
+  });
+}
+
+async function rejectActivityParticipant(input: {
+  ctx: MutationCtx;
+  activityId: Id<"activity">;
+  participantId: Id<"activityParticipant">;
+}) {
+  const participant = await input.ctx.db.get(input.participantId);
+  if (!participant) {
+    return { rejected: false, skipped: true as const };
+  }
+  if (participant.activityId !== input.activityId) {
+    return { rejected: false, skipped: true as const };
+  }
+  if (participant.status !== "attended") {
+    return { rejected: false, skipped: true as const };
+  }
+
+  await input.ctx.db.patch(participant._id, {
+    status: "registered",
+    evidenceStorageId: null,
+    evidenceType: null,
+    evidenceMimeType: null,
+    evidenceFileName: null,
+    evidenceSize: null,
+    evidenceUploadedAt: null,
+    evidenceUploadedBy: null,
+  });
+
+  return { rejected: true as const, skipped: false as const };
 }
 
 const activityRow = z
@@ -696,6 +740,11 @@ export const bulkAddParticipants = authMutation
               activityName: activity.name,
             },
           });
+          await awardJoinSpecialPoints(ctx, {
+            employeeId: emp._id,
+            participantId: existing._id,
+            activityName: activity.name,
+          });
           reactivated += 1;
           activeCount += 1;
           continue;
@@ -725,6 +774,11 @@ export const bulkAddParticipants = authMutation
             employeeId: String(emp._id),
             activityName: activity.name,
           },
+        });
+        await awardJoinSpecialPoints(ctx, {
+          employeeId: emp._id,
+          participantId,
+          activityName: activity.name,
         });
         added += 1;
         activeCount += 1;
@@ -785,11 +839,7 @@ export const recommended = authQuery
           return false;
         }
         // ตัดกิจกรรมที่จบไปแล้ว (ไม่มี endDate = ยังเปิดอยู่)
-        if (
-          now != null &&
-          row.endDate != null &&
-          new Date(row.endDate).getTime() < now
-        ) {
+        if (now != null && hasActivityEnded(row, now)) {
           return false;
         }
         return true;
@@ -1217,15 +1267,11 @@ export const join = authMutation
       },
     });
 
-    if (activity.category === "specials_point") {
-      await awardSpecialPoints(ctx, {
-        employeeId,
-        delta: 5,
-        sourceType: "activity",
-        sourceId: `join:${participantId}`,
-        note: `เข้าร่วมกิจกรรมพิเศษ: ${activity.name}`,
-      });
-    }
+    await awardJoinSpecialPoints(ctx, {
+      employeeId,
+      participantId,
+      activityName: activity.name,
+    });
 
     return { joined: true };
   });
@@ -1366,6 +1412,18 @@ export const attachEvidence = authMutation
         message: "You have not joined this activity",
       });
     }
+    if (participant.evidenceStorageId) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "แนบหลักฐานแล้ว ไม่สามารถเปลี่ยนไฟล์ได้",
+      });
+    }
+    if (participant.status !== "registered") {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "ไม่สามารถแนบหลักฐานในระยะนี้ได้",
+      });
+    }
 
     const uploader = await ctx.db
       .query("user")
@@ -1380,7 +1438,7 @@ export const attachEvidence = authMutation
       evidenceSize: meta.size,
       evidenceUploadedAt: Date.now(),
       evidenceUploadedBy: uploader?._id,
-      status: participant.status === "registered" ? "attended" : participant.status,
+      status: "attended",
     });
 
     return { uploaded: true };
@@ -1397,6 +1455,7 @@ export const approve = authMutation
     z.object({
       approved: z.boolean(),
       skipped: z.boolean(),
+      payoutBalanceType: z.enum(["giving", "receiving"]).optional(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -1471,6 +1530,83 @@ export const bulkApprove = authMutation
     }
 
     return { approved, skipped };
+  });
+
+export const reject = authMutation
+  .input(
+    z.object({
+      activityId: z.string().min(1),
+      participantId: z.string().min(1),
+    }),
+  )
+  .output(
+    z.object({
+      rejected: z.boolean(),
+      skipped: z.boolean(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const activityId = input.activityId as Id<"activity">;
+    const participantId = input.participantId as Id<"activityParticipant">;
+    const activity = await ctx.db.get(activityId);
+    if (!activity) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Activity not found",
+      });
+    }
+    return await rejectActivityParticipant({
+      ctx,
+      activityId,
+      participantId,
+    });
+  });
+
+export const bulkReject = authMutation
+  .input(
+    z.object({
+      activityId: z.string().min(1),
+      participantIds: z.array(z.string().min(1)).min(1).max(100),
+    }),
+  )
+  .output(
+    z.object({
+      rejected: z.number(),
+      skipped: z.number(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const activityId = input.activityId as Id<"activity">;
+    const activity = await ctx.db.get(activityId);
+    if (!activity) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Activity not found",
+      });
+    }
+
+    const participantIds = [
+      ...new Set(
+        input.participantIds.map((id) => id as Id<"activityParticipant">),
+      ),
+    ];
+    let rejected = 0;
+    let skipped = 0;
+
+    for (const participantId of participantIds) {
+      const result = await rejectActivityParticipant({
+        ctx,
+        activityId,
+        participantId,
+      });
+      if (result.rejected) {
+        rejected += 1;
+      } else {
+        skipped += 1;
+      }
+    }
+
+    return { rejected, skipped };
   });
 
 /** จำนวนกิจกรรมที่เข้าร่วมอยู่ แต่ยังไม่ได้รับรางวัล (ยังไม่ `rewarded`; ไม่รวมที่ยกเลิก) */

@@ -71,6 +71,11 @@ export const metadata: MetadataItem[] = [
     isAdmin: true,
   },
   {
+    label: "จัดส่งรางวัล",
+    href: "/meta/redemptions?shippingStatus=pending&shippingStatus=processing",
+    isAdmin: true,
+  },
+  {
     label: "กิจกรรม",
     href: "/meta/events",
     isAdmin: true,

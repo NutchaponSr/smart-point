@@ -24,6 +24,7 @@ import { categories, statuses } from "@/modules/events/constants";
 import { useEventFilters } from "@/modules/events/stores/use-event-filters";
 
 type MyEvent = ApiOutputs["activity"]["list"]["page"][number];
+type ParticipationStatus = keyof typeof statuses;
 
 const categoryBadgeClassName: Record<MyEvent["category"], string> = {
   external: "bg-[#ddf4ff] text-[#1899d6]",
@@ -32,8 +33,14 @@ const categoryBadgeClassName: Record<MyEvent["category"], string> = {
   specials_point: "bg-[#ffe8c2] text-[#cc7800]",
 };
 
-const rewardedBadgeClassName =
-  "flex h-10 items-center justify-center gap-1.5 rounded-md bg-[#d7ffb8] text-sm font-medium text-[#58a700]";
+const statusBadgeClassName: Record<ParticipationStatus, string> = {
+  registered: "bg-[#ddf4ff] text-[#1899d6]",
+  attended: "bg-[#ffe8c2] text-[#cc7800]",
+  rewarded: "bg-[#d7ffb8] text-[#58a700]",
+};
+
+const statusActionClassName =
+  "flex h-10 items-center justify-center gap-1.5 rounded-md text-sm font-medium";
 
 export const MyEventScreen = () => {
   const crpc = useCRPC();
@@ -86,11 +93,14 @@ export const MyEventScreen = () => {
       ) : (
         <ul>
           {events.page.map((event) => {
-            const participationStatus = event.myParticipation.status;
+            const participationStatus = event.myParticipation
+              .status as ParticipationStatus;
             const statusLabel =
               participationStatus in statuses
-                ? statuses[participationStatus as keyof typeof statuses].th
+                ? statuses[participationStatus].th
                 : participationStatus;
+            const hasEvidence = !!event.myParticipation.evidenceFileName;
+            const canAttach = !hasEvidence && participationStatus === "registered";
             const points =
               event.myParticipation.pointAwarded ?? event.point;
 
@@ -108,6 +118,15 @@ export const MyEventScreen = () => {
                       )}
                     >
                       {categories[event.category].th}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-md px-2 py-1.5 text-xs font-bold",
+                        statusBadgeClassName[participationStatus] ??
+                          "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {statusLabel}
                     </span>
                     <span className="flex items-center gap-1 rounded-md px-2 py-1.5 text-[#1cb0f6] font-semibold">
                       <img
@@ -142,10 +161,16 @@ export const MyEventScreen = () => {
                 </div>
 
                 <div className="shrink-0 sm:w-36 self-start mt-8">
-                  {participationStatus === "registered" ? (
+                  {canAttach ? (
                     <AttachButton event={event} />
                   ) : (
-                    <div className={rewardedBadgeClassName}>
+                    <div
+                      className={cn(
+                        statusActionClassName,
+                        statusBadgeClassName[participationStatus] ??
+                          "bg-muted text-muted-foreground",
+                      )}
+                    >
                       <BsCheckCircleFill className="size-4" />
                       {statusLabel}
                     </div>

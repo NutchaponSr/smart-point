@@ -313,6 +313,7 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
       pointCostPerItem: reward.pointCost,
       pointSpent: linePoints,
       status: "pending",
+      shippingStatus: "pending",
     });
     redemptionIds.push(redemptionId);
 
