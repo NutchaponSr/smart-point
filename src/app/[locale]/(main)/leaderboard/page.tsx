@@ -10,13 +10,15 @@ interface Props {
 }
 
 const Page = async ({ searchParams }: Props) => {
-  const { period, limit, q } = await loadLeaderboardSearchParams(searchParams);
+  const { period, limit, q, division } =
+    await loadLeaderboardSearchParams(searchParams);
 
   prefetch(crpc.leaderboard.getMany.queryOptions({
     period,
     limit,
     cursor: null,
     q: q.trim() || undefined,
+    division: division.length > 0 ? division : null,
   }));
   prefetch(crpc.leaderboard.getMyEntry.queryOptions({
     period,

@@ -1,3 +1,4 @@
+import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
 import { ApiOutputs } from "@convex/api";
@@ -64,7 +65,13 @@ export const columns = (): ColumnDef<Reward>[] => {
     },
     {
       accessorKey: "pointCost",
-      header: "ราคา",
+      header: "พอยต์",
+      cell: ({ row }) => (
+        <span className="flex items-center gap-1 text-base font-medium text-[#1cb0f6]">
+          <img src={Coin.src} alt="Coin" className="size-6" />
+          {row.original.pointCost}
+        </span>
+      ),
     },
     {
       id: "actions",

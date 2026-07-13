@@ -34,7 +34,7 @@ export const Navigations = ({ links }: Props) => {
         <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuTrigger>ข้อมูล</NavigationMenuTrigger>
-            <NavigationMenuContent className="bg-background border-2 border-border rounded-xs p-0 py-2">
+            <NavigationMenuContent className="bg-background border-2 border-border rounded-md p-0 py-2">
               {links.map((link) => (
                 <NavigationMenuLink href={`/meta/${link.slug}`} key={link.slug} className="rounded-none!">
                   {link.name.th}

@@ -1,18 +1,123 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { ChevronDownIcon, PinIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  CheckIcon,
+  ChevronDownIcon,
+  CopyIcon,
+  LogInIcon,
+  PartyPopperIcon,
+  PinIcon,
+  SendIcon,
+  ShieldCheckIcon,
+  ShieldXIcon,
+  UserPlusIcon,
+} from "lucide-react";
+import { toast } from "sonner";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCRPC } from "@/lib/convex/crpc";
 import { cn } from "@/lib/utils";
 
 import NotFoundImage from "../../public/extra_character_e.svg";
 
-export const News = () => {
+type ActivityLogType =
+  | "point_transfer_sent"
+  | "point_transfer_approved"
+  | "point_transfer_rejected"
+  | "daily_login"
+  | "event_joined"
+  | "event_completed";
+
+const logTypeIcon: Record<ActivityLogType, typeof SendIcon> = {
+  point_transfer_sent: SendIcon,
+  point_transfer_approved: ShieldCheckIcon,
+  point_transfer_rejected: ShieldXIcon,
+  daily_login: LogInIcon,
+  event_joined: UserPlusIcon,
+  event_completed: PartyPopperIcon,
+};
+
+const logTypeTone: Record<ActivityLogType, string> = {
+  point_transfer_sent: "text-[#1cb0f6]",
+  point_transfer_approved: "text-emerald-600",
+  point_transfer_rejected: "text-rose-500",
+  daily_login: "text-amber-600",
+  event_joined: "text-[#1cb0f6]",
+  event_completed: "text-emerald-600",
+};
+
+const tabTriggerClassName = cn(
+  "min-h-11 flex-1 rounded-none border-0 bg-transparent px-3 py-2.5 text-sm font-bold",
+  "text-muted-foreground shadow-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#1cb0f6] after:opacity-0",
+  "hover:bg-transparent hover:text-muted-foreground",
+  "data-active:bg-transparent data-active:text-[#1cb0f6] data-active:after:opacity-100",
+  "hover:data-active:text-[#1cb0f6]",
+);
+
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mx-auto flex flex-col items-center justify-center gap-4 py-2">
+      <Image src={NotFoundImage} alt="Not Found" width={80} height={80} />
+      <div className="flex flex-col items-center justify-center">
+        <h5 className="text-base font-medium">{title}</h5>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function TabPanelFallback() {
+  return (
+    <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+      กำลังโหลด...
+    </div>
+  );
+}
+
+function CopyTransactionIdButton({ transactionId }: { transactionId: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(transactionId);
+      setCopied(true);
+      toast.success("คัดลอกรหัสธุรกรรมแล้ว");
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("คัดลอกไม่สำเร็จ");
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void onCopy()}
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-[#f7f7f7] hover:text-foreground"
+      title="คัดลอกรหัสธุรกรรม"
+    >
+      {copied ? (
+        <CheckIcon className="size-3 text-emerald-600" />
+      ) : (
+        <CopyIcon className="size-3" />
+      )}
+      {copied ? "คัดลอกแล้ว" : "คัดลอก"}
+    </button>
+  );
+}
+
+function NewsList() {
   const crpc = useCRPC();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -22,104 +127,194 @@ export const News = () => {
 
   if (items.length === 0) {
     return (
-      <article className="flex flex-col gap-4 rounded-md border-2 bg-background p-4">
-        <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-lg font-bold leading-7">ข่าวสาร</h2>
-        </div>
-
-        <div className="mx-auto flex flex-col items-center justify-center gap-4">
-          <Image src={NotFoundImage} alt="Not Found" width={80} height={80} />
-
-          <div className="flex flex-col items-center justify-center">
-            <h5 className="text-base font-medium">ยังไม่มีข่าวสาร</h5>
-            <p className="text-sm text-muted-foreground">
-              ข่าวสารจะถูกแสดงที่นี่
-            </p>
-          </div>
-        </div>
-      </article>
+      <EmptyState
+        title="ยังไม่มีข่าวสาร"
+        description="ข่าวสารจะถูกแสดงที่นี่"
+      />
     );
   }
 
   return (
-    <article className="flex flex-col gap-3 rounded-md border-2 bg-background p-4">
-      <div className="mb-1 flex items-center justify-between">
-        <h2 className="text-lg font-bold leading-7">ข่าวสาร</h2>
-        <span className="text-xs font-medium text-muted-foreground">
-          {items.length} รายการ
-        </span>
-      </div>
+    <ul className="flex flex-col gap-2">
+      {items.map((item) => {
+        const isExpanded = expandedId === item._id;
+        const publishedLabel = item.publishedAt
+          ? format(new Date(item.publishedAt), "d MMM yyyy", { locale: th })
+          : null;
 
-      <ul className="flex flex-col gap-2">
-        {items.map((item) => {
-          const isExpanded = expandedId === item._id;
-          const publishedLabel = item.publishedAt
-            ? format(new Date(item.publishedAt), "d MMM yyyy", { locale: th })
-            : null;
+        return (
+          <li
+            key={item._id}
+            className={cn(
+              "overflow-hidden rounded-md border-2 border-border transition-colors",
+              isExpanded && "border-pink/40 bg-pink/5",
+            )}
+          >
+            <button
+              type="button"
+              onClick={() => setExpandedId(isExpanded ? null : item._id)}
+              className="flex w-full items-start p-3 text-left"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      {item.isPinned && (
+                        <PinIcon className="size-3 shrink-0 text-pink" />
+                      )}
+                      <h3 className="line-clamp-2 text-sm font-bold leading-snug">
+                        {item.title}
+                      </h3>
+                    </div>
+                    {item.summary && !isExpanded && (
+                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                        {item.summary}
+                      </p>
+                    )}
+                  </div>
+                  <ChevronDownIcon
+                    className={cn(
+                      "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
+                      isExpanded && "rotate-180",
+                    )}
+                  />
+                </div>
+                {publishedLabel && (
+                  <time className="mt-1 block text-[11px] text-muted-foreground">
+                    {publishedLabel}
+                  </time>
+                )}
+              </div>
+            </button>
 
-          return (
-            <li
-              key={item._id}
+            {isExpanded && (
+              <div className="border-t border-border px-3 pb-3 pt-2">
+                {item.summary && (
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    {item.summary}
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {item.body}
+                </p>
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ActivityLogList() {
+  const crpc = useCRPC();
+  const { data: items } = useSuspenseQuery(
+    crpc.activityLog.getLatest.queryOptions({ limit: 10 }),
+  );
+
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        title="ยังไม่มีบันทึกการกระทำ"
+        description="การกระทำของคุณจะแสดงที่นี่"
+      />
+    );
+  }
+
+  return (
+    <ul className="flex flex-col gap-2">
+      {items.map((item) => {
+        const Icon =
+          logTypeIcon[item.type as ActivityLogType] ?? CheckCircle2Icon;
+        const tone =
+          logTypeTone[item.type as ActivityLogType] ?? "text-muted-foreground";
+        const timeLabel = format(new Date(item.createdAt), "d MMM yyyy HH:mm", {
+          locale: th,
+        });
+        const showRefs = item.refs.length > 0;
+
+        return (
+          <li
+            key={item._id}
+            className="flex items-start gap-3 rounded-md border-2 border-border p-3"
+          >
+            <span
               className={cn(
-                "overflow-hidden rounded-md border-2 border-border transition-colors",
-                isExpanded && "border-pink/40 bg-pink/5",
+                "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-[#f7f7f7]",
+                tone,
               )}
             >
-              <button
-                type="button"
-                onClick={() =>
-                  setExpandedId(isExpanded ? null : item._id)
-                }
-                className="flex w-full items-start p-3 text-left"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        {item.isPinned && (
-                          <PinIcon className="size-3 shrink-0 text-pink" />
-                        )}
-                        <h3 className="line-clamp-2 text-sm font-bold leading-snug">
-                          {item.title}
-                        </h3>
-                      </div>
-                      {item.summary && !isExpanded && (
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {item.summary}
-                        </p>
-                      )}
+              <Icon className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium leading-snug">{item.summary}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                <time>{timeLabel}</time>
+              </div>
+              {showRefs && (
+                <div className="mt-1.5 flex flex-col gap-1">
+                  {item.refs.map((ref) => (
+                    <div
+                      key={`${ref.label}-${ref.id}`}
+                      className="flex min-w-0 items-center gap-1.5"
+                    >
+                      <p
+                        className="min-w-0 truncate font-mono text-[10px] text-muted-foreground"
+                        title={`${ref.label}: ${ref.id}`}
+                      >
+                        <span className="font-sans text-muted-foreground/80">
+                          {ref.label}:{" "}
+                        </span>
+                        {ref.id}
+                      </p>
+                      {ref.label === "ธุรกรรม" ? (
+                        <CopyTransactionIdButton transactionId={ref.id} />
+                      ) : null}
                     </div>
-                    <ChevronDownIcon
-                      className={cn(
-                        "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
-                        isExpanded && "rotate-180",
-                      )}
-                    />
-                  </div>
-                  {publishedLabel && (
-                    <time className="mt-1 block text-[11px] text-muted-foreground">
-                      {publishedLabel}
-                    </time>
-                  )}
-                </div>
-              </button>
-
-              {isExpanded && (
-                <div className="border-t border-border px-3 pb-3 pt-2">
-                  {item.summary && (
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">
-                      {item.summary}
-                    </p>
-                  )}
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {item.body}
-                  </p>
+                  ))}
                 </div>
               )}
-            </li>
-          );
-        })}
-      </ul>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export const News = () => {
+  return (
+    <article className="flex flex-col gap-0 overflow-hidden rounded-md border-2 bg-background">
+      <Tabs defaultValue="news" className="gap-0">
+        <TabsList
+          variant="line"
+          className="h-auto w-full gap-0 rounded-none border-b border-border bg-transparent p-0"
+        >
+          <TabsTrigger value="news" className={tabTriggerClassName}>
+            ข่าวสาร
+          </TabsTrigger>
+          <TabsTrigger value="logs" className={tabTriggerClassName}>
+            บันทึกการกระทำ
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent
+          value="news"
+          className="max-h-80 overflow-y-auto overscroll-contain p-4 pt-3"
+        >
+          <Suspense fallback={<TabPanelFallback />}>
+            <NewsList />
+          </Suspense>
+        </TabsContent>
+        <TabsContent
+          value="logs"
+          className="max-h-80 overflow-y-auto overscroll-contain p-4 pt-3"
+        >
+          <Suspense fallback={<TabPanelFallback />}>
+            <ActivityLogList />
+          </Suspense>
+        </TabsContent>
+      </Tabs>
     </article>
   );
 };

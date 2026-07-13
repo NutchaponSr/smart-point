@@ -90,6 +90,7 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
               <div className="flex flex-col gap-4">
                 <Button 
                   type="button"
+                  size="lg"
                   onClick={() => router.push(`/meta/transactions?by=${employee._id}`)}
                 >
                   ธุรกรรม
@@ -105,7 +106,7 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
               </div>
 
               <div className="flex flex-col gap-4">
-                <Button className="bg-destructive" type="button" onClick={handleRemove}>
+                <Button variant="danger" size="lg" type="button" onClick={handleRemove}>
                   ลบบัญชีผู้ใช้งาน
                 </Button>
               </div>

@@ -111,6 +111,43 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  activityLog: {
+    document: {
+      actorEmployeeId: Id<"employee">;
+      meta?: null | string;
+      sourceId: string;
+      subjectEmployeeId?: null | Id<"employee">;
+      summary: string;
+      type:
+        | "point_transfer_sent"
+        | "point_transfer_approved"
+        | "point_transfer_rejected"
+        | "daily_login"
+        | "event_joined"
+        | "event_completed";
+      _id: Id<"activityLog">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "actorEmployeeId"
+      | "_creationTime"
+      | "_id"
+      | "meta"
+      | "sourceId"
+      | "subjectEmployeeId"
+      | "summary"
+      | "type";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_actor: ["actorEmployeeId", "_creationTime"];
+      by_subject: ["subjectEmployeeId", "_creationTime"];
+      by_type: ["type", "_creationTime"];
+      by_type_sourceId: ["type", "sourceId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   activityParticipant: {
     document: {
       activityId: Id<"activity">;
@@ -492,7 +529,16 @@ export type DataModel = {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
       by_department: ["department", "_creationTime"];
+      by_department_employeeId: ["department", "employeeId", "_creationTime"];
+      by_division_department_employeeId: [
+        "division",
+        "department",
+        "employeeId",
+        "_creationTime",
+      ];
+      by_division_employeeId: ["division", "employeeId", "_creationTime"];
       by_employeeId: ["employeeId", "_creationTime"];
+      by_rank_employeeId: ["rank", "employeeId", "_creationTime"];
     };
     searchIndexes: {
       search_email: {
@@ -898,6 +944,7 @@ export type DataModel = {
       by_receiverId: ["receiverId", "_creationTime"];
       by_receiverId_status: ["receiverId", "status", "_creationTime"];
       by_senderId: ["senderId", "_creationTime"];
+      by_senderId_receiverId: ["senderId", "receiverId", "_creationTime"];
       by_senderId_status: ["senderId", "status", "_creationTime"];
       by_status: ["status", "_creationTime"];
     };

@@ -1,7 +1,12 @@
 import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
+import { appendActivityLog } from "../lib/activity-log";
 import { authMutation, authQuery } from "../lib/crpc";
+import {
+  getMonthlyTransferUsed,
+  MONTHLY_TRANSFER_CAP_PER_RECEIVER,
+} from "../lib/monthly-transfer";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -71,12 +76,14 @@ function filterTransaction(
   if (input.to != null && ts > input.to) return false;
   if (normalizedQuery) {
     const message = (t.message ?? "").toLowerCase();
+    const transactionId = t._id.toLowerCase();
     const senderId = t.senderId.toLowerCase();
     const receiverId = t.receiverId.toLowerCase();
     const senderName = (input.senderName ?? "").toLowerCase();
     const receiverName = (input.receiverName ?? "").toLowerCase();
     const isQueryMatch =
       message.includes(normalizedQuery) ||
+      transactionId.includes(normalizedQuery) ||
       senderId.includes(normalizedQuery) ||
       receiverId.includes(normalizedQuery) ||
       senderName.includes(normalizedQuery) ||
@@ -835,6 +842,20 @@ async function approveTransactionById(
       updatedAt: now,
     });
 
+    await appendActivityLog(ctx, {
+      actorEmployeeId: reviewedBy,
+      subjectEmployeeId: transaction.receiverId,
+      type: "point_transfer_approved",
+      sourceId: transactionSourceId,
+      summary: `อนุมัติการโอน ${transaction.amount} พอยต์`,
+      meta: {
+        transactionId: transactionSourceId,
+        senderId: String(transaction.senderId),
+        receiverId: String(transaction.receiverId),
+        amount: transaction.amount,
+      },
+    });
+
     return {
       transactionId: transaction._id,
       status: "approved" as const,
@@ -889,6 +910,20 @@ async function approveTransactionById(
     reviewedAt: now,
     reviewedBy,
     updatedAt: now,
+  });
+
+  await appendActivityLog(ctx, {
+    actorEmployeeId: reviewedBy,
+    subjectEmployeeId: transaction.senderId,
+    type: "point_transfer_rejected",
+    sourceId: transactionSourceId,
+    summary: `ปฏิเสธการโอน ${transaction.amount} พอยต์`,
+    meta: {
+      transactionId: transactionSourceId,
+      senderId: String(transaction.senderId),
+      receiverId: String(transaction.receiverId),
+      amount: transaction.amount,
+    },
   });
 
   return {
@@ -1145,6 +1180,19 @@ export const send = authMutation
       });
     }
 
+    const quota = await getMonthlyTransferUsed({
+      ctx,
+      senderId: sender._id,
+      receiverId: receiver._id,
+    });
+
+    if (quota.used + input.amount > quota.cap) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: `โอนให้พนักงานคนนี้ได้ไม่เกิน ${quota.cap} พอยต์ต่อเดือน (ใช้ไปแล้ว ${quota.used} เหลือ ${quota.remaining})`,
+      });
+    }
+
     await ctx.db.patch(wallet._id, {
       givingBudget: wallet.givingBudget - input.amount,
     });
@@ -1169,6 +1217,21 @@ export const send = authMutation
       sourceId: String(transactionId),
       note: `Sent to ${receiver.name}`,
       createdAt: Date.now(),
+    });
+
+    await appendActivityLog(ctx, {
+      actorEmployeeId: sender._id,
+      subjectEmployeeId: receiver._id,
+      type: "point_transfer_sent",
+      sourceId: String(transactionId),
+      summary: `โอน ${input.amount} พอยต์ให้ ${receiver.name}`,
+      meta: {
+        transactionId: String(transactionId),
+        senderId: String(sender._id),
+        receiverId: String(receiver._id),
+        amount: input.amount,
+        receiverName: receiver.name,
+      },
     });
 
     return transactionId;
@@ -1273,6 +1336,7 @@ export const feeds = authQuery
       updatedAt: z.number().nullable(),
       sender: z.object({
         _id: z.custom<Id<"employee">>(),
+        employeeId: z.string(),
         name: z.string(),
         department: z.string(),
         position: z.string(),
@@ -1282,6 +1346,7 @@ export const feeds = authQuery
       }),
       receiver: z.object({
         _id: z.custom<Id<"employee">>(),
+        employeeId: z.string(),
         name: z.string(),
         department: z.string(),
         position: z.string(),
@@ -1301,6 +1366,7 @@ export const feeds = authQuery
           updatedAt: z.number().nullable(),
           author: z.object({
             _id: z.custom<Id<"employee">>(),
+            employeeId: z.string(),
             name: z.string(),
             department: z.string(),
             position: z.string(),
@@ -1410,12 +1476,23 @@ export const feeds = authQuery
               rejectionReason: tx.rejectionReason ?? null,
               updatedAt: tx.updatedAt ?? null,
               sender: {
-                ...sender,
+                _id: sender._id,
+                employeeId: sender.employeeId,
+                name: sender.name,
+                department: sender.department,
+                position: sender.position,
+                rank: sender.rank,
+                division: sender.division,
                 image: userImageByEmployeeId.get(sender._id) ?? null,
               },
               receiver: {
-                ...receiver,
                 _id: receiver._id,
+                employeeId: receiver.employeeId,
+                name: receiver.name,
+                department: receiver.department,
+                position: receiver.position,
+                rank: receiver.rank,
+                division: receiver.division,
                 image: userImageByEmployeeId.get(receiver._id) ?? null,
               },
               likes: {
@@ -1434,6 +1511,7 @@ export const feeds = authQuery
                     updatedAt: comment.updatedAt ?? null,
                     author: {
                       _id: author._id,
+                      employeeId: author.employeeId,
                       name: author.name,
                       department: author.department,
                       position: author.position,
@@ -1586,6 +1664,49 @@ export const comment = authMutation
         division: employee.division,
         image: user?.image ?? null,
       },
+    };
+  });
+
+export const getMonthlyTransferQuota = authQuery
+  .input(
+    z.object({
+      receiverId: z.string().min(1),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    const [sender, receiver] = await Promise.all([
+      ctx.db
+        .query("employee")
+        .withIndex("by_employeeId", (q) =>
+          q.eq("employeeId", ctx.user.username),
+        )
+        .first(),
+      ctx.db
+        .query("employee")
+        .withIndex("by_employeeId", (q) => q.eq("employeeId", input.receiverId))
+        .first(),
+    ]);
+
+    if (!sender || !receiver) {
+      return {
+        cap: MONTHLY_TRANSFER_CAP_PER_RECEIVER,
+        used: 0,
+        remaining: MONTHLY_TRANSFER_CAP_PER_RECEIVER,
+        monthStart: null as number | null,
+        monthEnd: null as number | null,
+        receiverName: receiver?.name ?? null,
+      };
+    }
+
+    const quota = await getMonthlyTransferUsed({
+      ctx,
+      senderId: sender._id,
+      receiverId: receiver._id,
+    });
+
+    return {
+      ...quota,
+      receiverName: receiver.name,
     };
   });
 

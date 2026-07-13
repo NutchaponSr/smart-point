@@ -22,6 +22,7 @@ const Page = async ({ searchParams }: Props) => {
 
   prefetch(crpc.wallet.getOne.queryOptions());
   prefetch(crpc.news.getLatest.queryOptions({ limit: 5 }));
+  prefetch(crpc.activityLog.getLatest.queryOptions({ limit: 10 }));
   prefetch(crpc.reward.getMany.queryOptions());
   prefetch(crpc.transaction.getMonthlyQuestProgress.queryOptions({ monthStart: startOfMonth(new Date()).getTime() }));  
   prefetch(

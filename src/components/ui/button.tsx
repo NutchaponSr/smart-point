@@ -16,14 +16,14 @@ const buttonVariants = cva(
         // custom
         locked: "bg-neutral-200 text-primary-foreground hover:bg-neutral-200/90 border-neutral-400 border-b-4 active:border-b-0",
 
-        primary: "bg-sky-400 text-primary-foreground hover:bg-sky-400/90 border-sky-500 border-b-4 active:border-b-0",
+        primary: "bg-[#1cb0f6] text-primary-foreground hover:brightness-[1.1] border-[#0003] border-b-4 active:border-b-0",
         primaryOutline: "bg-white text-[#1cb0f6] hover:bg-[#f7f7f7]",
 
-        secondary: "bg-[#58cc02] text-primary-foreground hover:bg-[#58cc02]/90 border-[#0003] border-b-4 active:border-b-0",
+        secondary: "bg-[#58cc02] text-primary-foreground hover:brightness-[1.1] border-[#0003] border-b-4 active:border-b-0",
         secondaryOutline: "bg-white text-[#58cc02] hover:bg-[#f7f7f7]",
 
-        danger: "bg-rose-500 text-primary-foreground hover:bg-rose-500/90 border-rose-600 border-b-4 active:border-b-0",
-        dangerOutline: "bg-white text-rose-500 hover:bg-[#f7f7f7]",
+        danger: "bg-[#ff4b4b] text-primary-foreground hover:brightness-[1.1] border-[#0003] border-b-4 active:border-b-0",
+        dangerOutline: "bg-white text-[#ff4b4b] hover:bg-[#f7f7f7]",
 
         super: "bg-indigo-500 text-primary-foreground hover:bg-indigo-500/90 border-indigo-600 border-b-4 active:border-b-0",
         superOutline: "bg-white text-indigo-500 hover:bg-[#f7f7f7]",

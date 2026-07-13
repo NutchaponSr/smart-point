@@ -179,6 +179,9 @@ export declare const api: {
       any
     >;
   };
+  activityLog: {
+    getLatest: FunctionReference<"query", "public", { limit?: number }, any>;
+  };
   cart: {
     addCart: FunctionReference<
       "mutation",
@@ -244,13 +247,25 @@ export declare const api: {
     exportAll: FunctionReference<
       "mutation",
       "public",
-      { query?: string | null },
+      {
+        department?: Array<string> | null;
+        division?: Array<string> | null;
+        query?: string | null;
+        rank?: Array<string> | null;
+      },
       any
     >;
     getMany: FunctionReference<
       "query",
       "public",
-      { cursor?: string | null; limit: number; query?: string | null },
+      {
+        cursor?: string | null;
+        department?: Array<string> | null;
+        division?: Array<string> | null;
+        limit: number;
+        query?: string | null;
+        rank?: Array<string> | null;
+      },
       any
     >;
     getOne: FunctionReference<"query", "public", { employeeId: any }, any>;
@@ -281,6 +296,7 @@ export declare const api: {
       "public",
       {
         cursor?: string | null;
+        division?: Array<string> | null;
         limit: number;
         period: "24hr" | "7d" | "30d" | "fullTime";
         q?: string | null;
@@ -547,6 +563,7 @@ export declare const api: {
               _id: any;
               department: string;
               division: string;
+              employeeId: string;
               image: string | null;
               name: string;
               position: string;
@@ -563,6 +580,7 @@ export declare const api: {
             _id: any;
             department: string;
             division: string;
+            employeeId: string;
             image: string | null;
             name: string;
             position: string;
@@ -576,6 +594,7 @@ export declare const api: {
             _id: any;
             department: string;
             division: string;
+            employeeId: string;
             image: string | null;
             name: string;
             position: string;
@@ -610,6 +629,12 @@ export declare const api: {
       "query",
       "public",
       { monthStart: number },
+      any
+    >;
+    getMonthlyTransferQuota: FunctionReference<
+      "query",
+      "public",
+      { receiverId: string },
       any
     >;
     like: FunctionReference<

@@ -4,9 +4,8 @@ import Image from "next/image";
 
 import CoinIcon from "../../../../../public/coin.svg";
 import CoinGiveIcon from "../../../../../public/coin-give.svg";
-import brickCorner from "../../../../../public/brick_high_slope_inverted_left_yellow_2.svg";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ApiOutputs } from "@convex/api";
 import { format, formatDistanceToNow, startOfDay } from "date-fns";
 import { th } from "date-fns/locale";
@@ -26,7 +25,9 @@ import { SearchInput } from "@/components/search-input";
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
   DialogHidden,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,8 +37,10 @@ import {
 } from "@/components/ui/popover";
 
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
+import { tags } from "@/modules/transactions/constants";
 import { useFeedFilters } from "@/modules/transactions/stores/use-feed-filters";
 import { DateFilter } from "@/modules/transactions/ui/components/date-filter";
+import { TransactionStatusBadge } from "@/modules/transactions/ui/components/transaction-analytic-columns";
 
 import { Id } from "../../../../../convex/functions/_generated/dataModel";
 
@@ -86,6 +89,54 @@ function getFeedAvatarClassName(role: "sender" | "receiver", size: string) {
   };
 }
 
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="grid gap-1">
+      <p className="text-xs font-medium text-[#afafaf]">{label}</p>
+      <div className="text-sm font-medium text-[#4b4b4b]">{value}</div>
+    </div>
+  );
+}
+
+function PartyCard({
+  label,
+  name,
+  id,
+  department,
+  image,
+  accent,
+}: {
+  label: string;
+  name: string;
+  id: string | undefined;
+  department: string | undefined;
+  image: string | null | undefined;
+  accent?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-md border-2 border-[#e5e5e5] bg-[#fafafa] p-3">
+      <UserAvatar
+        name={name}
+        src={image ?? undefined}
+        className={{
+          container: "size-10 shrink-0 after:border-[1.5px]",
+          fallback: accent
+            ? "bg-orange text-sm font-medium"
+            : "text-sm font-medium",
+        }}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-[#afafaf]">{label}</p>
+        <p className="text-sm font-bold text-[#4b4b4b]">{name}</p>
+        {id ? <p className="text-xs text-[#777]">รหัส: {id}</p> : null}
+        {department ? (
+          <p className="text-xs text-[#777]">แผนก: {department}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function FeedHeadline({
   isReceived,
   senderName,
@@ -98,8 +149,12 @@ function FeedHeadline({
   if (isReceived) {
     return (
       <p className="flex min-w-0 items-baseline gap-1 text-sm leading-snug">
-        <span className="min-w-0 truncate font-bold text-[#1cb0f6]">{senderName}</span>
-        <span className="shrink-0 font-medium text-[#4b4b4b]">ส่งพอยต์ให้คุณ</span>
+        <span className="min-w-0 truncate font-bold text-[#1cb0f6]">
+          {senderName}
+        </span>
+        <span className="shrink-0 font-medium text-[#4b4b4b]">
+          ส่งพอยต์ให้คุณ
+        </span>
       </p>
     );
   }
@@ -107,7 +162,9 @@ function FeedHeadline({
   return (
     <p className="flex min-w-0 items-baseline gap-1 text-sm leading-snug">
       <span className="shrink-0 font-medium text-[#4b4b4b]">คุณมอบพอยต์ให้</span>
-      <span className="min-w-0 truncate font-bold text-[#f1c40f]">{receiverName}</span>
+      <span className="min-w-0 truncate font-bold text-[#f1c40f]">
+        {receiverName}
+      </span>
     </p>
   );
 }
@@ -147,8 +204,7 @@ function PointBadge({
   size?: "sm" | "md";
 }) {
   return (
-    <div
-      className="flex shrink-0 items-center gap-1 font-bold tabular-nums">
+    <div className="flex shrink-0 items-center gap-1 font-bold tabular-nums">
       <Image
         src={isReceived ? CoinIcon : CoinGiveIcon}
         alt=""
@@ -156,9 +212,7 @@ function PointBadge({
         height={size === "sm" ? 20 : 24}
         aria-hidden
       />
-      <span
-        className={cn(isReceived ? "text-[#1cb0f6]" : "text-[#f1c40f]")}
-      >
+      <span className={cn(isReceived ? "text-[#1cb0f6]" : "text-[#f1c40f]")}>
         {isReceived ? `+${amount}` : `-${amount}`}
       </span>
     </div>
@@ -253,7 +307,7 @@ function FeedFiltersPopover() {
         <div className="p-4">
           <SearchInput
             value={filters.feedQ}
-            placeholder="ค้นหากิจกรรม"
+            placeholder="ค้นหาชื่อ ข้อความ หรือรหัสธุรกรรม"
             onChange={(feedQ) => void setFilters({ ...filters, feedQ })}
           />
         </div>
@@ -361,12 +415,28 @@ export const Feeds = () => {
           <li className="grid gap-6 p-6 md:p-8">
             <div className="grid justify-items-center gap-4 rounded-xl border-2 border-dashed border-[#e5e5e5] bg-[#fafafa] p-8 text-center">
               <div className="flex items-center gap-2">
-                <Image src={CoinIcon} alt="" width={28} height={34} aria-hidden />
-                <Image src={CoinGiveIcon} alt="" width={28} height={34} aria-hidden />
+                <Image
+                  src={CoinIcon}
+                  alt=""
+                  width={28}
+                  height={34}
+                  aria-hidden
+                />
+                <Image
+                  src={CoinGiveIcon}
+                  alt=""
+                  width={28}
+                  height={34}
+                  aria-hidden
+                />
               </div>
               <div className="grid gap-1">
-                <h3 className="text-lg font-bold text-[#4b4b4b]">ยังไม่มีกิจกรรมในฟีด</h3>
-                <p className="text-sm text-[#777]">เมื่อมีการมอบคะแนน รายการจะแสดงขึ้นที่นี่</p>
+                <h3 className="text-lg font-bold text-[#4b4b4b]">
+                  ยังไม่มีกิจกรรมในฟีด
+                </h3>
+                <p className="text-sm text-[#777]">
+                  เมื่อมีการมอบคะแนน รายการจะแสดงขึ้นที่นี่
+                </p>
               </div>
             </div>
           </li>
@@ -397,7 +467,8 @@ const FeedItem = ({
   currentEmployeeId: Id<"employee">;
   onLike: () => void;
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCommentOpen, setIsCommentOpen] = useState(false);
   const isReceived = feed.receiverId === currentEmployeeId;
   const timeAgo = formatDistanceTh(feed.createdAt);
 
@@ -408,65 +479,99 @@ const FeedItem = ({
     <>
       <li
         className={cn(
-          "p-4 transition-colors",
-          isReceived ? "bg-[#f4fbff]" : "bg-white",
+          "p-4 transition-colors bg-background",
         )}
       >
         <div className="flex min-w-0 items-start gap-3 overflow-hidden">
-          <UserAvatar
-            name={avatarName}
-            src={avatarImage || undefined}
-            className={getFeedAvatarClassName(
-              isReceived ? "sender" : "receiver",
-              "size-11",
-            )}
-          />
-
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <div className="flex w-full min-w-0 flex-col gap-2 text-left">
-              <FeedHeadline
-                isReceived={isReceived}
-                senderName={feed.sender.name}
-                receiverName={feed.receiver.name}
-              />
-
-              {isReceived ? (
-                <>
-                  {feed.message ? <FeedMessageBubble message={feed.message} /> : null}
-                  <span className="text-xs font-bold text-[#afafaf]">{timeAgo}</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-xs font-bold text-[#afafaf]">{timeAgo}</span>
-                  {feed.message ? <FeedMessageBubble message={feed.message} /> : null}
-                </>
+          <button
+            type="button"
+            onClick={() => setIsDetailOpen(true)}
+            className="flex min-w-0 flex-1 items-start gap-3 overflow-hidden text-left"
+          >
+            <UserAvatar
+              name={avatarName}
+              src={avatarImage || undefined}
+              className={getFeedAvatarClassName(
+                isReceived ? "sender" : "receiver",
+                "size-11",
               )}
+            />
+
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div className="flex w-full min-w-0 flex-col gap-2 text-left">
+                <FeedHeadline
+                  isReceived={isReceived}
+                  senderName={feed.sender.name}
+                  receiverName={feed.receiver.name}
+                />
+
+                {isReceived ? (
+                  <>
+                    {feed.message ? (
+                      <FeedMessageBubble message={feed.message} />
+                    ) : null}
+                    <span className="text-xs font-bold text-[#afafaf]">
+                      {timeAgo}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs font-bold text-[#afafaf]">
+                      {timeAgo}
+                    </span>
+                    {feed.message ? (
+                      <FeedMessageBubble message={feed.message} />
+                    ) : null}
+                  </>
+                )}
+
+                <p
+                  className="truncate font-mono text-[10px] text-[#afafaf]"
+                  title={feed._id}
+                >
+                  ID: {feed._id}
+                </p>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <FeedLikeButton
-                likes={feed.likes.count}
-                likedByCurrentUser={feed.likes.likedByCurrentUser}
-                onLike={onLike}
-              />
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setIsOpen(true)}
-              >
-                <GoComment className="size-4 stroke-[0.5]" />
-                {feed.comments.length}
-              </Button>
-            </div>
-          </div>
+            <PointBadge isReceived={isReceived} amount={feed.amount} size="sm" />
+          </button>
+        </div>
 
-          <PointBadge isReceived={isReceived} amount={feed.amount} size="sm" />
+        <div className="mt-2 flex flex-wrap items-center gap-2 pl-14">
+          <FeedLikeButton
+            likes={feed.likes.count}
+            likedByCurrentUser={feed.likes.likedByCurrentUser}
+            onLike={onLike}
+          />
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsCommentOpen(true)}
+          >
+            <GoComment className="size-4 stroke-[0.5]" />
+            {feed.comments.length}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="primaryOutline"
+            onClick={() => setIsDetailOpen(true)}
+          >
+            รายละเอียด
+          </Button>
         </div>
       </li>
 
+      <FeedDetailDialog
+        feed={feed}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+      />
+
       <FeedDialog
-        isOpen={isOpen}
-        onOpenChange={setIsOpen}
+        isOpen={isCommentOpen}
+        onOpenChange={setIsCommentOpen}
         isReceived={isReceived}
         amount={feed.amount}
         senderName={feed.sender.name}
@@ -486,6 +591,126 @@ const FeedItem = ({
   );
 };
 
+function FeedDetailDialog({
+  feed,
+  open,
+  onOpenChange,
+}: {
+  feed: Feed;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const tagLabel = feed.tags ? (tags[feed.tags] ?? feed.tags) : "-";
+  const createdAt = format(new Date(feed.createdAt), "d MMM yyyy HH:mm", {
+    locale: th,
+  });
+  const reviewedAt =
+    feed.reviewedAt > 0
+      ? format(new Date(feed.reviewedAt), "d MMM yyyy HH:mm", { locale: th })
+      : null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>รายละเอียดธุรกรรม</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid gap-4">
+          <InfoRow
+            label="รหัสธุรกรรม"
+            value={
+              <p className="break-all font-mono text-xs text-[#777]">{feed._id}</p>
+            }
+          />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PartyCard
+              label="ผู้ส่ง"
+              name={feed.sender.name}
+              id={feed.sender.employeeId}
+              department={feed.sender.department}
+              image={feed.sender.image}
+            />
+            <PartyCard
+              label="ผู้รับ"
+              name={feed.receiver.name}
+              id={feed.receiver.employeeId}
+              department={feed.receiver.department}
+              image={feed.receiver.image}
+              accent
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InfoRow
+              label="จำนวนพอยต์"
+              value={
+                <span className="flex items-center gap-1 text-lg font-bold text-[#F7C100]">
+                  <Image
+                    src={CoinGiveIcon}
+                    alt=""
+                    width={24}
+                    height={24}
+                    aria-hidden
+                  />
+                  {feed.amount}
+                </span>
+              }
+            />
+            <InfoRow
+              label="สถานะ"
+              value={
+                <TransactionStatusBadge
+                  status={
+                    feed.status === "rejected"
+                      ? "rejected"
+                      : feed.status === "pending"
+                        ? "pending"
+                        : "completed"
+                  }
+                />
+              }
+            />
+          </div>
+
+          <InfoRow label="วันที่สร้าง" value={createdAt} />
+
+          {reviewedAt ? (
+            <InfoRow label="วันที่ตรวจสอบ" value={reviewedAt} />
+          ) : null}
+
+          <InfoRow label="แท็ก SMART Culture" value={tagLabel || "-"} />
+
+          <InfoRow
+            label="ข้อความ"
+            value={
+              feed.message ? (
+                <p className="whitespace-pre-wrap rounded-md border-2 border-[#e5e5e5] bg-[#fafafa] p-3 text-sm leading-relaxed">
+                  {feed.message}
+                </p>
+              ) : (
+                "-"
+              )
+            }
+          />
+
+          {feed.rejectionReason ? (
+            <InfoRow
+              label="เหตุผลที่ปฏิเสธ"
+              value={
+                <p className="whitespace-pre-wrap rounded-md border-2 border-rose-200 bg-rose-50 p-3 text-sm text-rose-600">
+                  {feed.rejectionReason}
+                </p>
+              }
+            />
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export const FeedDialog = ({
   isOpen,
   onOpenChange,
@@ -499,7 +724,6 @@ export const FeedDialog = ({
   likes,
   comments,
   createdAt,
-  tags,
   onLike,
   transactionId,
   likedByCurrentUser,
@@ -523,7 +747,9 @@ export const FeedDialog = ({
 }) => {
   const crpc = useCRPC();
 
-  const { data: currentUser } = useSuspenseQuery(crpc.user.getCurrentUser.queryOptions());
+  const { data: currentUser } = useSuspenseQuery(
+    crpc.user.getCurrentUser.queryOptions(),
+  );
 
   const [comment, setComment] = useState("");
 
@@ -558,20 +784,28 @@ export const FeedDialog = ({
               <PointBadge isReceived={isReceived} amount={amount} size="sm" />
             </div>
 
-
             {isReceived ? (
               <>
                 {message ? <FeedMessageBubble message={message} /> : null}
-                <span className="text-xs font-bold text-[#afafaf]">{formatDistanceTh(createdAt)}</span>
+                <span className="text-xs font-bold text-[#afafaf]">
+                  {formatDistanceTh(createdAt)}
+                </span>
               </>
             ) : (
               <>
-                <span className="text-xs font-bold text-[#afafaf]">{formatDistanceTh(createdAt)}</span>
+                <span className="text-xs font-bold text-[#afafaf]">
+                  {formatDistanceTh(createdAt)}
+                </span>
                 {message ? <FeedMessageBubble message={message} /> : null}
               </>
             )}
 
-            
+            <p
+              className="truncate font-mono text-[10px] text-[#afafaf]"
+              title={transactionId}
+            >
+              ID: {transactionId}
+            </p>
 
             <div className="flex flex-wrap items-center gap-2">
               <FeedLikeButton
@@ -611,8 +845,12 @@ export const FeedDialog = ({
             <div className="grid justify-items-center gap-3 rounded-xl border-2 border-dashed border-[#e5e5e5] bg-[#fafafa] p-6 text-center">
               <GoComment className="size-8 text-[#e5e5e5]" />
               <div className="grid gap-1">
-                <h3 className="text-base font-bold text-[#4b4b4b]">ยังไม่มีความคิดเห็น</h3>
-                <p className="text-sm text-[#777]">เริ่มแสดงความคิดเห็นเป็นคนแรก</p>
+                <h3 className="text-base font-bold text-[#4b4b4b]">
+                  ยังไม่มีความคิดเห็น
+                </h3>
+                <p className="text-sm text-[#777]">
+                  เริ่มแสดงความคิดเห็นเป็นคนแรก
+                </p>
               </div>
             </div>
           )}
@@ -632,25 +870,28 @@ export const FeedDialog = ({
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
                 placeholder="เขียนความคิดเห็น..."
-                className="h-auto max-w-full min-w-0 w-full resize-none overflow-hidden bg-transparent text-sm leading-snug text-[#4b4b4b] placeholder:text-[#afafaf] focus-visible:outline-none field-sizing-content break-all"
+                className="field-sizing-content h-auto max-w-full min-w-0 w-full resize-none overflow-hidden bg-transparent text-sm leading-snug break-all text-[#4b4b4b] placeholder:text-[#afafaf] focus-visible:outline-none"
               />
               <button
-                  type="button"
-                  onClick={() => {
-                    if (!comment.trim()) return;
-                    addComment.mutate({ transactionId, content: comment });
-                    setComment("");
-                  }}
-                  disabled={!comment.trim()}
+                type="button"
+                onClick={() => {
+                  if (!comment.trim()) return;
+                  addComment.mutate({ transactionId, content: comment });
+                  setComment("");
+                }}
+                disabled={!comment.trim()}
+                className={cn(
+                  "shrink-0 transition-opacity",
+                  comment.trim() ? "opacity-100" : "opacity-30",
+                )}
+              >
+                <BsArrowUpCircleFill
                   className={cn(
-                    "shrink-0 transition-opacity",
-                    comment.trim() ? "opacity-100" : "opacity-30",
+                    "size-7",
+                    comment.trim() ? "text-[#1cb0f6]" : "text-[#afafaf]",
                   )}
-                >
-                  <BsArrowUpCircleFill
-                    className={cn("size-7", comment.trim() ? "text-[#1cb0f6]" : "text-[#afafaf]")}
-                  />
-                </button>
+                />
+              </button>
             </div>
           </div>
         </footer>

@@ -45,7 +45,6 @@ export const navigations: NavigationItem[] = [
     icon: EventsIcon,
     label: "กิจกรรม",
     href: "/events",
-    isAdmin: true,
   },
   {
     icon: DashboardIcon,

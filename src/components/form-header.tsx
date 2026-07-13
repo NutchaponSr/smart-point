@@ -18,7 +18,7 @@ export const FormHeader = ({ title, backHref }: Props) => {
           <Button onClick={() => router.push(backHref ?? "/")} type="button">
             ยกเลิก
           </Button>
-          <Button className="bg-pink" type="submit">
+          <Button variant="secondary" type="submit">
             บันทึกข้อมูล
           </Button>
         </div>

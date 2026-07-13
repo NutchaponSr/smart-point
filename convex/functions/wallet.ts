@@ -1,5 +1,6 @@
 import z from "zod/v4";
 
+import { appendActivityLog } from "../lib/activity-log";
 import { authMutation, authQuery, privateMutation } from "../lib/crpc";
 
 import { Id } from "./_generated/dataModel";
@@ -135,6 +136,18 @@ export const dailyLogin = authMutation
       sourceId: today,
       note: "โบนัสเข้าสู่ระบบประจำวัน",
       createdAt: Date.now(),
+    });
+
+    await appendActivityLog(ctx, {
+      actorEmployeeId: wallet.employeeId,
+      type: "daily_login",
+      sourceId: `${wallet.employeeId}:${today}`,
+      summary: "รับโบนัสเข้าสู่ระบบประจำวัน",
+      meta: {
+        employeeId: String(wallet.employeeId),
+        date: today,
+        delta: 1,
+      },
     });
 
     return { claimed: true, specialBudget: newBalance };

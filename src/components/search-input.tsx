@@ -67,7 +67,7 @@ export const SearchInput = (props: SearchInputProps) => {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="primaryOutline" size="iconLg">
+          <Button size="iconLg">
             <GoSearch className="size-5 stroke-[0.25]" />
           </Button>
         </PopoverTrigger>

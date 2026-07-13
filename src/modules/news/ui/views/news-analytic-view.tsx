@@ -3,11 +3,7 @@
 import { useMemo, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-import {
-  getCoreRowModel,
-  type RowSelectionState,
-  useReactTable,
-} from "@tanstack/react-table";
+import { type RowSelectionState } from "@tanstack/react-table";
 
 import { useCRPC } from "@/lib/convex/crpc";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -55,24 +51,15 @@ export const NewsAnalyticView = () => {
   const bulkDelete = useMutation(crpc.news.bulkDelete.mutationOptions());
 
   const tableColumnDefs = useMemo(() => columns(), []);
-
-  const table = useReactTable({
-    data: newsList.page,
-    columns: tableColumnDefs,
-    getRowId: (row) => row._id,
-    getCoreRowModel: getCoreRowModel(),
-    onRowSelectionChange: setRowSelection,
-    state: {
-      rowSelection,
-    },
-  });
+  const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
 
   const onRemove = async () => {
     const ok = await confirm();
     if (ok) {
-      bulkDelete.mutate({
-        ids: table.getSelectedRowModel().rows.map((row) => row.original._id),
-      });
+      bulkDelete.mutate(
+        { ids: selectedIds },
+        { onSuccess: () => setRowSelection({}) },
+      );
     }
   };
 
@@ -98,10 +85,9 @@ export const NewsAnalyticView = () => {
                   if (c != null) goForward(c);
                 }}
               />
-              {(table.getIsAllPageRowsSelected() ||
-                table.getIsSomePageRowsSelected()) && (
+              {selectedIds.length > 0 && (
                 <Button
-                  variant="dangerOutline"
+                  variant="danger"
                   onClick={onRemove}
                 >
                   ลบ
@@ -109,7 +95,14 @@ export const NewsAnalyticView = () => {
               )}
             </div>
 
-            <DataTable data={newsList.page} columns={columns()} />
+            <DataTable
+              data={newsList.page}
+              columns={tableColumnDefs}
+              enableRowSelection
+              getRowId={(row) => row._id}
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
+            />
           </div>
         </div>
       </section>
