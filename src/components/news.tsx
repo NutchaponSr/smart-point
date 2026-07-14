@@ -6,18 +6,18 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import {
-  CheckCircle2Icon,
-  CheckIcon,
-  ChevronDownIcon,
-  CopyIcon,
-  LogInIcon,
-  PartyPopperIcon,
-  PinIcon,
-  SendIcon,
-  ShieldCheckIcon,
-  ShieldXIcon,
-  UserPlusIcon,
-} from "lucide-react";
+  BsBoxArrowInRight,
+  BsCheck,
+  BsCheckCircle,
+  BsChevronDown,
+  BsClipboard,
+  BsPinAngleFill,
+  BsSendFill,
+  BsShieldCheck,
+  BsShieldX,
+  BsStars,
+  BsPersonPlusFill,
+} from "react-icons/bs";
 import { toast } from "sonner";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,22 +34,22 @@ type ActivityLogType =
   | "event_joined"
   | "event_completed";
 
-const logTypeIcon: Record<ActivityLogType, typeof SendIcon> = {
-  point_transfer_sent: SendIcon,
-  point_transfer_approved: ShieldCheckIcon,
-  point_transfer_rejected: ShieldXIcon,
-  daily_login: LogInIcon,
-  event_joined: UserPlusIcon,
-  event_completed: PartyPopperIcon,
+const logTypeIcon: Record<ActivityLogType, typeof BsSendFill> = {
+  point_transfer_sent: BsSendFill,
+  point_transfer_approved: BsShieldCheck,
+  point_transfer_rejected: BsShieldX,
+  daily_login: BsBoxArrowInRight,
+  event_joined: BsPersonPlusFill,
+  event_completed: BsStars,
 };
 
 const logTypeTone: Record<ActivityLogType, string> = {
   point_transfer_sent: "text-[#1cb0f6]",
-  point_transfer_approved: "text-emerald-600",
-  point_transfer_rejected: "text-rose-500",
-  daily_login: "text-amber-600",
+  point_transfer_approved: "text-[#58cc02]",
+  point_transfer_rejected: "text-[#ff4b4b]",
+  daily_login: "text-[#f1c40f]",
   event_joined: "text-[#1cb0f6]",
-  event_completed: "text-emerald-600",
+  event_completed: "text-[#58cc02]",
 };
 
 const tabTriggerClassName = cn(
@@ -108,9 +108,9 @@ function CopyTransactionIdButton({ transactionId }: { transactionId: string }) {
       title="คัดลอกรหัสธุรกรรม"
     >
       {copied ? (
-        <CheckIcon className="size-3 text-emerald-600" />
+        <BsCheck className="size-3 text-emerald-600" />
       ) : (
-        <CopyIcon className="size-3" />
+        <BsClipboard className="size-3" />
       )}
       {copied ? "คัดลอกแล้ว" : "คัดลอก"}
     </button>
@@ -160,7 +160,7 @@ function NewsList() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       {item.isPinned && (
-                        <PinIcon className="size-3 shrink-0 text-pink" />
+                        <BsPinAngleFill className="size-3 shrink-0 text-pink" />
                       )}
                       <h3 className="line-clamp-2 text-sm font-bold leading-snug">
                         {item.title}
@@ -172,7 +172,7 @@ function NewsList() {
                       </p>
                     )}
                   </div>
-                  <ChevronDownIcon
+                  <BsChevronDown
                     className={cn(
                       "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
                       isExpanded && "rotate-180",
@@ -225,7 +225,7 @@ function ActivityLogList() {
     <ul className="flex flex-col gap-2">
       {items.map((item) => {
         const Icon =
-          logTypeIcon[item.type as ActivityLogType] ?? CheckCircle2Icon;
+          logTypeIcon[item.type as ActivityLogType] ?? BsCheckCircle;
         const tone =
           logTypeTone[item.type as ActivityLogType] ?? "text-muted-foreground";
         const timeLabel = format(new Date(item.createdAt), "d MMM yyyy HH:mm", {
