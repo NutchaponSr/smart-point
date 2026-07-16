@@ -11,7 +11,6 @@ import { useCRPC } from "@/lib/convex/crpc";
 
 import { Selection } from "@/components/selection";
 import ElementEditable from "@/components/element-editable";
-import { Input } from "@/components/ui/input";
 
 import { SendTransactionSchema } from "@/modules/wallets/schema";
 import { SendPointHelpPopover } from "@/modules/wallets/ui/components/send-point-help-popover";
@@ -233,64 +232,42 @@ export const SendStep = ({
             <SendPointHelpPopover />
           </div>
 
-          {canSendUnlimitedPoints ? (
-            <div className="grid gap-1.5">
-              <Input
-                type="number"
-                min={1}
-                step={1}
-                inputMode="numeric"
-                value={amountField.value > 0 ? amountField.value : ""}
-                onChange={(event) => {
-                  const parsed = Number.parseInt(event.target.value, 10);
-                  amountField.onChange(
-                    Number.isFinite(parsed) && parsed > 0 ? parsed : 0,
-                  );
-                }}
-                onBlur={amountField.onBlur}
-                placeholder="ระบุจำนวนแต้ม"
-                className="h-11 rounded-md border-2 border-[#e5e5e5] text-base font-medium text-[#4b4b4b] focus-visible:border-[#84d8ff] focus-visible:ring-0"
-              />
-              <p className="text-xs font-medium text-[#777]">
-                บัญชีผู้ดูแลระบบ — ระบุจำนวนแต้มได้เอง (หักจากงบ giving เหมือนปกติ)
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {sendAmountOptions.map((value) => {
-                const isSelected = amountField.value === value;
-                const exceedsBudget = value > points;
-                const exceedsQuota =
-                  remainingToReceiver != null && value > remainingToReceiver;
-                const disabled = exceedsBudget || exceedsQuota;
+          <div className="grid grid-cols-3 gap-2">
+            {sendAmountOptions.map((value) => {
+              const isSelected = amountField.value === value;
+              const exceedsBudget = !canSendUnlimitedPoints && value > points;
+              const exceedsQuota =
+                !canSendUnlimitedPoints &&
+                remainingToReceiver != null &&
+                value > remainingToReceiver;
+              const disabled = exceedsBudget || exceedsQuota;
 
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => amountField.onChange(value)}
-                    className={cn(
-                      "flex items-center justify-center gap-1.5 rounded-md border-2 px-3 py-2.5 font-medium transition-colors",
-                      disabled && "cursor-not-allowed opacity-40 hover:bg-white",
-                      isSelected && !disabled
-                        ? "border-[#84d8ff] bg-[#ddf4ff] text-[#4b4b4b]"
-                        : "border-[#e5e5e5] bg-white text-[#4b4b4b] hover:bg-[#f7f7f7]",
-                    )}
-                  >
-                    <Image
-                      src={CoinGivingIcon}
-                      alt=""
-                      width={20}
-                      height={20}
-                      className="shrink-0"
-                    />
-                    <span className="text-base text-[#f1c40f]">{value}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => amountField.onChange(value)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 rounded-md border-2 px-3 py-2.5 font-medium transition-colors",
+                    disabled && "cursor-not-allowed opacity-40 hover:bg-white",
+                    isSelected && !disabled
+                      ? "border-[#84d8ff] bg-[#ddf4ff] text-[#4b4b4b]"
+                      : "border-[#e5e5e5] bg-white text-[#4b4b4b] hover:bg-[#f7f7f7]",
+                  )}
+                >
+                  <Image
+                    src={CoinGivingIcon}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="shrink-0"
+                  />
+                  <span className="text-base text-[#f1c40f]">{value}</span>
+                </button>
+              );
+            })}
+          </div>
 
           {amountState.error?.message && (
             <p className="text-xs font-medium text-[#ea2b2b]">

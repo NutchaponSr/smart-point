@@ -18,7 +18,7 @@ import { CompleteStep } from "@/modules/wallets/ui/components/complete-step";
 import { SendPointHelpPopover } from "@/modules/wallets/ui/components/send-point-help-popover";
 
 import {
-  createSendTransactionSchema,
+  sendTransactionSchema,
   SendTransactionSchema,
   stepFields,
 } from "@/modules/wallets/schema";
@@ -69,7 +69,7 @@ export const TransactionContent = ({
   };
 
   const form = useForm<SendTransactionSchema>({
-    resolver: zodResolver(createSendTransactionSchema(canSendUnlimitedPoints)),
+    resolver: zodResolver(sendTransactionSchema),
     mode: "onChange",
     defaultValues: {
       employee: {
