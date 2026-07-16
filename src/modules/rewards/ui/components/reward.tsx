@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from "react";
 
-import Image from "next/image";
 import { useQueryClient } from "@tanstack/react-query";
 
 import placeholder from "../../../../../public/placeholder.png";
@@ -42,12 +41,12 @@ export const Reward = ({ reward }: Props) => {
 
   return (
     <div className="flex flex-row gap-8">
-      <Image
-        src={reward.image || placeholder}
+      <img
+        src={reward.image || placeholder.src}
         alt={reward.name}
         width={100}
         height={100}
-        className="bg-no-repeat bg-position-[50%] inline-block float-left h-[100px] -m-1 -mb-5 -ml-[120px] w-[100px] rounded-lg border-2 border-border"
+        className="bg-no-repeat bg-position-[50%] inline-block float-left h-[100px] -m-1 -mb-5 -ml-[120px] w-[100px] rounded-lg border-2 border-border object-cover"
       />
 
       <div className="flex flex-col gap-1 min-w-0 grow">
