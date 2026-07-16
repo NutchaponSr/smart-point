@@ -34,7 +34,7 @@ export const OverviewsView = () => {
               <h2 className="text-base font-bold">
                 {ENABLE_BU_RECOMMENDED
                   ? "กิจกรรมสำหรับ BU ของคุณ"
-                  : "กิจกรรมแนะนำ"}
+                  : "กิจกรรมสำหรับคุณ"}
               </h2>
               <Link
                 href="/events"

@@ -18,7 +18,7 @@ import { CompleteStep } from "@/modules/wallets/ui/components/complete-step";
 import { SendPointHelpPopover } from "@/modules/wallets/ui/components/send-point-help-popover";
 
 import {
-  sendTransactionSchema,
+  createSendTransactionSchema,
   SendTransactionSchema,
   stepFields,
 } from "@/modules/wallets/schema";
@@ -51,6 +51,8 @@ export const TransactionContent = ({
     crpc.user.getCurrentUser.queryOptions(),
   );
 
+  const canSendUnlimitedPoints = user?.canSendUnlimitedPoints === true;
+
   const transaction = useMutation(crpc.transaction.send.mutationOptions());
 
   const [step, setStep] = useState<Step>("send");
@@ -67,7 +69,7 @@ export const TransactionContent = ({
   };
 
   const form = useForm<SendTransactionSchema>({
-    resolver: zodResolver(sendTransactionSchema),
+    resolver: zodResolver(createSendTransactionSchema(canSendUnlimitedPoints)),
     mode: "onChange",
     defaultValues: {
       employee: {
@@ -95,10 +97,14 @@ export const TransactionContent = ({
     ...crpc.transaction.getMonthlyTransferQuota.queryOptions({
       receiverId: selectedReceiverId?.trim() || "_",
     }),
-    enabled: Boolean(selectedReceiverId?.trim()) && step === "send",
+    enabled:
+      !canSendUnlimitedPoints &&
+      Boolean(selectedReceiverId?.trim()) &&
+      step === "send",
   });
 
   const quotaBlocksSend =
+    !canSendUnlimitedPoints &&
     monthlyQuota?.enabled === true &&
     step === "send" &&
     monthlyQuota != null &&
@@ -139,7 +145,13 @@ export const TransactionContent = ({
             !isAnimating && "translate-x-0 opacity-100",
           )}
         >
-          {step === "send" && <SendStep points={givingBudget} user={user} />}
+          {step === "send" && (
+            <SendStep
+              points={givingBudget}
+              user={user}
+              canSendUnlimitedPoints={canSendUnlimitedPoints}
+            />
+          )}
           {step === "complete" && <CompleteStep />}
         </div>
       </FormProvider>

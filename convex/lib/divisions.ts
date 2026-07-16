@@ -1,12 +1,14 @@
 /** Canonical division slugs — keep in sync with src/modules/employee/constants.ts */
 export const DIVISION_SLUGS = [
-  "SBM3",
-  "SFT3",
-  "ICP2",
-  "SFT",
-  "SAT1",
-  "SFT2",
+  "SAT",
+  "SDS",
+  "SBM",
   "ICP1",
+  "ICP2",
+  "SFT1",
+  "SFT2",
+  "SFT3",
+  "SAA",
 ] as const;
 
 export type DivisionSlug = (typeof DIVISION_SLUGS)[number];

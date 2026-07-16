@@ -292,7 +292,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       maxParticipants: 40,
       isActive: true,
       category: "internal_bu" as const,
-      allowedDivisions: ["SBM3", "SFT3"],
+      allowedDivisions: ["SBM", "SFT3"],
     },
     {
       name: "Wellness Week — ส่วนลดแลกของรางวัล",
@@ -304,7 +304,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       maxParticipants: undefined,
       isActive: true,
       category: "specials_point" as const,
-      allowedDivisions: ["SBM3", "SFT3", "ICP2", "SFT", "SAT1", "SFT2", "ICP1"],
+      allowedDivisions: ["SAT", "SDS", "SBM", "ICP1", "ICP2", "SFT1", "SFT2", "SFT3", "SAA"],
     },
     {
       name: "BU Hackathon 2026",
@@ -326,7 +326,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       maxParticipants: 30,
       isActive: true,
       category: "internal_bu" as const,
-      allowedDivisions: ["SFT", "SFT2", "SFT3"],
+      allowedDivisions: ["SFT1", "SFT2", "SFT3"],
     },
     {
       name: "BU Team Building — Outing ประจำปี",
@@ -337,7 +337,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       maxParticipants: 50,
       isActive: true,
       category: "internal_bu" as const,
-      allowedDivisions: ["SAT1"],
+      allowedDivisions: ["SAT"],
     },
     {
       name: "BU 5ส Big Cleaning Day",
@@ -348,7 +348,7 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       maxParticipants: undefined,
       isActive: true,
       category: "internal_bu" as const,
-      allowedDivisions: ["SBM3"],
+      allowedDivisions: ["SBM"],
     },
     {
       name: "วิ่งการกุศล Charity Run 10K",

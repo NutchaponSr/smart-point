@@ -8,6 +8,7 @@ import {
   MONTHLY_TRANSFER_CAP_PER_RECEIVER,
   MONTHLY_TRANSFER_LIMIT_ENABLED,
 } from "../lib/monthly-transfer";
+import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -1125,11 +1126,13 @@ export const exportAll = authMutation
     return aggregated;
   });
 
+const STANDARD_SEND_AMOUNTS = [5, 10, 20] as const;
+
 export const send = authMutation
   .input(
     z.object({
       receiverId: z.string(),
-      amount: z.number(),
+      amount: z.number().int().positive(),
       message: z.string(),
       tags: z.string(),
     }),
@@ -1174,25 +1177,38 @@ export const send = authMutation
       });
     }
 
-    if (wallet.givingBudget < input.amount) {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: "Insufficient giving budget",
-      });
-    }
+    const unlimitedSend = canSendUnlimitedPoints(sender.employeeId);
 
-    if (MONTHLY_TRANSFER_LIMIT_ENABLED) {
-      const quota = await getMonthlyTransferUsed({
-        ctx,
-        senderId: sender._id,
-        receiverId: receiver._id,
-      });
-
-      if (quota.used + input.amount > quota.cap) {
+    if (!unlimitedSend) {
+      if (
+        !(STANDARD_SEND_AMOUNTS as readonly number[]).includes(input.amount)
+      ) {
         throw new CRPCError({
           code: "BAD_REQUEST",
-          message: `โอนให้พนักงานคนนี้ได้ไม่เกิน ${quota.cap} พอยต์ต่อเดือน (ใช้ไปแล้ว ${quota.used} เหลือ ${quota.remaining})`,
+          message: "จำนวนแต้มต้องเป็น 5, 10 หรือ 20 เท่านั้น",
         });
+      }
+
+      if (wallet.givingBudget < input.amount) {
+        throw new CRPCError({
+          code: "BAD_REQUEST",
+          message: "Insufficient giving budget",
+        });
+      }
+
+      if (MONTHLY_TRANSFER_LIMIT_ENABLED) {
+        const quota = await getMonthlyTransferUsed({
+          ctx,
+          senderId: sender._id,
+          receiverId: receiver._id,
+        });
+
+        if (quota.used + input.amount > quota.cap) {
+          throw new CRPCError({
+            code: "BAD_REQUEST",
+            message: `โอนให้พนักงานคนนี้ได้ไม่เกิน ${quota.cap} พอยต์ต่อเดือน (ใช้ไปแล้ว ${quota.used} เหลือ ${quota.remaining})`,
+          });
+        }
       }
     }
 
@@ -1234,6 +1250,7 @@ export const send = authMutation
         receiverId: String(receiver._id),
         amount: input.amount,
         receiverName: receiver.name,
+        ...(unlimitedSend ? { adminBypass: true } : {}),
       },
     });
 
@@ -1690,7 +1707,10 @@ export const getMonthlyTransferQuota = authQuery
         .first(),
     ]);
 
-    if (!MONTHLY_TRANSFER_LIMIT_ENABLED) {
+    if (
+      !MONTHLY_TRANSFER_LIMIT_ENABLED ||
+      (sender && canSendUnlimitedPoints(sender.employeeId))
+    ) {
       return {
         enabled: false as const,
         cap: MONTHLY_TRANSFER_CAP_PER_RECEIVER,

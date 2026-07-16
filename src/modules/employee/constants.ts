@@ -118,13 +118,15 @@ export const ranks = [
 
 /** BU / สังกัดของพนักงาน — ใช้ร่วมกับกิจกรรม internal_bu และ specials_point */
 export const divisions = [
-  { slug: "SBM3", name: { th: "SBM3", en: "SBM3" } },
-  { slug: "SFT3", name: { th: "SFT3", en: "SFT3" } },
-  { slug: "ICP2", name: { th: "ICP2", en: "ICP2" } },
-  { slug: "SFT", name: { th: "SFT", en: "SFT" } },
-  { slug: "SAT1", name: { th: "SAT1", en: "SAT1" } },
-  { slug: "SFT2", name: { th: "SFT2", en: "SFT2" } },
+  { slug: "SAT", name: { th: "SAT", en: "SAT" } },
+  { slug: "SDS", name: { th: "SDS", en: "SDS" } },
+  { slug: "SBM", name: { th: "SBM", en: "SBM" } },
   { slug: "ICP1", name: { th: "ICP1", en: "ICP1" } },
+  { slug: "ICP2", name: { th: "ICP2", en: "ICP2" } },
+  { slug: "SFT1", name: { th: "SFT1", en: "SFT1" } },
+  { slug: "SFT2", name: { th: "SFT2", en: "SFT2" } },
+  { slug: "SFT3", name: { th: "SFT3", en: "SFT3" } },
+  { slug: "SAA", name: { th: "SAA", en: "SAA" } },
 ] as const;
 
 export type DivisionSlug = (typeof divisions)[number]["slug"];
