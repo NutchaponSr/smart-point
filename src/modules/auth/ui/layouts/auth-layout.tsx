@@ -10,26 +10,26 @@ export const AuthLayout = ({ children }: Props) => {
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-[#f0fbff]">
       <div className="pointer-events-none absolute inset-0 motion-reduce:[&_*]:!animate-none" aria-hidden>
         <div className="absolute inset-0 animate-[auth-wash_14s_ease-in-out_infinite] bg-linear-to-br from-[#ddf4ff] via-[#f0fbff] to-[#d7ffb8]" />
-        <div className="absolute -top-28 -right-24 size-[28rem] animate-[auth-blob-a_9s_ease-in-out_infinite] rounded-full bg-[#58cc02]/35 blur-3xl" />
-        <div className="absolute -bottom-36 -left-20 size-[26rem] animate-[auth-blob-b_11s_ease-in-out_infinite] rounded-full bg-[#1cb0f6]/40 blur-3xl" />
-        <div className="absolute top-[42%] left-1/2 size-72 -translate-x-1/2 animate-[auth-blob-c_8s_ease-in-out_infinite] rounded-full bg-[#ffc800]/30 blur-3xl" />
+        <div className="absolute -top-20 -right-16 size-48 animate-[auth-blob-a_9s_ease-in-out_infinite] rounded-full bg-[#58cc02]/35 blur-3xl sm:-top-28 sm:-right-24 sm:size-[28rem]" />
+        <div className="absolute -bottom-24 -left-12 size-44 animate-[auth-blob-b_11s_ease-in-out_infinite] rounded-full bg-[#1cb0f6]/40 blur-3xl sm:-bottom-36 sm:-left-20 sm:size-[26rem]" />
+        <div className="absolute top-[42%] left-1/2 size-48 -translate-x-1/2 animate-[auth-blob-c_8s_ease-in-out_infinite] rounded-full bg-[#ffc800]/30 blur-3xl sm:size-72" />
         <div className="absolute inset-0 animate-[auth-dots_20s_linear_infinite] bg-[radial-gradient(#84d8ff_1.25px,transparent_1.25px)] bg-size-[22px_22px] opacity-40" />
       </div>
 
       <header className="fixed top-0 z-10 w-full border-b-2 bg-white/75 backdrop-blur-md">
-        <nav className="mx-auto flex h-[70px] max-w-[988px] items-center justify-between p-0">
-          <Logo />
+        <nav className="mx-auto flex h-14 max-w-[988px] items-center justify-between px-4 sm:h-[70px] sm:px-6">
+          <Logo className="px-0 sm:px-2" />
         </nav>
       </header>
 
-      <main className="relative z-1 flex w-full flex-1 items-center justify-center self-stretch p-[30px] pt-[100px] pb-10">
-        <div className="w-full max-w-md animate-[auth-rise_0.55s_ease-out]">
+      <main className="relative z-1 flex w-full flex-1 items-center justify-center self-stretch px-4 pt-24 pb-6 sm:px-[30px] sm:pt-[100px] sm:pb-10">
+        <div className="mx-auto w-full max-w-md animate-[auth-rise_0.55s_ease-out]">
           {children}
         </div>
       </main>
 
-      <footer className="relative z-1 flex h-20 items-center justify-center border-t-2 bg-white/70 px-10 backdrop-blur-sm">
-        <div className="overflow-hidden text-center text-base">
+      <footer className="relative z-1 flex min-h-16 shrink-0 items-center justify-center border-t-2 bg-white/70 px-4 py-3 backdrop-blur-sm sm:h-20 sm:px-10">
+        <div className="w-full overflow-hidden text-center text-sm sm:text-base">
           <LanguageSelector />
         </div>
       </footer>

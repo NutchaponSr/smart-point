@@ -18,68 +18,82 @@ export const SignInView = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    await authClient.signIn.username({
-      username: username,
-      password: password,
-    }, {
-      onSuccess: (data) => {
-        router.push("/");
+
+    await authClient.signIn.username(
+      {
+        username: username,
+        password: password,
       },
-      onError: (error) => {
-        console.error(error);
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: (error) => {
+          console.error(error);
+        },
       },
-    });
+    );
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="flex flex-col text-base relative text-start w-full">
-        <fieldset className="flex min-w-0 flex-col gap-1 border-none"> 
-          <legend className="relative mb-2 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
-            <Label 
+      <div className="relative flex w-full flex-col gap-4 text-start text-base sm:gap-5">
+        <fieldset className="flex min-w-0 flex-col gap-1.5 border-none">
+          <legend className="relative mb-0 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
+            <Label
               htmlFor="username"
-              className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 sr-only"
+              className="sr-only inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
             >
               Employee ID
             </Label>
           </legend>
-          <Input 
+          <Input
             required
             id="username"
             type="text"
+            inputMode="numeric"
+            autoComplete="username"
             value={username}
             placeholder="รหัสพนักงาน"
             onChange={(e) => setUsername(e.target.value)}
-            className="flex min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf]"
+            className="flex h-11 min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-base text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf] sm:h-12"
           />
         </fieldset>
 
-        <fieldset className="flex min-w-0 flex-col gap-1 border-none"> 
-          <legend className="relative mb-2 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
-            <Label 
+        <fieldset className="flex min-w-0 flex-col gap-1.5 border-none">
+          <legend className="relative mb-0 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
+            <Label
               htmlFor="password"
-              className="inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30 sr-only"
+              className="sr-only inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
             >
               Last 5 digits of your citizenship number
             </Label>
           </legend>
-          <Input 
+          <Input
             required
             id="password"
             type="password"
+            inputMode="numeric"
+            autoComplete="current-password"
             value={password}
             placeholder="รหัสผ่าน"
             onChange={(e) => setPassword(e.target.value)}
-            className="flex min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf]"
+            className="flex h-11 min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-base text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf] sm:h-12"
           />
-          <span className="text-sm text-[#777]">5 ตัวท้ายของหมายเลขประจำตัวประชาชน</span>
+          <span className="text-xs leading-relaxed text-[#777] sm:text-sm">
+            5 ตัวท้ายของหมายเลขประจำตัวประชาชน
+          </span>
         </fieldset>
 
-        <Button variant="primary" type="submit" className="mt-4" size="lg">
+        <Button
+          variant="primary"
+          type="submit"
+          className="mt-1 w-full sm:mt-2"
+          size="lg"
+        >
           เข้าสู่ระบบ
         </Button>
       </div>
     </form>
   );
-}
+};
