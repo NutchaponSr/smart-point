@@ -40,20 +40,20 @@ export const Reward = ({ reward }: Props) => {
   };
 
   return (
-    <div className="flex flex-row items-center gap-8">
+    <div className="flex flex-row items-start gap-8">
       <img
         src={reward.image || placeholder.src}
         alt={reward.name}
         width={100}
         height={100}
-        className="bg-no-repeat bg-position-[50%] inline-block float-left h-[100px] -m-1 -mb-5 -ml-[120px] w-[100px] rounded-lg border-2 border-border object-cover"
+        className="bg-no-repeat bg-position-[50%] inline-block h-[100px] w-[100px] rounded-md border-2 border-border object-cover"
       />
 
       <div className="flex flex-col gap-1 min-w-0 grow">
         <h3 className="text-lg font-bold py-2 whitespace-pre-wrap break-all overflow-hidden">
           {reward.name}
         </h3>
-        <div className="flex flex-wrap items-center gap-x-4">
+        <div className="flex flex-wrap items-center gap-4">
           <span className="inline-flex items-center gap-1 text-sm font-bold text-[#1cb0f6]">
             <img src={Coin.src} alt="" className="size-5" aria-hidden />
             {reward.pointCost}

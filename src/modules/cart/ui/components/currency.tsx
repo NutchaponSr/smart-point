@@ -43,21 +43,21 @@ export const Currencies = () => {
         amount={wallet.givingBudget}
         image={CoinGivingIcon}
         color="yellow"
-        title="คะแนนมอบให้"
+        title="คะแนนที่มอบให้"
         description="คะแนนที่ใช้ชื่นชมเพื่อนร่วมงาน รีเซ็ตทุกต้นเดือนและหมดอายุสิ้นเดือน"
       />
       <Currency
         amount={wallet.receivingBudget}
         image={CoinIcon}
         color="blue"
-        title="พอยต์ที่ได้รับ"
+        title="คะแนนที่ได้รับ"
         description="คะแนนที่ได้รับจากเพื่อนร่วมงาน ใช้แลกรางวัลในร้านค้าได้"
       />
       <Currency
         amount={wallet.specialBudget}
         image={RubyIcon}
         color="red"
-        title="พอยต์พิเศษ"
+        title="คะแนนพิเศษ"
         description="คะแนนที่ได้รับจากกิจกรรมพิเศษ ใช้แลกรางวัลพิเศษได้"
       />
     </div>

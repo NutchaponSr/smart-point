@@ -55,7 +55,7 @@ export const RewardContent = ({ rewards, hasNextPage, onLoad }: Props) => {
             {rewards.map((reward) => (
               <li
                 key={reward._id}
-                className="min-w-[120px] py-5 ps-[120px] relative border-t-2"
+                className="py-5 relative border-t-2"
               >
                 <Reward reward={reward} />
               </li>
