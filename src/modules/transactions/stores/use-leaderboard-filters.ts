@@ -6,11 +6,11 @@ import {
   useQueryStates,
 } from "nuqs";
 
-export const periodValues = ["24hr", "7d", "30d", "fullTime"] as const;
+export const periodValues = ["30d", "fullTime"] as const;
 
 const params = {
   q: parseAsString.withDefault(""),
-  period: parseAsStringLiteral(periodValues).withDefault("24hr"),
+  period: parseAsStringLiteral(periodValues).withDefault("fullTime"),
   division: parseAsArrayOf(parseAsString).withDefault([]),
   limit: parseAsInteger.withDefault(25),
   cursor: parseAsInteger.withDefault(0),

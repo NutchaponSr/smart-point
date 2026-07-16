@@ -5,13 +5,11 @@ import type { QueryCtx } from "./generated/server";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const periodSchema = z.enum(["24hr", "7d", "30d", "fullTime"]);
+const periodSchema = z.enum(["30d", "fullTime"]);
 
 type Period = z.infer<typeof periodSchema>;
 
 function getPeriodStartMs(period: Period, nowMs: number): number | null {
-  if (period === "24hr") return nowMs - DAY_MS;
-  if (period === "7d") return nowMs - 7 * DAY_MS;
   if (period === "30d") return nowMs - 30 * DAY_MS;
   return null;
 }

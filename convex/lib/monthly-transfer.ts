@@ -2,6 +2,9 @@ import type { Id } from "../functions/_generated/dataModel";
 import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import type { DataModel } from "../functions/_generated/dataModel";
 
+/** ปิดชั่วคราวได้ — ตั้ง true เพื่อเปิดลิมิต 20 พอยต์/คน/เดือนอีกครั้ง */
+export const MONTHLY_TRANSFER_LIMIT_ENABLED = false;
+
 export const MONTHLY_TRANSFER_CAP_PER_RECEIVER = 20;
 
 const THAI_OFFSET_MS = 7 * 60 * 60 * 1000;

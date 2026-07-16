@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import {
   categories,
   buRestrictedCategories,
+  ENABLE_BU_RECOMMENDED,
   getCarouselNow,
 } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
@@ -204,12 +205,17 @@ export const EventCarousel = ({
       <ConfirmationDialog />
       {data.items.length === 0 ? (
         <div className="grid place-items-center gap-2 rounded-md border-2 border-dashed border-border bg-background p-10 text-center">
-          <p className="text-lg font-bold">ยังไม่มีกิจกรรมเฉพาะ BU ของคุณ</p>
+          <p className="text-lg font-bold">
+            {ENABLE_BU_RECOMMENDED
+              ? "ยังไม่มีกิจกรรมเฉพาะ BU ของคุณ"
+              : "ยังไม่มีกิจกรรมแนะนำ"}
+          </p>
           <p className="text-sm text-muted-foreground">
-            กิจกรรมที่เปิดทุก BU หรือกิจกรรมอื่น ๆ ดูได้ที่รายการด้านล่าง
+            {ENABLE_BU_RECOMMENDED
+              ? "กิจกรรมที่เปิดทุก BU หรือกิจกรรมอื่น ๆ ดูได้ที่รายการด้านล่าง"
+              : "กิจกรรมอื่น ๆ ดูได้ที่รายการด้านล่าง"}
           </p>
         </div>
-        
       ) : (
         <div className="relative w-full min-w-0">
           <button

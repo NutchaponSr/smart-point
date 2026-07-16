@@ -2,6 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { ENABLE_BU_RECOMMENDED } from "@/modules/events/constants";
 import { EventFilters } from "@/modules/events/ui/components/event-filters";
 import { EventCarousel } from "@/modules/events/ui/components/event-carousel";
 import { MyEventScreen } from "@/modules/events/ui/screens/my-event-screen";
@@ -24,10 +25,14 @@ export const MyEventView = () => {
             <header className="flex flex-wrap items-center justify-between gap-3 rounded-md border-2 border-[#0003] bg-[#58cc02] p-4">
               <div className="grid min-w-0 gap-1">
                 <h2 className="text-xl font-bold text-white sm:text-2xl">
-                  กิจกรรมสำหรับ BU / สังกัดของคุณ
+                  {ENABLE_BU_RECOMMENDED
+                    ? "กิจกรรมสำหรับ BU / สังกัดของคุณ"
+                    : "กิจกรรมแนะนำ"}
                 </h2>
                 <p className="text-sm text-white/90">
-                  แสดงเฉพาะกิจกรรมที่เปิดให้ BU หรือสังกัดของคุณเข้าร่วม
+                  {ENABLE_BU_RECOMMENDED
+                    ? "แสดงเฉพาะกิจกรรมที่เปิดให้ BU หรือสังกัดของคุณเข้าร่วม"
+                    : "กิจกรรมที่คุณมีสิทธิ์เข้าร่วม"}
                 </p>
               </div>
             </header>

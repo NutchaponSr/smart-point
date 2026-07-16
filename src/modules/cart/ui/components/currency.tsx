@@ -13,10 +13,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 
 const currencyColors = cva("", {
@@ -78,18 +78,25 @@ export const Currency = ({
   color: VariantProps<typeof currencyColors>["color"];
 }) => {
   return (
-    <HoverCard>
-      <HoverCardTrigger
-        delay={200}
-        closeDelay={100}
-        render={
-          <Button variant="ghost" className={currencyColors({ color })} />
-        }
-      >
-        <Image src={image} alt="" width={24} height={24} />
-        {amount}
-      </HoverCardTrigger>
-      <HoverCardContent align="end" className="w-72 p-0">
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          className={currencyColors({
+            color,
+            className: "h-auto flex-col gap-0.5 px-2 py-1",
+          })}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Image src={image} alt="" width={20} height={20} />
+            <span className="tabular-nums">{amount}</span>
+          </span>
+          <span className="text-[10px] font-medium leading-none text-muted-foreground">
+            {title}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="center" sideOffset={8} className="w-72 p-0">
         <div className="flex flex-col gap-3 p-4">
           <div className="flex items-center gap-3">
             <Image src={image} alt="" width={32} height={32} />
@@ -109,7 +116,7 @@ export const Currency = ({
             {description}
           </p>
         </div>
-      </HoverCardContent>
-    </HoverCard>
+      </PopoverContent>
+    </Popover>
   );
 };

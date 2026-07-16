@@ -23,8 +23,6 @@ import {
 const LIMIT_OPTIONS = ["10", "25", "50", "100"] as const;
 
 const PERIOD_LABELS: Record<(typeof periodValues)[number], string> = {
-  "24hr": "24 ชั่วโมง",
-  "7d": "7 วัน",
   "30d": "30 วัน",
   fullTime: "ทั้งหมด",
 };

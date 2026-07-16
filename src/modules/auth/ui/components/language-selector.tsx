@@ -46,7 +46,7 @@ export const LanguageSelector = () => {
         <li key={locale}>
           <button onClick={() => onLocaleChange(locale)} className="items-center flex justify-center space-x-2">
             <Image src={LOCALE_LABELS[locale].image.src} alt={LOCALE_LABELS[locale].label} width={20} height={20} />
-            <span className="text-base font-bold tracking-[.8px] whitespace-nowrap text-white">{LOCALE_LABELS[locale].label}</span>
+            <span className="whitespace-nowrap text-base font-bold tracking-[.8px] text-[#4b4b4b]">{LOCALE_LABELS[locale].label}</span>
           </button>
         </li>
       ))}

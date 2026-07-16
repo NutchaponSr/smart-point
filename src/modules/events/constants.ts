@@ -1,5 +1,11 @@
 const DAY_MS = 86_400_000;
 
+/**
+ * Temporary: set true เพื่อกลับมาโหมด Bu carousel
+ * Mirror ของ convex/lib/activity-features.ts — เปิดทั้งสองฝั่งพร้อมกัน
+ */
+export const ENABLE_BU_RECOMMENDED = false;
+
 /** ปัดเวลาเป็นรายวัน (UTC) ให้ query key ของ carousel ตรงกันระหว่าง server prefetch และ client */
 export const getCarouselNow = () => Math.floor(Date.now() / DAY_MS) * DAY_MS;
 

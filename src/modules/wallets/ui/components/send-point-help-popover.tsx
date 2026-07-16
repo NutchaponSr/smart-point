@@ -10,17 +10,24 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import {
-  SMART_CULTURE_TITLE,
-  smartCulturePillars,
-} from "@/modules/transactions/constants";
-
 import CoinGivingIcon from "../../../../../public/coin-give.svg";
 
 const sendPointGuideTiers = [
-  { label: 5, behaviorPoints: 5 },
-  { label: 10, behaviorPoints: 15 },
-  { label: 20, behaviorPoints: 20 },
+  {
+    label: 5,
+    definition:
+      "พฤติกรรมเล็กๆ น้อยๆ ในชีวิตประจำวัน ที่ช่วยสร้างบรรยากาศที่ดีในการทำงาน แสดงถึงความมีน้ำใจ หรือการปฏิบัติตามวัฒนธรรมองค์กรเป็นปกติ",
+  },
+  {
+    label: 10,
+    definition:
+      "พฤติกรรมที่แสดงถึงความทุ่มเทที่ มากกว่า หน้าที่ปกติของตัวเอง มีการสละเวลามาช่วยเหลือ หรือช่วยแก้ปัญหาเฉพาะหน้าให้งานของเพื่อนร่วมงานหรือทีมราบรื่นขึ้น",
+  },
+  {
+    label: 20,
+    definition:
+      "พฤติกรรมที่สร้างผลกระทบเชิงบวกอย่างมีนัยสำคัญ ต่อตัวบุคคล ทีม หรือองค์กร แสดงถึงศักยภาพที่โดดเด่น ความคิดสร้างสรรค์ หรือการกอบกู้สถานการณ์วิกฤต",
+  },
 ] as const;
 
 type SendPointHelpPopoverProps = {
@@ -59,14 +66,14 @@ export function SendPointHelpPopover({
             เงื่อนไขการให้ Point
           </p>
           <p className="mt-0.5 text-xs text-[#4b4b4b]/90">
-            เลือกมอบ 5, 10 หรือ 20 แต้มตามระดับพฤติกรรม {SMART_CULTURE_TITLE}
+            เลือกมอบ 5, 10 หรือ 20 คะแนนตามระดับพฤติกรรม
           </p>
         </div>
 
         <div className="grid divide-y-2 divide-[#e5e5e5]">
           {sendPointGuideTiers.map((tier) => (
             <section key={tier.label} className="px-3 py-2.5">
-              <div className="mb-2 flex items-center gap-1.5">
+              <div className="mb-1.5 flex items-center gap-1.5">
                 <Image
                   src={CoinGivingIcon}
                   alt=""
@@ -75,32 +82,12 @@ export function SendPointHelpPopover({
                   className="shrink-0"
                 />
                 <h3 className="text-sm font-bold text-[#4b4b4b]">
-                  {tier.label} แต้ม
+                  {tier.label} คะแนน
                 </h3>
               </div>
-
-              <ul className="grid gap-2">
-                {smartCulturePillars.map((pillar) => {
-                  const level = pillar.levels.find(
-                    (item) => item.points === tier.behaviorPoints,
-                  );
-                  if (!level) return null;
-
-                  return (
-                    <li key={`${pillar.key}-${tier.label}`} className="text-xs">
-                      <p className="font-bold text-[#4b4b4b]">
-                        {pillar.nameTh}{" "}
-                        <span className="font-medium text-[#afafaf]">
-                          · {level.title}
-                        </span>
-                      </p>
-                      <p className="mt-0.5 leading-relaxed text-[#4b4b4b]/90">
-                        {level.description}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
+              <p className="text-xs leading-relaxed text-[#4b4b4b]/90">
+                {tier.definition}
+              </p>
             </section>
           ))}
         </div>

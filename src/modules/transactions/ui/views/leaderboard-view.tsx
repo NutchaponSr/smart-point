@@ -8,11 +8,6 @@ import { LeaderboardScreen } from "@/modules/transactions/ui/screens/leaderboard
 import { LeaderboardFilters } from "@/modules/transactions/ui/components/leaderboard-filters";
 
 export const LeaderboardView = () => {
-  const monthLabel = new Date().toLocaleDateString("th-TH", {
-    month: "long",
-    year: "numeric",
-  });
-
   return (
     <div className="flex flex-col gap-6 px-6">
       <div className="flex flex-col gap-6 lg:flex-row-reverse lg:gap-12">
@@ -31,10 +26,9 @@ export const LeaderboardView = () => {
                 className="size-16 sm:size-[100px]"
               />
               <h1 className="text-xl font-bold sm:text-2xl">
-                กระดานคะแนนประจำเดือน
+                ตารางคะแนน
               </h1>
               <p className="text-sm text-muted-foreground sm:text-base">
-                อันดับการส่งพอยต์ให้เพื่อนร่วมงาน ประจำ{monthLabel}
               </p>
             </header>
 

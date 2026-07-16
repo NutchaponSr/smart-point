@@ -9,6 +9,7 @@ import { useCRPC } from "@/lib/convex/crpc";
 import { News } from "@/components/news";
 import { Currencies } from "@/modules/cart/ui/components/currency";
 
+import { ENABLE_BU_RECOMMENDED } from "@/modules/events/constants";
 import { EventCarousel } from "@/modules/events/ui/components/event-carousel";
 import { Feeds } from "@/modules/transactions/ui/components/feeds";
 import { MonthlyQuest } from "@/modules/overviews/ui/components/monthly-quest";
@@ -30,7 +31,11 @@ export const OverviewsView = () => {
           <MonthlyQuest />
           <div className="flex flex-col gap-4">
             <div className="flex flex-row items-center justify-between">
-              <h2 className="text-base font-bold">กิจกรรมสำหรับ BU ของคุณ</h2>
+              <h2 className="text-base font-bold">
+                {ENABLE_BU_RECOMMENDED
+                  ? "กิจกรรมสำหรับ BU ของคุณ"
+                  : "กิจกรรมแนะนำ"}
+              </h2>
               <Link
                 href="/events"
                 className="text-sm font-medium text-[#1cb0f6]"

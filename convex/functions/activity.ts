@@ -1,6 +1,7 @@
 import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
+import { ENABLE_BU_RECOMMENDED } from "../lib/activity-features";
 import { appendActivityLog } from "../lib/activity-log";
 import { authMutation, authQuery, publicQuery } from "../lib/crpc";
 import {
@@ -805,8 +806,10 @@ async function getMyParticipationStatus(
 }
 
 /**
- * กิจกรรมแนะนำสำหรับ Carousel — เฉพาะ internal_bu / specials_point ที่กำหนด BU เจาะจง
- * และพนักงานมีสิทธิ์เข้าร่วม (เรียงตาม startDate ล่าสุด)
+ * กิจกรรมแนะนำสำหรับ Carousel
+ * - ENABLE_BU_RECOMMENDED=true: เฉพาะ internal_bu / specials_point ที่กำหนด BU เจาะจง
+ * - ENABLE_BU_RECOMMENDED=false: กิจกรรมทั้งหมดที่พนักงานมีสิทธิ์เข้าร่วม (ชั่วคราว)
+ * เรียงตาม startDate ล่าสุด
  */
 export const recommended = authQuery
   .input(
@@ -826,14 +829,16 @@ export const recommended = authQuery
       .orderBy({ startDate: "desc" })
       .filter((row) => {
         if (!row.isActive) return false;
-        if (
-          row.category !== "internal_bu" &&
-          row.category !== "specials_point"
-        ) {
-          return false;
-        }
-        if (!hasSpecificBuRestriction(row)) {
-          return false;
+        if (ENABLE_BU_RECOMMENDED) {
+          if (
+            row.category !== "internal_bu" &&
+            row.category !== "specials_point"
+          ) {
+            return false;
+          }
+          if (!hasSpecificBuRestriction(row)) {
+            return false;
+          }
         }
         if (!isEmployeeEligibleForActivity(row, employee)) {
           return false;

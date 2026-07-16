@@ -99,6 +99,7 @@ export const TransactionContent = ({
   });
 
   const quotaBlocksSend =
+    monthlyQuota?.enabled === true &&
     step === "send" &&
     monthlyQuota != null &&
     (monthlyQuota.remaining === 0 || selectedAmount > monthlyQuota.remaining);
@@ -124,7 +125,6 @@ export const TransactionContent = ({
           <h2 className="text-base font-bold leading-snug text-white">
             {stepTitles[step]}
           </h2>
-          {step === "send" && <SendPointHelpPopover variant="light" />}
         </div>
       </header>
 
@@ -146,6 +146,7 @@ export const TransactionContent = ({
 
       <footer className="rounded-b-md bg-white px-4 pb-4">
         <Button
+          size="lg"
           variant="secondary"
           className="w-full rounded-md font-bold tracking-wide uppercase"
           disabled={transaction.isPending || quotaBlocksSend}

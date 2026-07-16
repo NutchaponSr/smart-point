@@ -78,7 +78,10 @@ export const SendStep = ({ points }: Props) => {
     enabled: selectedEmployeeId.length > 0,
   });
 
-  const remainingToReceiver = monthlyQuota?.remaining ?? null;
+  const limitEnabled = monthlyQuota?.enabled === true;
+  const remainingToReceiver = limitEnabled
+    ? (monthlyQuota?.remaining ?? null)
+    : null;
 
   useEffect(() => {
     if (remainingToReceiver == null) return;
@@ -179,7 +182,7 @@ export const SendStep = ({ points }: Props) => {
             {employeeErrorMessage}
           </p>
         )}
-        {monthlyQuota && selectedEmployeeId ? (
+        {limitEnabled && monthlyQuota && selectedEmployeeId ? (
           <p
             className={cn(
               "text-xs font-medium",

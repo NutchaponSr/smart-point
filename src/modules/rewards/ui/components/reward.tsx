@@ -40,7 +40,7 @@ export const Reward = ({ reward }: Props) => {
   };
 
   return (
-    <div className="flex flex-row gap-8">
+    <div className="flex flex-row items-center gap-8">
       <img
         src={reward.image || placeholder.src}
         alt={reward.name}

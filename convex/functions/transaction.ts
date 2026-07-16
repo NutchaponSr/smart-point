@@ -6,6 +6,7 @@ import { authMutation, authQuery } from "../lib/crpc";
 import {
   getMonthlyTransferUsed,
   MONTHLY_TRANSFER_CAP_PER_RECEIVER,
+  MONTHLY_TRANSFER_LIMIT_ENABLED,
 } from "../lib/monthly-transfer";
 
 import type { Doc, Id } from "./_generated/dataModel";
@@ -1180,17 +1181,19 @@ export const send = authMutation
       });
     }
 
-    const quota = await getMonthlyTransferUsed({
-      ctx,
-      senderId: sender._id,
-      receiverId: receiver._id,
-    });
-
-    if (quota.used + input.amount > quota.cap) {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: `โอนให้พนักงานคนนี้ได้ไม่เกิน ${quota.cap} พอยต์ต่อเดือน (ใช้ไปแล้ว ${quota.used} เหลือ ${quota.remaining})`,
+    if (MONTHLY_TRANSFER_LIMIT_ENABLED) {
+      const quota = await getMonthlyTransferUsed({
+        ctx,
+        senderId: sender._id,
+        receiverId: receiver._id,
       });
+
+      if (quota.used + input.amount > quota.cap) {
+        throw new CRPCError({
+          code: "BAD_REQUEST",
+          message: `โอนให้พนักงานคนนี้ได้ไม่เกิน ${quota.cap} พอยต์ต่อเดือน (ใช้ไปแล้ว ${quota.used} เหลือ ${quota.remaining})`,
+        });
+      }
     }
 
     await ctx.db.patch(wallet._id, {
@@ -1687,8 +1690,21 @@ export const getMonthlyTransferQuota = authQuery
         .first(),
     ]);
 
+    if (!MONTHLY_TRANSFER_LIMIT_ENABLED) {
+      return {
+        enabled: false as const,
+        cap: MONTHLY_TRANSFER_CAP_PER_RECEIVER,
+        used: 0,
+        remaining: MONTHLY_TRANSFER_CAP_PER_RECEIVER,
+        monthStart: null as number | null,
+        monthEnd: null as number | null,
+        receiverName: receiver?.name ?? null,
+      };
+    }
+
     if (!sender || !receiver) {
       return {
+        enabled: true as const,
         cap: MONTHLY_TRANSFER_CAP_PER_RECEIVER,
         used: 0,
         remaining: MONTHLY_TRANSFER_CAP_PER_RECEIVER,
@@ -1705,6 +1721,7 @@ export const getMonthlyTransferQuota = authQuery
     });
 
     return {
+      enabled: true as const,
       ...quota,
       receiverName: receiver.name,
     };

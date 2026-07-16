@@ -33,7 +33,7 @@ export const SignInView = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="w-full">
       <div className="flex flex-col text-base relative text-start w-full">
         <fieldset className="flex min-w-0 flex-col gap-1 border-none"> 
           <legend className="relative mb-2 flex w-full min-w-0 items-center justify-between text-balance leading-snug font-bold [&_a]:font-normal">
@@ -51,7 +51,7 @@ export const SignInView = () => {
             value={username}
             placeholder="รหัสพนักงาน"
             onChange={(e) => setUsername(e.target.value)}
-            className="caret-[#49c0f8] placeholder:text-[#f1f7fb] min-w-0 text-white bg-[#202f36] border-2 border-[#37464f] flex rounded-md overflow-hidden"
+            className="flex min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf]"
           />
         </fieldset>
 
@@ -71,12 +71,12 @@ export const SignInView = () => {
             value={password}
             placeholder="รหัสผ่าน"
             onChange={(e) => setPassword(e.target.value)}
-            className="caret-[#49c0f8] placeholder:text-[#f1f7fb] min-w-0 text-white bg-[#202f36] border-2 border-[#37464f] flex rounded-md overflow-hidden"
+            className="flex min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf]"
           />
-          <span className="text-[#52656d]">5 ตัวท้ายของหมายเลขประจำตัวประชาชน</span>
+          <span className="text-sm text-[#777]">5 ตัวท้ายของหมายเลขประจำตัวประชาชน</span>
         </fieldset>
 
-        <Button variant="secondary" type="submit" className="mt-4">
+        <Button variant="primary" type="submit" className="mt-4" size="lg">
           เข้าสู่ระบบ
         </Button>
       </div>

@@ -314,7 +314,7 @@ export declare const api: {
         cursor?: string | null;
         division?: Array<string> | null;
         limit: number;
-        period: "24hr" | "7d" | "30d" | "fullTime";
+        period: "30d" | "fullTime";
         q?: string | null;
       },
       any
@@ -322,7 +322,7 @@ export declare const api: {
     getMyEntry: FunctionReference<
       "query",
       "public",
-      { period: "24hr" | "7d" | "30d" | "fullTime" },
+      { period: "30d" | "fullTime" },
       any
     >;
   };
