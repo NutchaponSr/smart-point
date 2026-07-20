@@ -40,6 +40,7 @@ export default async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api).*)",
+    // Skip Next internals, API, and static files in /public (e.g. /chick.png)
+    "/((?!_next/static|_next/image|favicon.ico|api|.*\\..*).*)",
   ],
-}
+};

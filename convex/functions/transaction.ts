@@ -1290,15 +1290,18 @@ export const bulkApprove = authMutation
   )
   .mutation(async ({ ctx, input }) => {
     const uniqueTransactionIds = Array.from(new Set(input.transactionIds));
-    const results = await Promise.all(
-      uniqueTransactionIds.map((transactionId) =>
-        approveTransactionById(
+    // ต้องทำทีละรายการ — ห้าม Promise.all เพราะหลาย tx ของ receiver/sender
+    // คนเดียวกันจะอ่าน wallet ฉบับเดียวกันแล้ว patch ทับกัน (last write wins)
+    const results: ApproveTransactionResult[] = [];
+    for (const transactionId of uniqueTransactionIds) {
+      results.push(
+        await approveTransactionById(
           ctx,
           transactionId as Id<"transaction">,
           input.confirm,
         ),
-      ),
-    );
+      );
+    }
 
     const approvedCount = results.filter(
       (item) => item.status === "approved",

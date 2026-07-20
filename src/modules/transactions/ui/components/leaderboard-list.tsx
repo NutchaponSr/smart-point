@@ -60,7 +60,7 @@ export const LeaderboardList = ({ entries, myEmployeeId }: Props) => {
 
               <UserAvatar
                 name={entry.employeeName}
-                src={entry.employeeCode}
+                src={entry.avatarImage ?? undefined}
                 className={{
                   container: "size-12",
                   fallback: "text-base",

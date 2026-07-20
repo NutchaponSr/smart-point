@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { AvatarProfileHeader } from "../components/avatar-profile-header";
 
 const sections = ["account", "language"] as const;
 type Section = (typeof sections)[number];
@@ -152,6 +153,8 @@ export const SettingsView = () => {
                   บัญชี
                 </h1>
               </header>
+
+              <AvatarProfileHeader />
 
               <section className="grid gap-1">
                 <h2 className="border-b-2 border-[#e5e5e5] pb-3 text-xl font-bold text-[#3c3c3c]">

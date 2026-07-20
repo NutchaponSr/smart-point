@@ -4,6 +4,7 @@ import authConfig from "./auth.config";
 import { convex } from "better-convex/auth";
 import { username } from "better-auth/plugins";
 
+import { isAllowedAvatarPath } from "../shared/avatars";
 import { defineAuth } from "./generated/auth";
 
 const normalizeEmail = (email: string) => {
@@ -11,6 +12,13 @@ const normalizeEmail = (email: string) => {
 
   return email;
 }
+
+const assertAllowedAvatar = (image: string | null | undefined) => {
+  if (image === undefined || image === null) return;
+  if (!isAllowedAvatarPath(image)) {
+    throw new Error("Invalid avatar");
+  }
+};
 
 export default defineAuth((ctx) => {
   return {
@@ -41,12 +49,19 @@ export default defineAuth((ctx) => {
       user: {
         create: {
           before: async (user) => {
+            assertAllowedAvatar(user.image);
             return {
               data: {
                 ...user,
                 email: normalizeEmail(user.email),
               },
             };
+          },
+        },
+        update: {
+          before: async (user) => {
+            assertAllowedAvatar(user.image);
+            return { data: user };
           },
         },
       },

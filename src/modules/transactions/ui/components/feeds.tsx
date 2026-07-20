@@ -81,10 +81,18 @@ const FEED_AVATAR_CLASS = {
   },
 } as const;
 
-function getFeedAvatarClassName(role: "sender" | "receiver", size: string) {
+function getFeedAvatarClassName(
+  role: "sender" | "receiver",
+  size: string,
+  hasImage: boolean,
+) {
   const tone = FEED_AVATAR_CLASS[role];
   return {
-    container: cn(size, "shrink-0", tone.container),
+    container: cn(
+      size,
+      "shrink-0",
+      hasImage ? "ring-0! shadow-none!" : tone.container,
+    ),
     fallback: tone.fallback,
   };
 }
@@ -119,10 +127,10 @@ function PartyCard({
         name={name}
         src={image ?? undefined}
         className={{
-          container: "size-10 shrink-0 after:border-[1.5px]",
+          container: "size-10 shrink-0",
           fallback: accent
             ? "bg-orange text-sm font-medium"
-            : "text-sm font-medium",
+            : "text-lg font-medium",
         }}
       />
       <div className="min-w-0 flex-1">
@@ -494,6 +502,7 @@ const FeedItem = ({
               className={getFeedAvatarClassName(
                 isReceived ? "sender" : "receiver",
                 "size-11",
+                Boolean(avatarImage),
               )}
             />
 
@@ -770,6 +779,7 @@ export const FeedDialog = ({
             className={getFeedAvatarClassName(
               isReceived ? "sender" : "receiver",
               "size-11",
+              Boolean(avatarImage),
             )}
           />
           <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden text-left">

@@ -63,6 +63,7 @@ export const UserButtonDropdown = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="sidebar" size="lg" className="w-full justify-start">
           <UserAvatar
+            src={session?.user?.image ?? undefined}
             name={session?.user?.name ?? ""}
             className={{
               container: "size-7",

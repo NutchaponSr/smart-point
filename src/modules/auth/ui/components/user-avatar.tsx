@@ -40,13 +40,18 @@ export const UserAvatar = ({
   className,
 }: Props) => {
   const colors = getAvatarColorFromName(name);
+  const hasImage = Boolean(src);
 
   return (
     <Avatar
       className={cn(
-        "after:border-0 ring-2 ring-inset",
-        colors.ring,
-        colors.shadow,
+        hasImage
+          ? "rounded-none ring-0 shadow-none"
+          : cn(
+              "ring-2 ring-inset",
+              colors.ring,
+              colors.shadow,
+            ),
         className?.container,
       )}
     >
@@ -54,7 +59,7 @@ export const UserAvatar = ({
         <AvatarImage
           src={src}
           alt={name}
-          className="ring-2 ring-inset ring-white/20"
+          className="rounded-none object-contain"
         />
       )}
       <AvatarFallback

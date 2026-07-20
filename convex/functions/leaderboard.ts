@@ -271,6 +271,19 @@ export const getMany = authQuery
     const endIndex = startIndex + input.limit;
     const pageSlice = filteredRanked.slice(startIndex, endIndex);
 
+    const avatarEntries = await Promise.all(
+      pageSlice.map(async (row) => {
+        const user = await ctx.db
+          .query("user")
+          .withIndex("by_employeeId", (q) =>
+            q.eq("employeeId", row.employeeId),
+          )
+          .first();
+        return [String(row.employeeId), user?.image ?? null] as const;
+      }),
+    );
+    const avatarByEmployeeId = new Map(avatarEntries);
+
     const rows = pageSlice.flatMap((row) => {
       const rank = globalRankByEmployeeId.get(String(row.employeeId));
       if (rank == null) return [];
@@ -281,6 +294,7 @@ export const getMany = authQuery
           employeeId: row.employeeId,
           employeeCode: row.employeeCode,
           employeeName: row.employeeName,
+          avatarImage: avatarByEmployeeId.get(String(row.employeeId)) ?? null,
           department: row.department,
           points: row.points,
           transactionCount: row.transactionCount,
@@ -327,6 +341,7 @@ export const getMyEntry = authQuery
       employeeId: row.employeeId,
       employeeCode: row.employeeCode,
       employeeName: row.employeeName,
+      avatarImage: ctx.user.image ?? null,
       department: row.department,
       points: row.points,
       transactionCount: row.transactionCount,
