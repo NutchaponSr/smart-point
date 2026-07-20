@@ -176,7 +176,7 @@ export const Selection = ({
               name={selected.label}
               src={selected.image || undefined}
               className={{
-                container: "size-6 after:border-[1.5px]",
+                container: "size-6",
                 fallback: "text-xs font-normal",
               }}
             />
@@ -269,7 +269,7 @@ export const Selection = ({
                           name={option.label}
                           src={option.image || undefined}
                           className={{
-                            container: "size-6 after:border-[1.5px]",
+                            container: "size-6",
                             fallback: "text-xs font-normal",
                           }}
                         />
