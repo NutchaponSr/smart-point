@@ -5,7 +5,6 @@ import { Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import placeholder from "../../../../../public/placeholder.png";
-import Coin from "../../../../../public/coin.svg";
 
 import { ApiOutputs } from "@convex/api";
 
@@ -19,6 +18,7 @@ import {
   DialogHidden,
 } from "@/components/ui/dialog";
 
+import { CombinedPointsBadge } from "@/modules/cart/ui/components/currency";
 import { RewardInfoView } from "@/modules/rewards/ui/views/reward-info-view";
 
 interface Props {
@@ -54,10 +54,7 @@ export const Reward = ({ reward }: Props) => {
           {reward.name}
         </h3>
         <div className="flex flex-wrap items-center gap-4">
-          <span className="inline-flex items-center gap-1 text-sm font-bold text-[#1cb0f6]">
-            <img src={Coin.src} alt="" className="size-5" aria-hidden />
-            {reward.pointCost}
-          </span>
+          <CombinedPointsBadge amount={reward.pointCost} size="sm" />
           <StarRating
             rating={reward.totalStars}
             text={String(reward.totalReviews)}

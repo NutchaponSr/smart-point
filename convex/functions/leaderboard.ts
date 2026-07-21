@@ -3,16 +3,8 @@ import { authQuery } from "../lib/crpc";
 import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
+/** Kept for API compatibility — wallet balances have no time window. */
 const periodSchema = z.enum(["30d", "fullTime"]);
-
-type Period = z.infer<typeof periodSchema>;
-
-function getPeriodStartMs(period: Period, nowMs: number): number | null {
-  if (period === "30d") return nowMs - 30 * DAY_MS;
-  return null;
-}
 
 type EmployeeListRow = {
   employeeId: string;
@@ -160,8 +152,8 @@ type RankedRow = {
   employeeName: string;
   department: string | null;
   points: number;
-  transactionCount: number;
-  lastReceivedAt: number | null;
+  receivingBudget: number;
+  specialBudget: number;
 };
 
 function parseOffsetCursor(raw: string | null | undefined): number {
@@ -170,70 +162,40 @@ function parseOffsetCursor(raw: string | null | undefined): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
+/** Rank by current wallet: receivingBudget + specialBudget (highest first). */
 async function buildRankedRows(
   ctx: QueryCtx,
-  period: Period,
-  nowMs: number,
   filters: LeaderboardEmployeeFilters,
 ): Promise<RankedRow[]> {
-  const startMs = getPeriodStartMs(period, nowMs);
-
-  const [employees, completedTransactions] = await Promise.all([
+  const [employees, wallets] = await Promise.all([
     collectFilteredEmployees(ctx, filters),
-    ctx.db
-      .query("transaction")
-      .withIndex("by_status", (q) => q.eq("status", "completed"))
-      .collect(),
+    // eslint-disable-next-line @convex-dev/no-query-collect -- join all wallets once into a Map (avoid N+1)
+    ctx.db.query("wallet").collect(),
   ]);
 
-  const aggregate = new Map<
-    string,
-    {
-      points: number;
-      transactionCount: number;
-      lastReceivedAt: number | null;
-    }
-  >();
-
-  for (const transaction of completedTransactions) {
-    const occurredAt = transaction.createdAt ?? transaction._creationTime;
-    if (startMs !== null && occurredAt < startMs) continue;
-    if (occurredAt > nowMs) continue;
-
-    const key = String(transaction.receiverId);
-    const existing = aggregate.get(key) ?? {
-      points: 0,
-      transactionCount: 0,
-      lastReceivedAt: null,
-    };
-
-    existing.points += transaction.amount;
-    existing.transactionCount += 1;
-    existing.lastReceivedAt = Math.max(
-      existing.lastReceivedAt ?? 0,
-      occurredAt,
-    );
-
-    aggregate.set(key, existing);
-  }
+  const walletByEmployeeId = new Map(
+    wallets.map((wallet) => [String(wallet.employeeId), wallet]),
+  );
 
   return employees
     .map((employee) => {
-      const stats = aggregate.get(String(employee._id));
+      const wallet = walletByEmployeeId.get(String(employee._id));
+      const receivingBudget = wallet?.receivingBudget ?? 0;
+      const specialBudget = wallet?.specialBudget ?? 0;
+
       return {
         employeeId: employee._id,
         employeeCode: employee.employeeCode,
         employeeName: employee.employeeName,
         department: employee.department,
-        points: stats?.points ?? 0,
-        transactionCount: stats?.transactionCount ?? 0,
-        lastReceivedAt: stats?.lastReceivedAt ?? null,
+        points: receivingBudget + specialBudget,
+        receivingBudget,
+        specialBudget,
       };
     })
     .sort(
       (a, b) =>
         b.points - a.points ||
-        (b.lastReceivedAt ?? 0) - (a.lastReceivedAt ?? 0) ||
         a.employeeCode.localeCompare(b.employeeCode) ||
         String(a.employeeId).localeCompare(String(b.employeeId)),
     );
@@ -242,6 +204,7 @@ async function buildRankedRows(
 export const getMany = authQuery
   .input(
     z.object({
+      /** Ignored — ranking uses current wallet balances. */
       period: periodSchema,
       limit: z.number().min(1).max(100),
       cursor: z.string().nullish(),
@@ -250,14 +213,12 @@ export const getMany = authQuery
     }),
   )
   .query(async ({ ctx, input }) => {
-    const nowMs = Date.now();
-
     const [globalRanked, filteredRanked] = await Promise.all([
-      buildRankedRows(ctx, input.period, nowMs, {
+      buildRankedRows(ctx, {
         query: null,
         division: null,
       }),
-      buildRankedRows(ctx, input.period, nowMs, {
+      buildRankedRows(ctx, {
         query: input.q,
         division: input.division,
       }),
@@ -297,13 +258,14 @@ export const getMany = authQuery
           avatarImage: avatarByEmployeeId.get(String(row.employeeId)) ?? null,
           department: row.department,
           points: row.points,
-          transactionCount: row.transactionCount,
-          lastReceivedAt: row.lastReceivedAt,
+          receivingBudget: row.receivingBudget,
+          specialBudget: row.specialBudget,
         },
       ];
     });
 
-    const continueCursor = endIndex >= filteredRanked.length ? null : String(endIndex);
+    const continueCursor =
+      endIndex >= filteredRanked.length ? null : String(endIndex);
     const hasNextPage = continueCursor !== null;
 
     return {
@@ -317,12 +279,12 @@ export const getMany = authQuery
 export const getMyEntry = authQuery
   .input(
     z.object({
+      /** Ignored — ranking uses current wallet balances. */
       period: periodSchema,
     }),
   )
-  .query(async ({ ctx, input }) => {
-    const nowMs = Date.now();
-    const ranked = await buildRankedRows(ctx, input.period, nowMs, {
+  .query(async ({ ctx }) => {
+    const ranked = await buildRankedRows(ctx, {
       query: null,
     });
     const myId = String(ctx.user.employee.id);
@@ -344,7 +306,7 @@ export const getMyEntry = authQuery
       avatarImage: ctx.user.image ?? null,
       department: row.department,
       points: row.points,
-      transactionCount: row.transactionCount,
-      lastReceivedAt: row.lastReceivedAt,
+      receivingBudget: row.receivingBudget,
+      specialBudget: row.specialBudget,
     };
   });

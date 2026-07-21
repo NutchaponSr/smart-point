@@ -3,7 +3,6 @@ import Image from "next/image";
 import GoldMedalIcon from "../../../../../public/1st.svg";
 import SilverMedalIcon from "../../../../../public/2nd.svg";
 import BronzeMedalIcon from "../../../../../public/3rd.svg";
-import CoinGiveIcon from "../../../../../public/coin-give.svg";
 
 import { ApiOutputs } from "@convex/api";
 import type { StaticImageData } from "next/image";
@@ -11,6 +10,7 @@ import type { StaticImageData } from "next/image";
 import { cn } from "@/lib/utils";
 
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
+import { CombinedPointsBadge } from "@/modules/cart/ui/components/currency";
 
 type Leaderboard = ApiOutputs["leaderboard"]["getMany"]["page"][0];
 
@@ -74,10 +74,7 @@ export const LeaderboardList = ({ entries, myEmployeeId }: Props) => {
                 {entry.employeeName}
               </span>
 
-              <span className="shrink-0 text-base font-medium tabular-nums text-[#f1c40f] flex items-center gap-2">
-                <Image src={CoinGiveIcon} alt="Coin Give" width={20} height={20} />
-                {entry.points.toLocaleString("th-TH")}
-              </span>
+              <CombinedPointsBadge amount={entry.points} size="sm" />
             </li>
           ))}
         </ul>
