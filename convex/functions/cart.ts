@@ -3,6 +3,7 @@ import z from "zod/v4";
 import { CRPCError } from "better-convex/server";
 
 import { authMutation, authQuery } from "../lib/crpc";
+import { splitRedeemCost } from "../lib/points";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
@@ -218,7 +219,7 @@ export const updateCartItemQuantity = authMutation
     });
   });
 
-/** แลกของในตะกร้า: หัก receiving budget, สร้าง redemption ต่อรายการรางวัล, ลดสต็อก, ปิดตะกร้า */
+/** แลกของในตะกร้า: หัก receiving ก่อนแล้ว special, สร้าง redemption, ลดสต็อก, ปิดตะกร้า */
 export const redeemCart = authMutation.mutation(async ({ ctx }) => {
   const cart = await ctx.db
     .query("cart")
@@ -296,10 +297,16 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
     });
   }
 
-  if (wallet.receivingBudget < totalPoints) {
+  const split = splitRedeemCost(
+    wallet.receivingBudget,
+    wallet.specialBudget ?? 0,
+    totalPoints,
+  );
+
+  if (!split.ok) {
     throw new CRPCError({
       code: "BAD_REQUEST",
-      message: "Insufficient receiving points",
+      message: "Insufficient points",
     });
   }
 
@@ -336,21 +343,39 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
     }
   }
 
-  const newReceiving = wallet.receivingBudget - totalPoints;
   await ctx.db.patch(wallet._id, {
-    receivingBudget: newReceiving,
+    receivingBudget: split.newReceiving,
+    specialBudget: split.newSpecial,
   });
 
-  await ctx.db.insert("pointLedger", {
-    employeeId: ctx.user.employeeId,
-    delta: -totalPoints,
-    balanceAfter: newReceiving,
-    balanceType: "receiving",
-    sourceType: "redemption",
-    sourceId: String(redemptionIds[0]),
-    note: "Reward redemption",
-    createdAt: Date.now(),
-  });
+  const now = Date.now();
+  const sourceId = String(redemptionIds[0]);
+
+  if (split.fromReceiving > 0) {
+    await ctx.db.insert("pointLedger", {
+      employeeId: ctx.user.employeeId,
+      delta: -split.fromReceiving,
+      balanceAfter: split.newReceiving,
+      balanceType: "receiving",
+      sourceType: "redemption",
+      sourceId,
+      note: "Reward redemption (receiving)",
+      createdAt: now,
+    });
+  }
+
+  if (split.fromSpecial > 0) {
+    await ctx.db.insert("pointLedger", {
+      employeeId: ctx.user.employeeId,
+      delta: -split.fromSpecial,
+      balanceAfter: split.newSpecial,
+      balanceType: "special",
+      sourceType: "redemption",
+      sourceId,
+      note: "Reward redemption (special)",
+      createdAt: now,
+    });
+  }
 
   await ctx.db.patch(cart._id, {
     status: "checked_out",
@@ -360,5 +385,10 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
     await ctx.db.delete(ci._id);
   }
 
-  return { redemptionIds, totalPoints };
+  return {
+    redemptionIds,
+    totalPoints,
+    fromReceiving: split.fromReceiving,
+    fromSpecial: split.fromSpecial,
+  };
 });

@@ -8,6 +8,32 @@ type SpecialPointSourceType =
   | "activity"
   | "monthly_quest";
 
+/** หัก receivingBudget ก่อน แล้วค่อย specialBudget */
+export function splitRedeemCost(
+  receivingBudget: number,
+  specialBudget: number,
+  totalPoints: number,
+) {
+  const receiving = Math.max(0, receivingBudget);
+  const special = Math.max(0, specialBudget);
+  const available = receiving + special;
+
+  if (available < totalPoints) {
+    return { ok: false as const, shortfall: totalPoints - available };
+  }
+
+  const fromReceiving = Math.min(receiving, totalPoints);
+  const fromSpecial = totalPoints - fromReceiving;
+
+  return {
+    ok: true as const,
+    fromReceiving,
+    fromSpecial,
+    newReceiving: receiving - fromReceiving,
+    newSpecial: special - fromSpecial,
+  };
+}
+
 export async function getWalletOrThrow(
   ctx: MutationCtx,
   employeeId: Id<"employee">,

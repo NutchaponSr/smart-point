@@ -369,6 +369,12 @@ export declare const api: {
     >;
   };
   redemption: {
+    confirmDelivery: FunctionReference<
+      "mutation",
+      "public",
+      { redemptionId: string },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",

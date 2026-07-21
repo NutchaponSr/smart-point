@@ -1,6 +1,5 @@
 "use client";
 
-import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
 import { ApiOutputs } from "@convex/api";
@@ -9,6 +8,8 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
+
+import { CombinedPointsBadge } from "@/modules/cart/ui/components/currency";
 
 interface Props {
   item: ApiOutputs["cart"]["getCart"]["items"][number];
@@ -60,12 +61,7 @@ export const CheckoutItem = ({
             ) : null}
           </div>
 
-          <div className="flex shrink-0 items-center gap-1">
-            <img src={Coin.src} alt="" className="size-5" aria-hidden />
-            <span className="text-base font-medium text-[#1cb0f6] tabular-nums">
-              {lineTotal}
-            </span>
-          </div>
+          <CombinedPointsBadge amount={lineTotal} size="sm" className="shrink-0" />
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-1">

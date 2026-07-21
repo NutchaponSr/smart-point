@@ -799,19 +799,19 @@ export const reviewRedemption = authMutation
       });
     }
 
-    // if (redemption.status === "cancelled") {
-    //   throw new CRPCError({
-    //     code: "BAD_REQUEST",
-    //     message: "Cannot review a cancelled redemption",
-    //   });
-    // }
+    if (redemption.status === "cancelled") {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "Cannot review a cancelled redemption",
+      });
+    }
 
-    // if (redemption.status !== "fulfilled") {
-    //   throw new CRPCError({
-    //     code: "BAD_REQUEST",
-    //     message: "Only fulfilled redemptions can be reviewed",
-    //   });
-    // }
+    if (resolveEffectiveShippingStatus(redemption) !== "delivered") {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "Only delivered redemptions can be reviewed",
+      });
+    }
 
     const existing = await ctx.db
       .query("review")
@@ -840,6 +840,55 @@ export const reviewRedemption = authMutation
       userId: ctx.userId as Id<"user">,
       stars: input.stars,
       ...(trimmed && trimmed.length > 0 ? { comment: trimmed } : {}),
+    });
+  });
+
+/** User ยืนยันรับของเมื่อสถานะจัดส่งเป็น shipped */
+export const confirmDelivery = authMutation
+  .input(
+    z.object({
+      redemptionId: z.string(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const redemptionId = input.redemptionId as Id<"redemption">;
+    const redemption = await ctx.db.get(redemptionId);
+
+    if (!redemption) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Redemption not found",
+      });
+    }
+
+    if (redemption.employeeId !== ctx.user.employeeId) {
+      throw new CRPCError({
+        code: "FORBIDDEN",
+        message: "Not your redemption",
+      });
+    }
+
+    if (redemption.status === "cancelled") {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "Cannot confirm delivery for a cancelled redemption",
+      });
+    }
+
+    if (resolveEffectiveShippingStatus(redemption) !== "shipped") {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "Only shipped redemptions can be confirmed as delivered",
+      });
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(redemptionId, {
+      shippingStatus: "delivered",
+      deliveredAt: redemption.deliveredAt ?? now,
+      status: "fulfilled",
+      fulfilledAt: redemption.fulfilledAt ?? now,
+      fulfilledBy: redemption.fulfilledBy ?? ctx.user.employeeId,
     });
   });
 

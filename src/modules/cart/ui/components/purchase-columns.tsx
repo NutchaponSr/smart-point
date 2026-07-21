@@ -107,15 +107,20 @@ export const purchaseColumns = (): ColumnDef<Purchase>[] => {
         return (
           <div className="flex items-center justify-end gap-2">
             <span className="text-sm text-muted-foreground">
-              {!row.original.review ? "ยังไม่รีวิว" : "รีวิวแล้ว"}
+              {row.original.redemption.status === "cancelled"
+                ? "—"
+                : row.original.redemption.shippingStatus === "shipped"
+                  ? "รอยืนยันรับของ"
+                  : !row.original.review
+                    ? "ยังไม่รีวิว"
+                    : "รีวิวแล้ว"}
             </span>
             <PurchaseActions
               redemptionId={row.original.redemption._id}
               reward={row.original.reward}
-              reviewDisabled={
-                !!row.original.review ||
-                row.original.redemption.shippingStatus !== "delivered"
-              }
+              shippingStatus={row.original.redemption.shippingStatus}
+              hasReview={!!row.original.review}
+              isCancelled={row.original.redemption.status === "cancelled"}
             />
           </div>
         );

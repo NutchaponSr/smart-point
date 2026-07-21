@@ -78,7 +78,7 @@ export const redemptionShippingColumns = ({
         <UserAvatar
           name={row.original.employee.name}
           className={{
-            container: "size-10 shrink-0 after:border-[1.5px]",
+            container: "size-10 shrink-0",
             fallback: "text-sm font-bold",
           }}
         />

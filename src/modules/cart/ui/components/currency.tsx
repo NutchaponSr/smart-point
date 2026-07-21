@@ -11,6 +11,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { useCRPC } from "@/lib/convex/crpc";
+import { cn } from "@/lib/utils";
 
 import {
   Popover,
@@ -61,6 +62,60 @@ export const Currencies = () => {
         description="คะแนนที่ได้รับจากกิจกรรมพิเศษ ใช้แลกรางวัลพิเศษได้"
       />
     </div>
+  );
+}
+
+/** ไอคอน coin + ruby ซ้อนกัน + ตัวเลข gradient ฟ้า→ชมพู */
+export function CombinedPointsBadge({
+  amount,
+  size = "md",
+  className,
+}: {
+  amount: number;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}) {
+  const iconSize = size === "lg" ? 24 : size === "sm" ? 18 : 22;
+  const textClass =
+    size === "lg"
+      ? "text-2xl sm:text-3xl"
+      : size === "sm"
+        ? "text-base"
+        : "text-xl sm:text-2xl";
+
+  return (
+    <span className={cn("inline-flex items-center gap-2", className)}>
+      <span
+        className={cn(
+          "relative shrink-0",
+          size === "lg" ? "h-8 w-11" : size === "sm" ? "h-6 w-8" : "h-7 w-9",
+        )}
+        aria-hidden
+      >
+        <Image
+          src={CoinIcon}
+          alt=""
+          width={iconSize}
+          height={iconSize}
+          className="absolute top-0 left-0 z-10 drop-shadow-sm"
+        />
+        <Image
+          src={RubyIcon}
+          alt=""
+          width={iconSize}
+          height={iconSize}
+          className="absolute top-0.5 left-3 z-0"
+        />
+      </span>
+      <span
+        className={cn(
+          "bg-linear-to-r from-[#1cb0f6] to-[#cc348d] bg-clip-text font-bold tabular-nums text-transparent",
+          textClass,
+        )}
+      >
+        {amount.toLocaleString("th-TH")}
+      </span>
+    </span>
   );
 }
 

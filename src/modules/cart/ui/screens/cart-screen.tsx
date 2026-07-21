@@ -13,7 +13,29 @@ import { Button } from "@/components/ui/button";
 
 import { CheckoutItem } from "@/modules/cart/ui/components/checkout-item";
 import { CheckoutSummary } from "@/modules/cart/ui/components/checkout-summary";
-import { Currencies } from "../components/currency";
+import { CombinedPointsBadge, Currencies } from "@/modules/cart/ui/components/currency";
+
+function splitCheckoutCost(
+  receivingBudget: number,
+  specialBudget: number,
+  totalPoints: number,
+) {
+  const receiving = Math.max(0, receivingBudget);
+  const special = Math.max(0, specialBudget);
+  const available = receiving + special;
+  const fromReceiving = Math.min(receiving, totalPoints);
+  const fromSpecial = Math.max(0, totalPoints - fromReceiving);
+
+  return {
+    available,
+    fromReceiving,
+    fromSpecial,
+    remainingReceiving: receiving - fromReceiving,
+    remainingSpecial: special - fromSpecial,
+    shortfall: Math.max(0, totalPoints - available),
+    canAfford: available >= totalPoints,
+  };
+}
 
 export const CartScreen = () => {
   const crpc = useCRPC();
@@ -26,8 +48,9 @@ export const CartScreen = () => {
   const remove = useMutation(crpc.cart.removeCartItem.mutationOptions());
 
   const itemCount = cart.items.length;
-  const canAfford = wallet.receivingBudget >= cart.totalPoints;
-  const pointsAfterCheckout = wallet.receivingBudget - cart.totalPoints;
+  const receiving = wallet.receivingBudget;
+  const special = wallet.specialBudget ?? 0;
+  const payment = splitCheckoutCost(receiving, special, cart.totalPoints);
 
   if (!itemCount) {
     return (
@@ -48,7 +71,7 @@ export const CartScreen = () => {
         </div>
 
         <Link href="/rewards">
-          <Button size="lg" className="bg-pink hover:bg-pink">
+          <Button size="lg" variant="secondary">
             <RiShoppingBag3Line className="size-5" />
             ค้นหารางวัล
           </Button>
@@ -61,7 +84,7 @@ export const CartScreen = () => {
     <Button
       size="lg"
       className="w-full"
-      disabled={checkout.isPending || !canAfford}
+      disabled={checkout.isPending || !payment.canAfford}
       onClick={() =>
         checkout.mutate(
           {},
@@ -121,22 +144,35 @@ export const CartScreen = () => {
       </section>
 
       <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
-        <Currencies />
+        <Currencies />  
+        <div className="flex items-center justify-between gap-3 rounded-md border-2 bg-background px-4 py-3">
+          <span className="text-sm font-medium text-muted-foreground">
+            พอยต์ที่ใช้แลกได้
+          </span>
+          <CombinedPointsBadge amount={payment.available} size="sm" />
+        </div>
+
         <CheckoutSummary
           totalPoints={cart.totalPoints}
           itemCount={itemCount}
+          fromReceiving={payment.fromReceiving}
+          fromSpecial={payment.fromSpecial}
         />
 
-        {!canAfford ? (
+        {!payment.canAfford ? (
           <p className="rounded-md border-2 border-[#ff0000] px-4 py-3 text-sm font-semibold text-[#ff0000]">
-            พอยต์ไม่เพียงพอ ขาดอีก {cart.totalPoints - wallet.receivingBudget}{" "}
+            พอยต์ไม่เพียงพอ ขาดอีก {payment.shortfall.toLocaleString("th-TH")}{" "}
             พอยต์
           </p>
         ) : (
           <p className="px-1 text-sm text-muted-foreground">
             หลังแลกจะเหลือ{" "}
-            <span className="font-semibold text-foreground tabular-nums">
-              {pointsAfterCheckout}
+            <span className="font-semibold tabular-nums text-[#1cb0f6]">
+              {payment.remainingReceiving.toLocaleString("th-TH")}
+            </span>
+            {" + "}
+            <span className="font-semibold tabular-nums text-[#cc348d]">
+              {payment.remainingSpecial.toLocaleString("th-TH")}
             </span>{" "}
             พอยต์
           </p>
