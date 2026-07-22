@@ -200,21 +200,21 @@ async function hydrateRedemptionDocsFromOrmPage(
   return docs.filter((doc): doc is Doc<"redemption"> => doc != null);
 }
 
-function redemptionListBaseQuery(
-  ctx: QueryCtx,
-  employeeDocId: Id<"employee">,
+function sortOwnRedemptions(
+  redemptions: Doc<"redemption">[],
   sort: PurchaseSort,
-) {
-  const order =
-    sort === "recently-updated"
-      ? ({ updatedAt: "desc" } as const)
-      : ({ createdAt: "desc" } as const);
+): Doc<"redemption">[] {
+  const updatedTime = (r: Doc<"redemption">) =>
+    r.updatedAt ?? r._creationTime;
+  const purchaseTime = (r: Doc<"redemption">) =>
+    r.createdAt ?? r._creationTime;
 
-  return ctx.orm.query.redemption
-    .select()
-    .withIndex("by_employeeId", (q) => q.eq("employeeId", employeeDocId))
-    .orderBy(order)
-    .map((row) => row);
+  return [...redemptions].sort((a, b) => {
+    if (sort === "recently-updated") {
+      return updatedTime(b) - updatedTime(a);
+    }
+    return purchaseTime(b) - purchaseTime(a);
+  });
 }
 
 type RedemptionAdminPageRow = {
@@ -470,6 +470,14 @@ export const getMany = authQuery
     }),
   )
   .query(async ({ ctx, input }) => {
+    const myEmployeeId = ctx.user.employeeId as Id<"employee">;
+    if (myEmployeeId == null) {
+      throw new CRPCError({
+        code: "UNAUTHORIZED",
+        message: "Employee profile not linked",
+      });
+    }
+
     const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
     const sortKey: PurchaseSort = input.sort ?? "purchase-date";
     const dateFrom = input.from ?? null;
@@ -482,114 +490,56 @@ export const getMany = authQuery
       ctx.userId as Id<"user">,
     );
 
-    const page: RedemptionListPageRow[] = [];
+    // Scope to the signed-in employee only (never accept identity from client).
+    const ownRedemptions = await ctx.db
+      .query("redemption")
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", myEmployeeId))
+      .order("desc")
+      .collect();
 
-    const baseQuery = redemptionListBaseQuery(
-      ctx,
-      ctx.user.employeeId,
-      sortKey,
+    const scoped = ownRedemptions.filter(
+      (row) => row.employeeId === myEmployeeId,
+    );
+    const sorted = sortOwnRedemptions(scoped, sortKey);
+
+    const rewardsByIndex = await Promise.all(
+      sorted.map((row) => ctx.db.get(row.rewardId)),
+    );
+    const rewardImagesByIndex = await Promise.all(
+      rewardsByIndex.map((reward) =>
+        reward != null
+          ? resolveStorageImageUrl(ctx.storage, reward.image)
+          : Promise.resolve(null),
+      ),
     );
 
-    let cursor = input.cursor ?? null;
-    let pageResult = await baseQuery.paginate({
-      cursor,
-      limit: input.limit,
+    const filtered: RedemptionListPageRow[] = [];
+    enqueueRedemptionPageRows({
+      normalizedQuery,
+      dateFrom,
+      dateTo,
+      redemptionRows: sorted,
+      rewardsByIndex,
+      rewardImagesByIndex,
+      reviewByRedemptionId,
+      out: filtered,
+      slotsRemaining: sorted.length,
     });
 
-    let isDone = false;
-
-    while (page.length < input.limit) {
-      const redemptionBatch = await hydrateRedemptionDocsFromOrmPage(
-        ctx,
-        pageResult.page,
-      );
-      const rewardsByIndex = await Promise.all(
-        redemptionBatch.map((row) => ctx.db.get(row.rewardId)),
-      );
-      const rewardImagesByIndex = await Promise.all(
-        rewardsByIndex.map((reward) =>
-          reward != null
-            ? resolveStorageImageUrl(ctx.storage, reward.image)
-            : Promise.resolve(null),
-        ),
-      );
-
-      enqueueRedemptionPageRows({
-        normalizedQuery,
-        dateFrom,
-        dateTo,
-        redemptionRows: redemptionBatch,
-        rewardsByIndex,
-        rewardImagesByIndex,
-        reviewByRedemptionId,
-        out: page,
-        slotsRemaining: input.limit - page.length,
-      });
-
-      isDone =
-        pageResult.isDone ||
-        pageResult.continueCursor == null ||
-        redemptionBatch.length === 0;
-
-      if (isDone || page.length >= input.limit) {
-        break;
-      }
-
-      cursor = pageResult.continueCursor;
-      pageResult = await baseQuery.paginate({
-        cursor,
-        limit: input.limit,
-      });
-    }
-
-    if (isDone) {
-      return {
-        ...pageResult,
-        page,
-        continueCursor: null,
-        hasNextPage: false,
-        isDone: true,
-      };
-    }
-
-    const probeCursor = pageResult.continueCursor;
-    let hasNextPage = false;
-    let probeIsDone = probeCursor == null;
-    let currentProbeCursor = probeCursor;
-
-    while (!probeIsDone && !hasNextPage) {
-      const probeResult = await baseQuery.paginate({
-        cursor: currentProbeCursor,
-        limit: 1,
-      });
-      if (probeResult.page.length === 0) {
-        probeIsDone = true;
-        break;
-      }
-
-      const [probeOrmRow] = probeResult.page;
-      const probeRedemption =
-        probeOrmRow != null
-          ? await ctx.db.get(probeOrmRow.id as Id<"redemption">)
-          : null;
-
-      const probeReward =
-        probeRedemption != null
-          ? await ctx.db.get(probeRedemption.rewardId)
-          : null;
-      hasNextPage =
-        probeRedemption != null &&
-        redemptionInDateRange(probeRedemption, dateFrom, dateTo) &&
-        redemptionAndRewardMatchesQuery(probeReward, normalizedQuery);
-
-      probeIsDone = probeResult.isDone || probeResult.continueCursor == null;
-      currentProbeCursor = probeResult.continueCursor;
-    }
+    const startIndex = Math.max(
+      0,
+      Number.parseInt(input.cursor ?? "0", 10) || 0,
+    );
+    const endIndex = startIndex + input.limit;
+    const page = filtered.slice(startIndex, endIndex);
+    const hasNextPage = endIndex < filtered.length;
+    const continueCursor = hasNextPage ? String(endIndex) : null;
 
     return {
-      ...pageResult,
       page,
+      continueCursor,
       hasNextPage,
+      isDone: !hasNextPage,
     };
   });
 

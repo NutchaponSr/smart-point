@@ -1,4 +1,3 @@
-import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
 import { ApiOutputs } from "@convex/api";
@@ -10,6 +9,7 @@ import {
   statuses,
   type ShippingStatus,
 } from "@/modules/rewards/constants";
+import { CombinedPointsBadge } from "@/modules/cart/ui/components/currency";
 import { PurchaseActions } from "./purchase-actions";
 
 type Purchase = ApiOutputs["redemption"]["getMany"]["page"][0];
@@ -82,10 +82,10 @@ export const purchaseColumns = (): ColumnDef<Purchase>[] => {
       header: "พอยต์ที่ใช้",
       cell: ({ row }) => {
         return (
-          <span className="flex items-center gap-1 text-base font-medium tabular-nums text-[#1cb0f6]">
-            <img src={Coin.src} alt="Coin" className="size-6" />
-            {row.original.redemption.pointSpent}
-          </span>
+          <CombinedPointsBadge
+            amount={row.original.redemption.pointSpent}
+            size="sm"
+          />
         );
       },
     },
