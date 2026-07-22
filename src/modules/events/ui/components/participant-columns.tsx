@@ -119,7 +119,7 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
               type="button"
               size="sm"
               variant="secondary"
-              title="บวก receivingBudget ให้พนักงาน"
+              title="บวกคะแนนพิเศษให้พนักงาน"
               disabled={
                 !canReview || options.approvingIds.has(participantId)
               }

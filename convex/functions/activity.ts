@@ -375,45 +375,15 @@ async function approveActivityParticipantReward(input: {
     throw new CRPCError({ code: "NOT_FOUND", message: "Activity not found" });
   }
 
-  const employeeWallet = await input.ctx.db
-    .query("wallet")
-    .withIndex("by_employeeId", (q) => q.eq("employeeId", participant.employeeId))
-    .first();
-  if (!employeeWallet) {
-    throw new CRPCError({
-      code: "NOT_FOUND",
-      message: "Wallet not found for participant",
-    });
-  }
-
   const sourceId = String(participant._id);
-  const existingLedger = await input.ctx.db
-    .query("pointLedger")
-    .withIndex("by_sourceType_sourceId", (q) =>
-      q.eq("sourceType", "activity").eq("sourceId", sourceId),
-    )
-    .first();
-
-  let pointAwarded = 0;
-
-  if (!existingLedger) {
-    const newReceivingBudget = employeeWallet.receivingBudget + activity.point;
-
-    await input.ctx.db.patch(employeeWallet._id, {
-      receivingBudget: newReceivingBudget,
-    });
-    await input.ctx.db.insert("pointLedger", {
-      employeeId: participant.employeeId,
-      delta: activity.point,
-      balanceAfter: newReceivingBudget,
-      balanceType: "receiving",
-      sourceType: "activity",
-      sourceId,
-      note: `Activity reward: ${activity.name}`,
-      createdAt: Date.now(),
-    });
-    pointAwarded = activity.point;
-  }
+  const award = await awardSpecialPoints(input.ctx, {
+    employeeId: participant.employeeId,
+    delta: activity.point,
+    sourceType: "activity",
+    sourceId,
+    note: `Activity reward: ${activity.name}`,
+  });
+  const pointAwarded = award.awarded ? activity.point : 0;
 
   await input.ctx.db.patch(participant._id, {
     status: "rewarded",
@@ -439,7 +409,7 @@ async function approveActivityParticipantReward(input: {
   return {
     approved: true as const,
     skipped: false as const,
-    payoutBalanceType: "receiving" as const,
+    payoutBalanceType: "special" as const,
   };
 }
 
@@ -1460,7 +1430,7 @@ export const approve = authMutation
     z.object({
       approved: z.boolean(),
       skipped: z.boolean(),
-      payoutBalanceType: z.enum(["giving", "receiving"]).optional(),
+      payoutBalanceType: z.enum(["giving", "receiving", "special"]).optional(),
     }),
   )
   .mutation(async ({ ctx, input }) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import Coin from "../../../../../public/coin.svg";
+import Ruby from "../../../../../public/ruby.svg";
 
 import { 
   ColumnFiltersState,
@@ -95,7 +95,7 @@ export const JoinEventView = ({ eventId }: Props) => {
   const activityHasEnded = hasActivityEnded(activity.endDate);
 
   const approveSuccessMessage = () =>
-    "อนุมัติสำเร็จ — บวก receivingBudget ให้พนักงานแล้ว";
+    "อนุมัติสำเร็จ — บวกคะแนนพิเศษให้พนักงานแล้ว";
 
   const table = useReactTable({
     data: activity.joinedEmployees,
@@ -253,8 +253,8 @@ export const JoinEventView = ({ eventId }: Props) => {
             </header>
             <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,full)]">
             <div className="p-3 outline-2outline-offset-0 outline-border border-r-2">
-              <div className="flex items-center gap-1 text-base font-medium text-[#1cb0f6]">
-                <img src={Coin.src} alt="Coin" className="size-6" />
+              <div className="flex items-center gap-1 text-base font-medium text-[#cc348d]">
+                <img src={Ruby.src} alt="คะแนนพิเศษ" className="size-6" />
                 {activity.point}
               </div>
             </div>
@@ -273,7 +273,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                 {activity.description}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                เข้าร่วมแล้วได้ special point 5 แต้ม · แนบหลักฐานแล้วรอ admin อนุมัติ/ปฏิเสธ · อนุมัติจะบวก receivingBudget
+                เข้าร่วมแล้วได้คะแนนพิเศษ 5 แต้ม · แนบหลักฐานแล้วรอ admin อนุมัติ/ปฏิเสธ · อนุมัติจะบวกคะแนนพิเศษ
                 {activityHasEnded ? " · กิจกรรมสิ้นสุดแล้ว" : null}
               </p>
             </section>
@@ -415,7 +415,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                     {
                       onSuccess: (result) => {
                         toast.success(
-                          `อนุมัติสำเร็จ ${result.approved} รายการ (ข้าม ${result.skipped}) — receivingBudget`,
+                          `อนุมัติสำเร็จ ${result.approved} รายการ (ข้าม ${result.skipped}) — คะแนนพิเศษ`,
                         );
                         queryClient.invalidateQueries({
                           queryKey: crpc.activity.getOne.queryKey({

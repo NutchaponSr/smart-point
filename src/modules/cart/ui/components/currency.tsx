@@ -44,7 +44,7 @@ export const Currencies = () => {
         amount={wallet.givingBudget}
         image={CoinGivingIcon}
         color="yellow"
-        title="คะแนนที่มอบให้"
+        title="คะแนนให้เพื่อน"
         description="คะแนนที่ใช้ชื่นชมเพื่อนร่วมงาน รีเซ็ตทุกต้นเดือนและหมดอายุสิ้นเดือน"
       />
       <Currency

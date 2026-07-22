@@ -61,7 +61,7 @@ function PartyCard({
         name={name}
         src={image ?? undefined}
         className={{
-          container: "size-10 shrink-0 after:border-[1.5px]",
+          container: "size-10 shrink-0",
           fallback: accent ? "text-sm font-medium bg-orange" : "text-sm font-medium",
         }}
       />

@@ -13,7 +13,7 @@ export const MyEventView = () => {
   return (
     <div className="flex flex-col gap-6 px-6">
       <div className="flex flex-col gap-6 lg:flex-row-reverse lg:gap-12">
-        <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-[368px] lg:shrink-0 lg:self-start">
+        <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-92 lg:shrink-0 lg:self-start">
           <div className="mb-2 flex h-11 flex-row items-center justify-between">
             <Currencies />
           </div>

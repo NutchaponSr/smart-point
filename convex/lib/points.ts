@@ -1,12 +1,14 @@
 import { CRPCError } from "better-convex/server";
+import type { GenericMutationCtx } from "convex/server";
 
-import type { Id } from "../functions/_generated/dataModel";
-import type { MutationCtx } from "../functions/generated/server";
+import type { DataModel, Id } from "../functions/_generated/dataModel";
 
 type SpecialPointSourceType =
   | "daily_login"
   | "activity"
   | "monthly_quest";
+
+type PointsMutationCtx = Pick<GenericMutationCtx<DataModel>, "db">;
 
 /** หัก receivingBudget ก่อน แล้วค่อย specialBudget */
 export function splitRedeemCost(
@@ -35,7 +37,7 @@ export function splitRedeemCost(
 }
 
 export async function getWalletOrThrow(
-  ctx: MutationCtx,
+  ctx: PointsMutationCtx,
   employeeId: Id<"employee">,
 ) {
   const wallet = await ctx.db
@@ -54,7 +56,7 @@ export async function getWalletOrThrow(
 }
 
 export async function awardSpecialPoints(
-  ctx: MutationCtx,
+  ctx: PointsMutationCtx,
   input: {
     employeeId: Id<"employee">;
     delta: number;

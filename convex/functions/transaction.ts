@@ -9,12 +9,23 @@ import {
   MONTHLY_TRANSFER_LIMIT_ENABLED,
 } from "../lib/monthly-transfer";
 import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
+import { awardSpecialPoints } from "../lib/points";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
+const MONTHLY_QUEST_GOAL = 20;
+const MONTHLY_QUEST_REWARD_PER_GIVE = 1;
+
 function transactionTimestamp(t: Doc<"transaction">) {
   return t.createdAt ?? t._creationTime;
+}
+
+function startOfMonthTimestamp(timestamp: number): number {
+  const date = new Date(timestamp);
+  date.setDate(1);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
 }
 
 type TransactionPartyNames = {
@@ -843,6 +854,27 @@ async function approveTransactionById(
       reviewedBy,
       updatedAt: now,
     });
+
+    const monthStart = startOfMonthTimestamp(now);
+    const completedThisMonth = await ctx.db
+      .query("transaction")
+      .withIndex("by_senderId_status", (q) =>
+        q.eq("senderId", transaction.senderId).eq("status", "completed"),
+      )
+      .collect();
+    const completedCount = completedThisMonth.filter(
+      (row) => transactionTimestamp(row) >= monthStart,
+    ).length;
+
+    if (completedCount <= MONTHLY_QUEST_GOAL) {
+      await awardSpecialPoints(ctx, {
+        employeeId: transaction.senderId,
+        delta: MONTHLY_QUEST_REWARD_PER_GIVE,
+        sourceType: "monthly_quest",
+        sourceId: transactionSourceId,
+        note: "ภารกิจประจำเดือน: มอบคะแนนให้เพื่อน",
+      });
+    }
 
     await appendActivityLog(ctx, {
       actorEmployeeId: reviewedBy,
@@ -1771,13 +1803,10 @@ export const getMonthlyQuestProgress = authQuery
       );
     }).length;
 
-    const goal = 20;
-    const reward = 5;
-
     return {
-      count: Math.min(count, goal),
-      goal,
-      reward,
-      isComplete: count >= goal,
+      count: Math.min(count, MONTHLY_QUEST_GOAL),
+      goal: MONTHLY_QUEST_GOAL,
+      reward: MONTHLY_QUEST_REWARD_PER_GIVE,
+      isComplete: count >= MONTHLY_QUEST_GOAL,
     };
   });

@@ -1,6 +1,6 @@
 "use client";
 
-import CoinIcon from "../../../../../public/coin.svg";
+import RubyIcon from "../../../../../public/ruby.svg";
 
 import { format } from "date-fns";
 import type { ApiOutputs } from "@convex/api";
@@ -128,10 +128,10 @@ export const MyEventScreen = () => {
                     >
                       {statusLabel}
                     </span>
-                    <span className="flex items-center gap-1 rounded-md px-2 py-1.5 text-[#1cb0f6] font-semibold">
+                    <span className="flex items-center gap-1 rounded-md px-2 py-1.5 text-[#cc348d] font-semibold">
                       <img
-                        src={CoinIcon.src}
-                        alt="Coin"
+                        src={RubyIcon.src}
+                        alt="คะแนนพิเศษ"
                         className="size-5 fill-current"
                       />
                       {points}

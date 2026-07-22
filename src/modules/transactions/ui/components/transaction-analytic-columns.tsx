@@ -87,7 +87,12 @@ export function TransactionAnalyticCard({
             name={senderName}
             src={transaction.sender?.image ?? undefined}
             className={{
-              container: cn("size-11", FEED_AVATAR_CLASS.sender.container),
+              container: cn(
+                "size-11",
+                transaction.sender?.image
+                  ? "ring-0! shadow-none!"
+                  : FEED_AVATAR_CLASS.sender.container,
+              ),
               fallback: FEED_AVATAR_CLASS.sender.fallback,
             }}
           />
@@ -96,7 +101,12 @@ export function TransactionAnalyticCard({
               name={receiverName}
               src={transaction.receiver?.image ?? undefined}
               className={{
-                container: cn("size-7", FEED_AVATAR_CLASS.receiver.container),
+                container: cn(
+                  "size-7",
+                  transaction.receiver?.image
+                    ? "ring-0! shadow-none!"
+                    : FEED_AVATAR_CLASS.receiver.container,
+                ),
                 fallback: FEED_AVATAR_CLASS.receiver.fallback,
               }}
             />

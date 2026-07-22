@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import CoinIcon from "../../../../../public/coin.svg";
+import RubyIcon from "../../../../../public/ruby.svg";
 
 import {
   useMutation,
@@ -287,7 +287,7 @@ export const EventCarousel = ({
                     </h3>
                   </div>
                   <span className="flex shrink-0 items-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-sm font-extrabold">
-                    <img src={CoinIcon.src} alt="Coin" className="size-5 fill-current" />
+                    <img src={RubyIcon.src} alt="คะแนนพิเศษ" className="size-5 fill-current" />
                     {event.point}
                   </span>
                 </div>

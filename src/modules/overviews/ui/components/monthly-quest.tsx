@@ -35,17 +35,15 @@ function QuestProgressBar({ value, max, className }: QuestProgressBarProps) {
       aria-valuemax={max}
       aria-label={`ความคืบหน้า ${value} จาก ${max}`}
     >
-      <span
-        className="pointer-events-none absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#afafaf]"
-      >
-        {value} / {max}
-      </span>
       <div
         className="relative h-full rounded-full bg-[#58cc02] transition-[width] duration-500 ease-out"
         style={{ width: percent > 0 ? `${percent}%` : "0%" }}
       >
         <div className="absolute inset-x-1.5 top-1 h-[3px] rounded-full bg-[#89e219]" />
       </div>
+      <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-[11px] font-bold text-[#e5e5e5]">
+        {value} / {max}
+      </span>
     </div>
   );
 }
@@ -85,8 +83,8 @@ export const MonthlyQuest = () => {
           className="me-[18px] self-start"
         />
         <div className="flex flex-col gap-0.5 text-left w-full">
-          <span className="text-base leading-6 font-bold">
-            ส่งให้เพื่อนพนักงานครบ {data.goal} ครั้ง
+          <span className="text-sm leading-6 font-bold">
+            มอบคะแนนให้เพื่อน 1 ครั้ง รับ 1 Point (สูงสุด 20 Point/เดือน)
           </span>
           <div className="flex items-center mr-1">
             <QuestProgressBar value={data.count} max={data.goal} />

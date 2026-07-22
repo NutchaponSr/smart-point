@@ -27,7 +27,7 @@ export declare const api: {
       { activityId: string; participantId: string },
       {
         approved: boolean;
-        payoutBalanceType?: "giving" | "receiving";
+        payoutBalanceType?: "giving" | "receiving" | "special";
         skipped: boolean;
       }
     >;

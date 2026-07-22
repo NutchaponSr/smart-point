@@ -1,6 +1,6 @@
 "use client";
 
-import Coin from "../../../../../public/coin.svg";
+import Ruby from "../../../../../public/ruby.svg";
 
 import { GoPersonFill } from "react-icons/go";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -40,8 +40,8 @@ export const EventPreview = () => {
         </header>
         <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,full)]">
           <div className="p-3 outline-2outline-offset-0 outline-border border-r-2">
-            <div className="flex items-center gap-1 text-base font-medium text-[#1cb0f6]">
-              <img src={Coin.src} alt="Coin" className="size-6" />
+            <div className="flex items-center gap-1 text-base font-medium text-[#cc348d]">
+              <img src={Ruby.src} alt="คะแนนพิเศษ" className="size-6" />
               {cost}
             </div>
           </div>
