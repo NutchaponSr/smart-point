@@ -124,7 +124,8 @@ export type DataModel = {
         | "point_transfer_rejected"
         | "daily_login"
         | "event_joined"
-        | "event_completed";
+        | "event_completed"
+        | "event_rejected";
       _id: Id<"activityLog">;
       _creationTime: number;
     };

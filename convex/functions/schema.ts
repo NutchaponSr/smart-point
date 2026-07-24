@@ -294,6 +294,7 @@ export const activityLog = convexTable("activityLog", {
     "daily_login",
     "event_joined",
     "event_completed",
+    "event_rejected",
   ] as const).notNull(),
   sourceId: text().notNull(),
   summary: text().notNull(),

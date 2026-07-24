@@ -57,29 +57,13 @@ function buildRefs(
 }
 
 async function resolveSummaryForViewer(input: {
-  ctx: QueryCtx;
   row: Doc<"activityLog">;
   viewerId: Id<"employee">;
   actorName: string | null;
   meta: Record<string, unknown> | null;
 }): Promise<string> {
-  const { ctx, row, viewerId, actorName, meta } = input;
+  const { row, viewerId, actorName, meta } = input;
   const amount = metaNumber(meta, "amount");
-  const receiverId = metaString(meta, "receiverId");
-  const senderId = metaString(meta, "senderId");
-  const isReceiver = receiverId === viewerId;
-
-  if (row.type === "point_transfer_approved" && isReceiver) {
-    let senderName: string | null = null;
-    if (senderId) {
-      const sender = await ctx.db.get(senderId as Id<"employee">);
-      senderName = sender?.name ?? null;
-    }
-    const points = amount != null ? `${amount} พอยต์` : "พอยต์";
-    return senderName
-      ? `ได้รับ ${points} จาก ${senderName}`
-      : `ได้รับ ${points}`;
-  }
 
   if (
     row.type === "point_transfer_sent" &&
@@ -117,7 +101,6 @@ async function enrichActivityLog(
   }
 
   const summary = await resolveSummaryForViewer({
-    ctx,
     row,
     viewerId,
     actorName: actor?.name ?? null,

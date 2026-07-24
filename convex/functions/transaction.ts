@@ -878,10 +878,10 @@ async function approveTransactionById(
 
     await appendActivityLog(ctx, {
       actorEmployeeId: reviewedBy,
-      subjectEmployeeId: transaction.receiverId,
+      subjectEmployeeId: transaction.senderId,
       type: "point_transfer_approved",
       sourceId: transactionSourceId,
-      summary: `อนุมัติการโอน ${transaction.amount} พอยต์`,
+      summary: "คำชมของคุณได้รับการอนุมัติ",
       meta: {
         transactionId: transactionSourceId,
         senderId: String(transaction.senderId),
@@ -951,7 +951,7 @@ async function approveTransactionById(
     subjectEmployeeId: transaction.senderId,
     type: "point_transfer_rejected",
     sourceId: transactionSourceId,
-    summary: `ปฏิเสธการโอน ${transaction.amount} พอยต์`,
+    summary: "คำชมของคุณได้รับการปฏิเสธ กรุณาระบุพฤติกรรมให้ชัดเจน",
     meta: {
       transactionId: transactionSourceId,
       senderId: String(transaction.senderId),

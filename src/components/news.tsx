@@ -32,7 +32,8 @@ type ActivityLogType =
   | "point_transfer_rejected"
   | "daily_login"
   | "event_joined"
-  | "event_completed";
+  | "event_completed"
+  | "event_rejected";
 
 const logTypeIcon: Record<ActivityLogType, typeof BsSendFill> = {
   point_transfer_sent: BsSendFill,
@@ -41,6 +42,7 @@ const logTypeIcon: Record<ActivityLogType, typeof BsSendFill> = {
   daily_login: BsBoxArrowInRight,
   event_joined: BsPersonPlusFill,
   event_completed: BsStars,
+  event_rejected: BsShieldX,
 };
 
 const logTypeTone: Record<ActivityLogType, string> = {
@@ -50,6 +52,7 @@ const logTypeTone: Record<ActivityLogType, string> = {
   daily_login: "text-[#f1c40f]",
   event_joined: "text-[#1cb0f6]",
   event_completed: "text-[#58cc02]",
+  event_rejected: "text-[#ff4b4b]",
 };
 
 const tabTriggerClassName = cn(

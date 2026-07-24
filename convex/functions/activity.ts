@@ -396,7 +396,7 @@ async function approveActivityParticipantReward(input: {
     actorEmployeeId: participant.employeeId,
     type: "event_completed",
     sourceId: String(participant._id),
-    summary: `ทำกิจกรรมเสร็จ: ${activity.name}`,
+    summary: "ขอบคุณสำหรับการร่วมกิจกรรม",
     meta: {
       activityId: String(activity._id),
       participantId: String(participant._id),
@@ -455,6 +455,18 @@ async function rejectActivityParticipant(input: {
     evidenceSize: null,
     evidenceUploadedAt: null,
     evidenceUploadedBy: null,
+  });
+
+  await appendActivityLog(input.ctx, {
+    actorEmployeeId: participant.employeeId,
+    type: "event_rejected",
+    sourceId: `reject:${participant._id}:${Date.now()}`,
+    summary: "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม",
+    meta: {
+      activityId: String(input.activityId),
+      participantId: String(participant._id),
+      employeeId: String(participant.employeeId),
+    },
   });
 
   return { rejected: true as const, skipped: false as const };

@@ -8,7 +8,8 @@ export type ActivityLogType =
   | "point_transfer_rejected"
   | "daily_login"
   | "event_joined"
-  | "event_completed";
+  | "event_completed"
+  | "event_rejected";
 
 type ActivityLogMutationCtx = Pick<GenericMutationCtx<DataModel>, "db">;
 
