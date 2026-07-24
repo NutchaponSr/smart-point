@@ -140,6 +140,13 @@ export function TransactionAnalyticCard({
             <span className="text-[#ffc800]">{receiverName}</span>
           </p>
 
+          <p
+            className="truncate font-mono text-[10px] text-[#afafaf]"
+            title={transaction._id}
+          >
+            ID: {transaction._id}
+          </p>
+
           {transaction.message ? (
             <p className="line-clamp-2 text-sm leading-relaxed text-[#777]">
               {transaction.message}

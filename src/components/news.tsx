@@ -89,37 +89,6 @@ function TabPanelFallback() {
   );
 }
 
-function CopyTransactionIdButton({ transactionId }: { transactionId: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(transactionId);
-      setCopied(true);
-      toast.success("คัดลอกรหัสธุรกรรมแล้ว");
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {
-      toast.error("คัดลอกไม่สำเร็จ");
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={() => void onCopy()}
-      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-[#f7f7f7] hover:text-foreground"
-      title="คัดลอกรหัสธุรกรรม"
-    >
-      {copied ? (
-        <BsCheck className="size-3 text-emerald-600" />
-      ) : (
-        <BsClipboard className="size-3" />
-      )}
-      {copied ? "คัดลอกแล้ว" : "คัดลอก"}
-    </button>
-  );
-}
-
 function NewsList() {
   const crpc = useCRPC();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -254,29 +223,6 @@ function ActivityLogList() {
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
                 <time>{timeLabel}</time>
               </div>
-              {showRefs && (
-                <div className="mt-1.5 flex flex-col gap-1">
-                  {item.refs.map((ref) => (
-                    <div
-                      key={`${ref.label}-${ref.id}`}
-                      className="flex min-w-0 items-center gap-1.5"
-                    >
-                      <p
-                        className="min-w-0 truncate font-mono text-[10px] text-muted-foreground"
-                        title={`${ref.label}: ${ref.id}`}
-                      >
-                        <span className="font-sans text-muted-foreground/80">
-                          {ref.label}:{" "}
-                        </span>
-                        {ref.id}
-                      </p>
-                      {ref.label === "ธุรกรรม" ? (
-                        <CopyTransactionIdButton transactionId={ref.id} />
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </li>
         );

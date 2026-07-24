@@ -138,6 +138,18 @@ export function TransactionReviewDialog({
           </DialogHeader>
 
           <div className="grid gap-4">
+            <InfoRow
+              label="รหัสธุรกรรม"
+              value={
+                <p
+                  className="break-all font-mono text-xs text-[#777]"
+                  title={transaction._id}
+                >
+                  {transaction._id}
+                </p>
+              }
+            />
+
             <div className="grid gap-3 sm:grid-cols-2">
               <PartyCard
                 label="ผู้ส่ง"
