@@ -1,0 +1,14 @@
+{
+  "guidelinesHash": "f730e6620e882fef21a3e00c5539cc0b472ef26688efd92bf3a42f0711de6888",
+  "agentsMdSectionHash": "a8a7b85906a77122f32b3b12bca8f25a1ea037235335decd8c39e7df03405c36",
+  "claudeMdHash": "a8a7b85906a77122f32b3b12bca8f25a1ea037235335decd8c39e7df03405c36",
+  "agentSkillsSha": "ec1e6baae7d86c7843c22938c75979c016f5c6e9",
+  "installedSkillNames": [
+    "convex",
+    "convex-create-component",
+    "convex-migration-helper",
+    "convex-performance-audit",
+    "convex-quickstart",
+    "convex-setup-auth"
+  ]
+}
