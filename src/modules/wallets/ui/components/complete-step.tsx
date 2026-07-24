@@ -13,7 +13,7 @@ export const CompleteStep = () => {
           คำชมของคุณ ส่งถึงผู้รับสำเร็จ
         </h1>
         <p className="mx-auto max-w-md text-base text-muted-foreground leading-relaxed">
-          รายการของคุณถูกบันทึกแล้ว สามารถตรวจสอบได้ในประวัติธุรกรรม
+          รายการของคุณถูกบันทึกแล้ว สามารถตรวจสอบได้ในบันทึกการกระทำ หรือ กิจกรรมพอยต์
         </p>
       </div>
     </div>

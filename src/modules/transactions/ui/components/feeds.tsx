@@ -534,12 +534,12 @@ const FeedItem = ({
                   </>
                 )}
 
-                <p
+                {/* <p
                   className="truncate font-mono text-[10px] text-[#afafaf]"
                   title={feed._id}
                 >
                   ID: {feed._id}
-                </p>
+                </p> */}
               </div>
             </div>
 
@@ -626,12 +626,12 @@ function FeedDetailDialog({
         </DialogHeader>
 
         <div className="grid gap-4">
-          <InfoRow
+          {/* <InfoRow
             label="รหัสธุรกรรม"
             value={
               <p className="break-all font-mono text-xs text-[#777]">{feed._id}</p>
             }
-          />
+          /> */}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <PartyCard

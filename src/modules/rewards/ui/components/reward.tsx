@@ -40,7 +40,7 @@ export const Reward = ({ reward }: Props) => {
   };
 
   return (
-    <div className="flex flex-row items-start gap-8">
+    <div className="flex flex-row items-start gap-4 md:gap-8">
       <img
         src={reward.image || placeholder.src}
         alt={reward.name}
@@ -50,10 +50,10 @@ export const Reward = ({ reward }: Props) => {
       />
 
       <div className="flex flex-col gap-1 min-w-0 grow">
-        <h3 className="text-lg font-bold py-2 whitespace-pre-wrap break-all overflow-hidden">
+        <h3 className="text-base md:text-lg font-bold py-2 whitespace-pre-wrap break-all overflow-hidden">
           {reward.name}
         </h3>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col items-start gap-1">
           <CombinedPointsBadge amount={reward.pointCost} size="sm" />
           <StarRating
             rating={reward.totalStars}
@@ -61,12 +61,17 @@ export const Reward = ({ reward }: Props) => {
             className="text-sm font-semibold text-primary"
           />
         </div>
-        <p className="text-base text-[#777] m-0 leading-[1.7] line-clamp-2 break-all overflow-hidden">
+        <p className="text-sm md:text-base text-[#777] m-0 leading-[1.7] line-clamp-2 break-all overflow-hidden">
           {reward.description}
         </p>
+        <div className="block md:hidden md:mt-0 mt-2">
+          <Button onClick={openDialog}>ดูเพิ่มเติม</Button>
+        </div>
       </div>
 
-      <Button onClick={openDialog}>ดูเพิ่มเติม</Button>
+      <div className="hidden md:block">
+        <Button onClick={openDialog}>ดูเพิ่มเติม</Button>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[80vh] gap-0 overflow-y-auto p-0 sm:max-w-xl">

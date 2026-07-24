@@ -1,6 +1,5 @@
 "use client";
 
-import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
 import { Fragment } from "react";
@@ -16,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 
 import { StarRating } from "@/components/star-rating";
 
+import { CombinedPointsBadge } from "@/modules/cart/ui/components/currency";
 import { Review } from "@/modules/rewards/ui/components/review";
 
 interface Props {
@@ -56,26 +56,25 @@ export const RewardInfoView = ({ rewardId, className }: Props) => {
           <img src={reward.image || placeholder.src} alt={reward.name} loading="lazy" className="w-full" />
         </figure>
 
-        <section className="lg:border-r-2">
+        <section className="lg:border-r-2 border-b-2">
           <header className="grid gap-4 p-6 not-first:border-t-2">
             <h1 className="text-[2rem] font-normal leading-[1.2]">{reward.name}</h1>
           </header>
-          <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,1fr)]">
-            <div className="px-6 py-4 outline-2 outline-offset-0 outline-border">
-              <div className="w-fit flex items-center gap-1">
-                <img src={Coin.src} alt="Coin" className="size-6" />
-                <span className="text-base font-medium text-[#1cb0f6]">{reward.pointCost}</span>
-              </div>
+          <section className="grid grid-cols-1 lg:grid-cols-[auto_1fr] border-t-2 border-border p-0">
+            <div className="px-6 py-4 flex w-full border-b-2">
+              <CombinedPointsBadge amount={reward.pointCost} size="sm" />
             </div>
-            <div className="flex items-center px-6 py-4 max-sm:col-span-full">
+            <div className="flex items-center px-6 py-4 max-sm:col-span-full lg:border-b-2 border-b-0 lg:border-l-2">
               <StarRating rating={reward.reviewRating} text={String(reward.reviewCount)} />
             </div>
           </section>
-          <section className="border-t-2 border-border p-6">
-            <p className="text-sm">
-              {reward.description}
-            </p>
-          </section>
+          {reward.description && (
+            <section className="lg:border-t-0 border-t-2 border-border p-6">
+              <p className="text-sm">
+                {reward.description}
+              </p>
+            </section>
+          )}
         </section>
         
         <section>

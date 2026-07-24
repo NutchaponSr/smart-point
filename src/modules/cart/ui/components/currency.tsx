@@ -97,7 +97,7 @@ export function CombinedPointsBadge({
           alt=""
           width={iconSize}
           height={iconSize}
-          className="absolute top-0 left-0 z-10 drop-shadow-sm"
+          className="absolute top-0 left-0 z-10"
         />
         <Image
           src={RubyIcon}
