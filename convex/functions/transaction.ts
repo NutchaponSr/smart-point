@@ -168,20 +168,59 @@ type TransactionListFilterBounds = {
   counterpartyEmployeeDocId: Id<"employee"> | null;
 };
 
-type TransactionPaginateResult = {
-  page: Doc<"transaction">[];
-  isDone: boolean;
-  continueCursor: string | null;
+type TransactionListCursor = {
+  creationTime: number;
+  id: Id<"transaction">;
+} | null;
+
+type TransactionListBaseQueryFactory = (cursor: TransactionListCursor) => {
+  take: (n: number) => Promise<Doc<"transaction">[]>;
 };
 
-type TransactionListBaseQuery = {
-  paginate(opts: {
-    cursor: string | null;
-    numItems: number;
-  }): Promise<TransactionPaginateResult>;
-};
+const MAX_LIST_SCAN_PER_CALL = 2_000;
 
-type TransactionListBaseQueryFactory = () => TransactionListBaseQuery;
+function encodeTransactionListCursor(
+  cursor: TransactionListCursor,
+): string | null {
+  if (cursor == null) return null;
+  return JSON.stringify(cursor);
+}
+
+function decodeTransactionListCursor(
+  raw: string | null | undefined,
+): TransactionListCursor {
+  if (raw == null || raw === "") return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "creationTime" in parsed &&
+      "id" in parsed &&
+      typeof (parsed as { creationTime: unknown }).creationTime === "number" &&
+      typeof (parsed as { id: unknown }).id === "string"
+    ) {
+      return {
+        creationTime: (parsed as { creationTime: number }).creationTime,
+        id: (parsed as { id: string }).id as Id<"transaction">,
+      };
+    }
+  } catch {
+    // opaque/old Convex paginate cursors → restart from newest
+  }
+  return null;
+}
+
+function isAfterTransactionListCursor(
+  tx: Doc<"transaction">,
+  cursor: TransactionListCursor,
+): boolean {
+  if (cursor == null) return true;
+  return (
+    tx._creationTime < cursor.creationTime ||
+    (tx._creationTime === cursor.creationTime && tx._id < cursor.id)
+  );
+}
 
 function assertTransactionListRanges(
   min: number | null,
@@ -224,8 +263,42 @@ function buildTransactionListBaseQuery(
   from: number | null,
   to: number | null,
   view: TransactionListViewMode,
+  cursor: TransactionListCursor,
 ) {
+  // Desc page: tighten upper bound so we don't re-read docs newer than cursor.
+  const effectiveTo =
+    cursor != null
+      ? to == null
+        ? cursor.creationTime
+        : Math.min(to, cursor.creationTime)
+      : to;
+
   if (scopeEmployeeDocId == null) {
+    // Admin/all list: no sender/receiver scope. Bound by creation time when
+    // possible so cursor pages don't re-read newer docs.
+    if (from != null && effectiveTo != null) {
+      return ctx.db
+        .query("transaction")
+        .filter((q) =>
+          q.and(
+            q.gte(q.field("_creationTime"), from),
+            q.lte(q.field("_creationTime"), effectiveTo),
+          ),
+        )
+        .order("desc");
+    }
+    if (from != null) {
+      return ctx.db
+        .query("transaction")
+        .filter((q) => q.gte(q.field("_creationTime"), from))
+        .order("desc");
+    }
+    if (effectiveTo != null) {
+      return ctx.db
+        .query("transaction")
+        .filter((q) => q.lte(q.field("_creationTime"), effectiveTo))
+        .order("desc");
+    }
     return ctx.db.query("transaction").order("desc");
   }
 
@@ -236,16 +309,16 @@ function buildTransactionListBaseQuery(
       .query("transaction")
       .withIndex("by_receiverId", (q) => {
         const receiverRange = q.eq("receiverId", myEmployeeDocId);
-        if (from != null && to != null) {
+        if (from != null && effectiveTo != null) {
           return receiverRange
             .gte("_creationTime", from)
-            .lte("_creationTime", to);
+            .lte("_creationTime", effectiveTo);
         }
         if (from != null) {
           return receiverRange.gte("_creationTime", from);
         }
-        if (to != null) {
-          return receiverRange.lte("_creationTime", to);
+        if (effectiveTo != null) {
+          return receiverRange.lte("_creationTime", effectiveTo);
         }
         return receiverRange;
       })
@@ -256,14 +329,16 @@ function buildTransactionListBaseQuery(
     .query("transaction")
     .withIndex("by_senderId", (q) => {
       const senderRange = q.eq("senderId", myEmployeeDocId);
-      if (from != null && to != null) {
-        return senderRange.gte("_creationTime", from).lte("_creationTime", to);
+      if (from != null && effectiveTo != null) {
+        return senderRange
+          .gte("_creationTime", from)
+          .lte("_creationTime", effectiveTo);
       }
       if (from != null) {
         return senderRange.gte("_creationTime", from);
       }
-      if (to != null) {
-        return senderRange.lte("_creationTime", to);
+      if (effectiveTo != null) {
+        return senderRange.lte("_creationTime", effectiveTo);
       }
       return senderRange;
     })
@@ -309,94 +384,100 @@ async function collectFilteredEnrichedTransactionPage(
   createBaseQuery: TransactionListBaseQueryFactory,
   bounds: TransactionListFilterBounds,
   limit: number,
-  initialCursor: string | null,
+  initialCursor: TransactionListCursor,
 ): Promise<{
   page: Array<Awaited<ReturnType<typeof enrichTransaction>>>;
-  lastPageResult: TransactionPaginateResult;
-  exhausted: boolean;
+  continueCursor: string | null;
+  hasNextPage: boolean;
+  isDone: boolean;
 }> {
-  let cursor = initialCursor;
-  let pageResult = await createBaseQuery().paginate({
-    cursor,
-    numItems: limit,
-  });
-  const page: Array<Awaited<ReturnType<typeof enrichTransaction>>> = [];
-  let exhausted = false;
+  const target = limit + 1; // +1 probe → hasNextPage without a second paginate
+  const matched: Doc<"transaction">[] = [];
+  let scanCursor = initialCursor;
+  let streamExhausted = false;
+  let totalScanned = 0;
 
-  while (page.length < limit) {
-    const partyNamesById = await getPartyNamesByTransaction(
-      ctx,
-      pageResult.page,
+  while (matched.length < target && !streamExhausted) {
+    const remaining = target - matched.length;
+    const batchSize = Math.min(
+      Math.max(remaining * 5, 50),
+      MAX_LIST_SCAN_PER_CALL - totalScanned,
     );
-    const filteredRows = pageResult.page.filter((transaction) =>
-      transactionMatchesListFilters(
-        transaction,
-        bounds,
-        partyNamesById.get(transaction._id),
-      ),
+    if (batchSize <= 0) break;
+
+    const raw = await createBaseQuery(scanCursor).take(batchSize);
+    totalScanned += raw.length;
+
+    const afterCursor = raw.filter((tx) =>
+      isAfterTransactionListCursor(tx, scanCursor),
     );
 
-    const remain = limit - page.length;
-    const enrichedRows = await Promise.all(
-      filteredRows
-        .slice(0, remain)
-        .map((transaction) => enrichTransaction(ctx, transaction)),
-    );
-    page.push(...enrichedRows);
-
-    exhausted =
-      pageResult.isDone ||
-      pageResult.continueCursor == null ||
-      pageResult.page.length === 0;
-    if (exhausted || page.length >= limit) {
-      break;
+    if (afterCursor.length === 0) {
+      if (raw.length === 0) {
+        streamExhausted = true;
+        break;
+      }
+      // Same-timestamp boundary: advance past this batch and keep scanning.
+      const lastRaw = raw[raw.length - 1]!;
+      scanCursor = {
+        creationTime: lastRaw._creationTime,
+        id: lastRaw._id,
+      };
+      streamExhausted = raw.length < batchSize;
+      continue;
     }
 
-    cursor = pageResult.continueCursor;
-    pageResult = await createBaseQuery().paginate({
-      cursor,
-      numItems: limit,
-    });
+    const partyNamesById = await getPartyNamesByTransaction(ctx, afterCursor);
+    for (const tx of afterCursor) {
+      if (
+        transactionMatchesListFilters(
+          tx,
+          bounds,
+          partyNamesById.get(tx._id),
+        )
+      ) {
+        matched.push(tx);
+        if (matched.length >= target) break;
+      }
+    }
+
+    const lastRaw = afterCursor[afterCursor.length - 1]!;
+    scanCursor = {
+      creationTime: lastRaw._creationTime,
+      id: lastRaw._id,
+    };
+
+    streamExhausted = raw.length < batchSize;
+    if (matched.length >= target) break;
+    if (totalScanned >= MAX_LIST_SCAN_PER_CALL) break;
   }
 
-  return { page, lastPageResult: pageResult, exhausted };
-}
+  const hasNextPage =
+    matched.length > limit ||
+    (!streamExhausted && totalScanned >= MAX_LIST_SCAN_PER_CALL);
 
-async function hasNextFilteredTransactionPage(
-  ctx: QueryCtx,
-  createBaseQuery: TransactionListBaseQueryFactory,
-  bounds: TransactionListFilterBounds,
-  startCursor: string | null,
-): Promise<boolean> {
-  let currentCursor = startCursor;
-  let done = currentCursor == null;
+  const pageDocs = matched.slice(0, limit);
+  const page = await Promise.all(
+    pageDocs.map((tx) => enrichTransaction(ctx, tx)),
+  );
 
-  while (!done) {
-    const probeResult = await createBaseQuery().paginate({
-      cursor: currentCursor,
-      numItems: 1,
-    });
-    if (probeResult.page.length === 0) {
-      break;
-    }
+  const lastPageDoc = pageDocs[pageDocs.length - 1];
+  const continueCursor =
+    lastPageDoc == null
+      ? hasNextPage
+        ? encodeTransactionListCursor(scanCursor)
+        : null
+      : encodeTransactionListCursor({
+          creationTime: lastPageDoc._creationTime,
+          id: lastPageDoc._id,
+        });
 
-    const [probeItem] = probeResult.page;
-    const probePartyNames = await getPartyNamesByTransaction(ctx, [probeItem]);
-    if (
-      transactionMatchesListFilters(
-        probeItem,
-        bounds,
-        probePartyNames.get(probeItem._id),
-      )
-    ) {
-      return true;
-    }
-
-    done = probeResult.isDone || probeResult.continueCursor == null;
-    currentCursor = probeResult.continueCursor;
-  }
-
-  return false;
+  return {
+    page,
+    continueCursor: hasNextPage ? continueCursor : null,
+    hasNextPage,
+    isDone: !hasNextPage,
+  };
 }
 
 type StreamCursor = {
@@ -1026,46 +1107,23 @@ export const getMany = authQuery
 
     assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
 
-    const createBaseQuery = () =>
+    const createBaseQuery: TransactionListBaseQueryFactory = (cursor) =>
       buildTransactionListBaseQuery(
         ctx,
         input.self ? ctx.user.employeeId : null,
         bounds.from,
         bounds.to,
         bounds.view,
+        cursor,
       );
 
-    const { page, lastPageResult, exhausted } =
-      await collectFilteredEnrichedTransactionPage(
-        ctx,
-        createBaseQuery,
-        bounds,
-        input.limit,
-        input.cursor ?? null,
-      );
-
-    if (exhausted) {
-      return {
-        ...lastPageResult,
-        page,
-        continueCursor: null,
-        hasNextPage: false,
-        isDone: true,
-      };
-    }
-
-    const hasNextPage = await hasNextFilteredTransactionPage(
+    return await collectFilteredEnrichedTransactionPage(
       ctx,
       createBaseQuery,
       bounds,
-      lastPageResult.continueCursor,
+      input.limit,
+      decodeTransactionListCursor(input.cursor ?? null),
     );
-
-    return {
-      ...lastPageResult,
-      page,
-      hasNextPage,
-    };
   });
 
 const MAX_EXPORT_ROWS = 10_000;
@@ -1122,20 +1180,21 @@ export const exportAll = authMutation
 
     assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
 
-    const createBaseQuery = () =>
+    const createBaseQuery: TransactionListBaseQueryFactory = (cursor) =>
       buildTransactionListBaseQuery(
         ctx,
         input.self ? ctx.user.employeeId : null,
         bounds.from,
         bounds.to,
         bounds.view,
+        cursor,
       );
 
     const aggregated: Array<Awaited<ReturnType<typeof enrichTransaction>>> = [];
-    let cursor: string | null = null;
+    let cursor: TransactionListCursor = null;
 
     while (true) {
-      const { page, lastPageResult, exhausted } =
+      const { page, continueCursor, isDone } =
         await collectFilteredEnrichedTransactionPage(
           ctx,
           createBaseQuery,
@@ -1152,11 +1211,8 @@ export const exportAll = authMutation
         });
       }
 
-      if (exhausted) break;
-
-      const next = lastPageResult.continueCursor;
-      if (next == null) break;
-      cursor = next;
+      if (isDone || continueCursor == null) break;
+      cursor = decodeTransactionListCursor(continueCursor);
     }
 
     return aggregated;
