@@ -181,6 +181,8 @@ type TransactionListBaseQuery = {
   }): Promise<TransactionPaginateResult>;
 };
 
+type TransactionListBaseQueryFactory = () => TransactionListBaseQuery;
+
 function assertTransactionListRanges(
   min: number | null,
   max: number | null,
@@ -304,7 +306,7 @@ function transactionMatchesListFilters(
 
 async function collectFilteredEnrichedTransactionPage(
   ctx: QueryCtx,
-  baseQuery: TransactionListBaseQuery,
+  createBaseQuery: TransactionListBaseQueryFactory,
   bounds: TransactionListFilterBounds,
   limit: number,
   initialCursor: string | null,
@@ -314,7 +316,7 @@ async function collectFilteredEnrichedTransactionPage(
   exhausted: boolean;
 }> {
   let cursor = initialCursor;
-  let pageResult = await baseQuery.paginate({
+  let pageResult = await createBaseQuery().paginate({
     cursor,
     numItems: limit,
   });
@@ -351,7 +353,7 @@ async function collectFilteredEnrichedTransactionPage(
     }
 
     cursor = pageResult.continueCursor;
-    pageResult = await baseQuery.paginate({
+    pageResult = await createBaseQuery().paginate({
       cursor,
       numItems: limit,
     });
@@ -362,7 +364,7 @@ async function collectFilteredEnrichedTransactionPage(
 
 async function hasNextFilteredTransactionPage(
   ctx: QueryCtx,
-  baseQuery: TransactionListBaseQuery,
+  createBaseQuery: TransactionListBaseQueryFactory,
   bounds: TransactionListFilterBounds,
   startCursor: string | null,
 ): Promise<boolean> {
@@ -370,7 +372,7 @@ async function hasNextFilteredTransactionPage(
   let done = currentCursor == null;
 
   while (!done) {
-    const probeResult = await baseQuery.paginate({
+    const probeResult = await createBaseQuery().paginate({
       cursor: currentCursor,
       numItems: 1,
     });
@@ -1024,18 +1026,19 @@ export const getMany = authQuery
 
     assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
 
-    const baseQuery = buildTransactionListBaseQuery(
-      ctx,
-      input.self ? ctx.user.employeeId : null,
-      bounds.from,
-      bounds.to,
-      bounds.view,
-    );
+    const createBaseQuery = () =>
+      buildTransactionListBaseQuery(
+        ctx,
+        input.self ? ctx.user.employeeId : null,
+        bounds.from,
+        bounds.to,
+        bounds.view,
+      );
 
     const { page, lastPageResult, exhausted } =
       await collectFilteredEnrichedTransactionPage(
         ctx,
-        baseQuery,
+        createBaseQuery,
         bounds,
         input.limit,
         input.cursor ?? null,
@@ -1053,7 +1056,7 @@ export const getMany = authQuery
 
     const hasNextPage = await hasNextFilteredTransactionPage(
       ctx,
-      baseQuery,
+      createBaseQuery,
       bounds,
       lastPageResult.continueCursor,
     );
@@ -1119,13 +1122,14 @@ export const exportAll = authMutation
 
     assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
 
-    const baseQuery = buildTransactionListBaseQuery(
-      ctx,
-      input.self ? ctx.user.employeeId : null,
-      bounds.from,
-      bounds.to,
-      bounds.view,
-    );
+    const createBaseQuery = () =>
+      buildTransactionListBaseQuery(
+        ctx,
+        input.self ? ctx.user.employeeId : null,
+        bounds.from,
+        bounds.to,
+        bounds.view,
+      );
 
     const aggregated: Array<Awaited<ReturnType<typeof enrichTransaction>>> = [];
     let cursor: string | null = null;
@@ -1134,7 +1138,7 @@ export const exportAll = authMutation
       const { page, lastPageResult, exhausted } =
         await collectFilteredEnrichedTransactionPage(
           ctx,
-          baseQuery,
+          createBaseQuery,
           bounds,
           EXPORT_FETCH_BATCH,
           cursor,
