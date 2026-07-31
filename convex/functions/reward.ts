@@ -569,11 +569,11 @@ export const getOne = authQuery
       };
     });
 
-    const image = await resolveStorageImageUrl(ctx.storage, reward.image);
+    const imageUrl = await resolveStorageImageUrl(ctx.storage, reward.image);
 
     return {
       ...reward,
-      image,
+      imageUrl,
       ratingDistribution,
       reviewRating,
       reviewCount,
@@ -742,8 +742,8 @@ export const update = authMutation
       stock: z
         .number()
         .int()
-        .refine((n) => n === -1 || n >= 1, {
-          message: "stock must be -1 (unlimited) or >= 1",
+        .refine((n) => n === -1 || n >= 0, {
+          message: "stock must be -1 (unlimited) or >= 0",
         })
         .optional(),
       onePerOrder: z.boolean().optional().nullable(),

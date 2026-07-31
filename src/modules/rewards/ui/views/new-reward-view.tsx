@@ -28,7 +28,7 @@ export const NewRewardView = () => {
       name: "",
       description: "",
       pointCost: 0,
-      stock: 0,
+      stock: 1,
       onePerOrder: false,
       isActive: true,
       image: null,

@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { FormHeader } from "@/components/form-header";
 import { useCRPC } from "@/lib/convex/crpc";
 import {
@@ -67,6 +68,12 @@ export const EditRewardView = ({ rewardId }: Props) => {
       {
         onSuccess: () => {
           form.reset(data);
+          toast.success("บันทึกรางวัลแล้ว");
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "บันทึกไม่สำเร็จ",
+          );
         },
       },
     );

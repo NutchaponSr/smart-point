@@ -9,12 +9,12 @@ const rewardCoreFields = {
     .number()
     .int({ message: "จำนวนพอยต์ต้องเป็นจำนวนเต็ม" })
     .min(0, { message: "กรุณากรอกจำนวนคะแนน" }),
-  /** -1 = ไม่จำกัด (สอดคล้องกับ `cart` / `reward.create`) */
+  /** -1 = ไม่จำกัด, 0 = หมดสต็อก (สอดคล้องกับ cart / reward.update) */
   stock: z.coerce
     .number()
     .int({ message: "สต็อกต้องเป็นจำนวนเต็ม" })
-    .refine((n) => n === -1 || n >= 1, {
-      message: "กรอกจำนวนคงเหลือ (≥1) หรือ -1 สำหรับไม่จำกัด",
+    .refine((n) => n === -1 || n >= 0, {
+      message: "กรอกจำนวนคงเหลือ (≥0) หรือ -1 สำหรับไม่จำกัด",
     }),
   onePerOrder: z.coerce.boolean().optional(),
   isActive: z.coerce.boolean().default(true),
