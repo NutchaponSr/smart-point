@@ -860,7 +860,7 @@ export const bulkCreate = publicMutation
     return { inserted };
   });
 
-/** Backfill name/description จาก string → { th, en } */
+/** Backfill name/description จาก string / "" → { th, en } | null */
 export const migrateLocalizedStrings = privateMutation.mutation(
   async ({ ctx }) => {
     const rewards = await ctx.db.query("reward").collect();
@@ -868,19 +868,22 @@ export const migrateLocalizedStrings = privateMutation.mutation(
 
     for (const reward of rewards) {
       const name = toLocalizedString(reward.name);
-      const description = toLocalizedString(reward.description);
-
       if (!name) continue;
 
       const nameNeedsUpdate = !isLocalizedString(reward.name);
+      // "" and plain strings → null / { th, en }; already-null stays null
       const descriptionNeedsUpdate =
-        reward.description != null && !isLocalizedString(reward.description);
+        reward.description !== undefined &&
+        reward.description !== null &&
+        !isLocalizedString(reward.description);
 
       if (!nameNeedsUpdate && !descriptionNeedsUpdate) continue;
 
       await ctx.db.patch(reward._id, {
-        name,
-        description,
+        ...(nameNeedsUpdate ? { name } : {}),
+        ...(descriptionNeedsUpdate
+          ? { description: toLocalizedString(reward.description) }
+          : {}),
       });
       updated += 1;
     }
