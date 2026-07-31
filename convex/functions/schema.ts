@@ -1,34 +1,10 @@
-import {
-  arrayOf,
-  boolean,
-  convexTable,
-  custom,
-  defineRelations,
-  defineSchema,
-  id,
-  index,
-  integer,
-  objectOf,
-  searchIndex,
-  text,
-  textEnum,
-  timestamp,
-  uniqueIndex,
-} from "better-convex/orm";
-import { v } from "convex/values";
+import { arrayOf, boolean, convexTable, defineRelations, defineSchema, id, index, integer, objectOf, searchIndex, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
 
-/** Localized object shape (target format). */
-const localizedObjectValidator = v.object({
-  th: v.string(),
-  en: v.string(),
-});
-
-/**
- * Temporary widen: accept legacy plain strings (incl. "") so prod can deploy,
- * then run migrateLocalizedStrings and narrow back to object | null only.
- */
 const localizedStringField = () =>
-  custom(v.union(localizedObjectValidator, v.string()));
+  objectOf({
+    th: text().notNull(),
+    en: text().notNull(),
+  });
 
 export const user = convexTable("user", {
   name: text().notNull(),

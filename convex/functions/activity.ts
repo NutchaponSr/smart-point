@@ -668,7 +668,7 @@ export const bulkDelete = authMutation
     return { deleted };
   });
 
-/** Backfill activity name/description จาก string / "" → { th, en } | null */
+/** Backfill activity name/description จาก string → { th, en } */
 export const migrateLocalizedStrings = privateMutation.mutation(
   async ({ ctx }) => {
     const activities = await ctx.db.query("activity").collect();
@@ -676,21 +676,20 @@ export const migrateLocalizedStrings = privateMutation.mutation(
 
     for (const activity of activities) {
       const name = toLocalizedString(activity.name);
+      const description = toLocalizedString(activity.description);
+
       if (!name) continue;
 
       const nameNeedsUpdate = !isLocalizedString(activity.name);
       const descriptionNeedsUpdate =
-        activity.description !== undefined &&
-        activity.description !== null &&
+        activity.description != null &&
         !isLocalizedString(activity.description);
 
       if (!nameNeedsUpdate && !descriptionNeedsUpdate) continue;
 
       await ctx.db.patch(activity._id, {
-        ...(nameNeedsUpdate ? { name } : {}),
-        ...(descriptionNeedsUpdate
-          ? { description: toLocalizedString(activity.description) }
-          : {}),
+        name,
+        description,
       });
       updated += 1;
     }

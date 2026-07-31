@@ -224,7 +224,7 @@ export const bulkDelete = authMutation
     return { deleted };
   });
 
-/** Backfill title/summary/body จาก string / "" → { th, en } | null */
+/** Backfill title/summary/body จาก string → { th, en } */
 export const migrateLocalizedStrings = privateMutation.mutation(
   async ({ ctx }) => {
     const rows = await ctx.db.query("news").collect();
@@ -232,14 +232,14 @@ export const migrateLocalizedStrings = privateMutation.mutation(
 
     for (const row of rows) {
       const title = toLocalizedString(row.title);
+      const summary = toLocalizedString(row.summary);
       const body = toLocalizedString(row.body);
+
       if (!title || !body) continue;
 
       const titleNeedsUpdate = !isLocalizedString(row.title);
       const summaryNeedsUpdate =
-        row.summary !== undefined &&
-        row.summary !== null &&
-        !isLocalizedString(row.summary);
+        row.summary != null && !isLocalizedString(row.summary);
       const bodyNeedsUpdate = !isLocalizedString(row.body);
 
       if (!titleNeedsUpdate && !summaryNeedsUpdate && !bodyNeedsUpdate) {
@@ -247,11 +247,9 @@ export const migrateLocalizedStrings = privateMutation.mutation(
       }
 
       await ctx.db.patch(row._id, {
-        ...(titleNeedsUpdate ? { title } : {}),
-        ...(summaryNeedsUpdate
-          ? { summary: toLocalizedString(row.summary) }
-          : {}),
-        ...(bodyNeedsUpdate ? { body } : {}),
+        title,
+        summary,
+        body,
       });
       updated += 1;
     }
