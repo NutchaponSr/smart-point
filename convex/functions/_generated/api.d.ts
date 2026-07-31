@@ -57,10 +57,10 @@ export declare const api: {
           allowedDepartments?: Array<string>;
           allowedDivisions?: Array<string>;
           category: "external" | "internal" | "internal_bu" | "specials_point";
-          description?: string | null;
+          description?: { en: string; th: string } | null;
           endDate?: number | null;
           maxParticipants?: number | null;
-          name: string;
+          name: { en: string; th: string };
           point: number;
           startDate: number;
         }>;
@@ -93,10 +93,10 @@ export declare const api: {
         allowedDepartments?: Array<string>;
         allowedDivisions?: Array<string>;
         category: "external" | "internal" | "internal_bu" | "specials_point";
-        description?: string | null;
+        description?: { en: string; th: string } | null;
         endDate?: number | null;
         maxParticipants?: number | null;
-        name: string;
+        name: { en: string; th: string };
         point: number;
         startDate: number;
       },
@@ -184,11 +184,11 @@ export declare const api: {
         allowedDepartments?: Array<string>;
         allowedDivisions?: Array<string>;
         category?: "external" | "internal" | "internal_bu" | "specials_point";
-        description?: string | null;
+        description?: { en: string; th: string } | null;
         endDate?: number | null;
         isActive?: boolean;
         maxParticipants?: number | null;
-        name?: string;
+        name?: { en: string; th: string };
         point?: number;
         startDate?: number;
       },
@@ -337,11 +337,11 @@ export declare const api: {
       "mutation",
       "public",
       {
-        body: string;
+        body: { en: string; th: string };
         isPinned?: boolean;
         isPublished: boolean;
-        summary?: string | null;
-        title: string;
+        summary?: { en: string; th: string } | null;
+        title: { en: string; th: string };
       },
       any
     >;
@@ -358,12 +358,12 @@ export declare const api: {
       "mutation",
       "public",
       {
-        body?: string;
+        body?: { en: string; th: string };
         isPinned?: boolean;
         isPublished?: boolean;
         newsId: string;
-        summary?: string | null;
-        title?: string;
+        summary?: { en: string; th: string } | null;
+        title?: { en: string; th: string };
       },
       any
     >;
@@ -431,9 +431,9 @@ export declare const api: {
       "public",
       {
         rows: Array<{
-          description: string | null;
+          description?: { en: string; th: string } | null;
           isActive?: boolean;
-          name: string;
+          name: { en: string; th: string };
           onePerOrder?: boolean;
           pointCost: number;
           stock: number;
@@ -451,10 +451,10 @@ export declare const api: {
       "mutation",
       "public",
       {
-        description?: string | null;
+        description?: { en: string; th: string } | null;
         image?: string | null;
         isActive: boolean;
-        name: string;
+        name: { en: string; th: string };
         onePerOrder?: boolean;
         pointCost: number;
         stock: number;
@@ -503,10 +503,10 @@ export declare const api: {
         page: Array<{
           _creationTime: number;
           _id: any;
-          description?: string | null;
+          description?: { en: string; th: string } | null;
           image?: string | null;
           isActive: boolean;
-          name: string;
+          name: { en: string; th: string };
           pointCost: number;
           stock: number;
           totalReviews: number;
@@ -521,10 +521,10 @@ export declare const api: {
       "mutation",
       "public",
       {
-        description?: string | null;
+        description?: { en: string; th: string } | null;
         image?: string | null;
         isActive?: boolean;
-        name?: string;
+        name?: { en: string; th: string };
         onePerOrder?: boolean | null;
         pointCost?: number;
         rewardId: string;
@@ -730,6 +730,9 @@ export declare const api: {
  * ```
  */
 export declare const internal: {
+  activity: {
+    migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;
+  };
   employee: {
     signUpEmployeeInternal: FunctionReference<
       "action",
@@ -909,6 +912,12 @@ export declare const internal: {
       >;
     };
   };
+  news: {
+    migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;
+  };
+  reward: {
+    migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;
+  };
   seed: {
     insertActivity: FunctionReference<
       "mutation",
@@ -917,11 +926,11 @@ export declare const internal: {
         allowedDepartments?: Array<string>;
         allowedDivisions?: Array<string>;
         category: "external" | "internal" | "internal_bu" | "specials_point";
-        description?: string;
+        description?: { en: string; th: string };
         endDate?: number;
         isActive: boolean;
         maxParticipants?: number;
-        name: string;
+        name: { en: string; th: string };
         point: number;
         startDate: number;
       },
@@ -946,10 +955,10 @@ export declare const internal: {
       "mutation",
       "internal",
       {
-        description?: string;
+        description?: { en: string; th: string };
         image?: string;
         isActive: boolean;
-        name: string;
+        name: { en: string; th: string };
         onePerOrder?: boolean;
         pointCost: number;
         stock: number;

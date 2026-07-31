@@ -7,6 +7,7 @@ import { th } from "date-fns/locale";
 import type { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
@@ -96,29 +97,30 @@ export const redemptionShippingColumns = ({
   {
     accessorKey: "reward",
     header: "รางวัล",
-    cell: ({ row }) => (
-      <div className="flex min-w-0 items-center gap-3">
-        <figure className="size-10 shrink-0 overflow-hidden rounded-xs border-2 border-border">
-          <img
-            src={row.original.reward.image || placeholder.src}
-            alt={row.original.reward.name}
-            className="size-full object-cover"
-          />
-        </figure>
-        <div className="min-w-0">
-          <p className="truncate text-base font-medium">
-            {row.original.reward.name}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {format(
-              new Date(row.original.redemption.createdAt),
-              "d MMM yyyy",
-              { locale: th },
-            )}
-          </p>
+    cell: ({ row }) => {
+      const name = pickLocalized(row.original.reward.name, "th");
+      return (
+        <div className="flex min-w-0 items-center gap-3">
+          <figure className="size-10 shrink-0 overflow-hidden rounded-xs border-2 border-border">
+            <img
+              src={row.original.reward.image || placeholder.src}
+              alt={name}
+              className="size-full object-cover"
+            />
+          </figure>
+          <div className="min-w-0">
+            <p className="truncate text-base font-medium">{name}</p>
+            <p className="text-sm text-muted-foreground">
+              {format(
+                new Date(row.original.redemption.createdAt),
+                "d MMM yyyy",
+                { locale: th },
+              )}
+            </p>
+          </div>
         </div>
-      </div>
-    ),
+      );
+    },
   },
   {
     accessorKey: "quantity",

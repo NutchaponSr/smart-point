@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { PriceInput } from "@/components/price-input";
 
 interface Props {
@@ -9,10 +11,12 @@ interface Props {
 }
 
 export const CostFilter = ({ minCost, maxCost, decimalScale = 2, onMinCostChange, onMaxCostChange }: Props) => {
+  const t = useTranslations("filter");
+
   return (
     <div className="grid gap-3">
       <PriceInput 
-        label="ขั้นต่ำ" 
+        label={t("min")} 
         id="min-amount" 
         name="min-amount" 
         placeholder="0.00" 
@@ -21,7 +25,7 @@ export const CostFilter = ({ minCost, maxCost, decimalScale = 2, onMinCostChange
         onValueChange={(value) => onMinCostChange(value)}
       />
       <PriceInput 
-        label="สูงสุด" 
+        label={t("max")} 
         id="max-amount" 
         name="max-amount" 
         placeholder="0.00" 

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { RewardFormInput } from "@/modules/rewards/schema";
+import Image from "next/image";
 
 /** react-currency-input-field ใช้ onValueChange ไม่ใช่ onChange ของ RHF — ห้าม spread `field` ทั้งก้อน */
 function intFromCurrencyValue(raw: string | undefined) {
@@ -54,26 +55,64 @@ export const RewardForm = () => {
       <FormSection
         step="1"
         title="รางวัล"
-        description="ข้อมูลพื้นฐานที่แสดงบนหน้ารางวัล"
+        description="ข้อมูลพื้นฐานที่แสดงบนหน้ารางวัล (ไทย / อังกฤษ)"
       >
-        <Controller
-          control={control}
-          name="name"
-          render={({ field, fieldState }) => (
-            <FieldSet label="ชื่อ" errorMessage={fieldState.error?.message}>
-              <Input {...field} />
-            </FieldSet>
-          )}
-        />
-        <Controller
-          control={control}
-          name="description"
-          render={({ field, fieldState }) => (
-            <FieldSet label="คำอธิบาย" errorMessage={fieldState.error?.message}>
-              <Textarea {...field} value={field.value ?? ""} />
-            </FieldSet>
-          )}
-        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Controller
+            control={control}
+            name="name.th"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="ชื่อ"
+                image={<Image src="/TH.svg" alt="Name" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Input {...field} />
+              </FieldSet>
+            )}
+          />
+          <Controller
+            control={control}
+            name="name.en"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="Name"
+                image={<Image src="/US.svg" alt="Name" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Input {...field} />
+              </FieldSet>
+            )}
+          />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Controller
+            control={control}
+            name="description.th"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="คำอธิบาย"
+                image={<Image src="/TH.svg" alt="Description" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Textarea {...field} value={field.value ?? ""} />
+              </FieldSet>
+            )}
+          />
+          <Controller
+            control={control}
+            name="description.en"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="Description"
+                image={<Image src="/US.svg" alt="Description" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Textarea {...field} value={field.value ?? ""} />
+              </FieldSet>
+            )}
+          />
+        </div>
         <Controller
           control={control}
           name="pointCost"

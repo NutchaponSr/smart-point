@@ -12,6 +12,7 @@ import {
   type RewardFormInput,
   type RewardSchema,
   rewardSchema,
+  toApiDescription,
 } from "@/modules/rewards/schema";
 
 import { RewardForm } from "@/modules/rewards/ui/components/reward-form";
@@ -25,8 +26,8 @@ export const NewRewardView = () => {
   const form = useForm<RewardFormInput>({
     resolver: zodResolver(rewardSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: { th: "", en: "" },
+      description: { th: "", en: "" },
       pointCost: 0,
       stock: 1,
       onePerOrder: false,
@@ -38,7 +39,7 @@ export const NewRewardView = () => {
   const onSubmit = (data: RewardSchema) => {
     create.mutate({
       name: data.name,
-      description: data.description,
+      description: toApiDescription(data.description),
       pointCost: data.pointCost,
       stock: data.stock,
       onePerOrder: data.onePerOrder,

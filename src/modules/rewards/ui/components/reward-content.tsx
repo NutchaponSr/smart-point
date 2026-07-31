@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiOutputs } from "@convex/api";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 
@@ -9,8 +10,6 @@ import { Reward } from "@/modules/rewards/ui/components/reward";
 import { RewardSort } from "@/modules/rewards/ui/components/reward-sort";
 
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
-
-import { generateSort } from "@/modules/rewards/utils";
 
 import emptyIllustration from "../../../../../public/extra_character_e.svg";
 
@@ -21,8 +20,11 @@ interface Props {
 }
 
 export const RewardContent = ({ rewards, hasNextPage, onLoad }: Props) => {
+  const t = useTranslations("reward");
+
   const [filters] = useRewardFilters();
   const isEmpty = rewards.length === 0;
+  const sort = filters.sort || "curated";
 
   const illustrationSrc =
     typeof emptyIllustration === "string"
@@ -31,21 +33,21 @@ export const RewardContent = ({ rewards, hasNextPage, onLoad }: Props) => {
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex justify-between gap-[.5rem] items-center flex-wrap">
+      <div className="flex justify-between gap-2 items-center flex-wrap">
         <h2 className="text-[20px] font-bold leading-[1.3]">
-          {generateSort(filters.sort || "curated")}
+          {t(`sort.${sort}-title`)}
         </h2>
         <RewardSort />
       </div>
 
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center gap-4 py-16 border-2 border-dashed border-border rounded-md">
-          <img src={illustrationSrc} alt="No rewards" className="size-20" />
+          <img src={illustrationSrc} alt={t("empty-alt")} className="size-20" />
 
           <div className="text-center">
-            <p className="text-lg font-bold">ยังไม่มีรางวัล</p>
+            <p className="text-lg font-bold">{t("no-rewards.title")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              ลองปรับตัวกรอง หรือกดดูเพิ่มเติมเพื่อโหลดรายการถัดไป
+              {t("no-rewards.description")}
             </p>
           </div>
         </div>
@@ -65,7 +67,7 @@ export const RewardContent = ({ rewards, hasNextPage, onLoad }: Props) => {
           {hasNextPage && (
             <div className="mt-8 w-full text-center">
               <Button size="lg" variant="secondaryOutline" onClick={onLoad}>
-                ดูเพิ่มเติม
+                {t("load-more")}
               </Button>
             </div>
           )}

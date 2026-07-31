@@ -7,6 +7,7 @@ import FolderIcon from "../../../../public/folder.svg";
 import ComputerIcon from "../../../../public/computer.svg";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -44,6 +45,8 @@ export const SidebarContent = ({
   const router = useRouter();
   const pathname = usePathname();
 
+  const t = useTranslations("nav");
+
   const { isAdmin } = usePermission();
 
   const visibleNavigations = navigations.filter((item) =>
@@ -74,10 +77,15 @@ export const SidebarContent = ({
             <Button
               size="lg"
               variant={isActive(item.href) ? "sidebarOutline" : "sidebar"}
-              className="w-full justify-start tracking-wide"
+              className="w-full justify-start tracking-wide text-base"
             >
-              <Image src={item.icon} alt={item.label} width={28} height={28} />
-              {item.label}
+              <Image
+                src={item.icon}
+                alt={t(item.label)}
+                width={28}
+                height={28}
+              />
+              {t(item.label)}
             </Button>
           </Link>
         ))}
@@ -86,27 +94,32 @@ export const SidebarContent = ({
             <div className="flex flex-col gap-1">
               <div
                 className={cn(
-                  "flex h-13 items-center gap-3 px-4 text-lg tracking-wide text-[#777]",
+                  "flex h-13 items-center gap-3 px-4 text-base tracking-wide text-[#777]",
                   isMetadataActive && "text-sky-500",
                 )}
               >
-                <Image src={ComputerIcon} alt="ข้อมูล" width={28} height={28} />
-                ข้อมูล
+                <Image
+                  src={ComputerIcon}
+                  alt={t("data")}
+                  width={28}
+                  height={28}
+                />
+                {t("data")}
               </div>
               {visibleMetadata.map((item) => (
                 <Link key={item.href} href={item.href} onClick={onNavigate}>
                   <Button
                     size="lg"
                     variant={isActive(item.href) ? "sidebarOutline" : "sidebar"}
-                    className="w-full justify-start tracking-wide pl-12"
+                    className="w-full justify-start tracking-wide pl-12 text-base"
                   >
                     <Image
                       src={FolderIcon}
-                      alt={item.label}
+                      alt={t(item.label)}
                       width={28}
                       height={28}
                     />
-                    {item.label}
+                    {t(item.label)}
                   </Button>
                 </Link>
               ))}
@@ -117,15 +130,15 @@ export const SidebarContent = ({
                 <Button
                   size="lg"
                   variant={isMetadataActive ? "sidebarOutline" : "sidebar"}
-                  className="w-full justify-start tracking-wide"
+                  className="w-full justify-start tracking-wide text-base"
                 >
                   <Image
                     src={ComputerIcon}
-                    alt="Computer"
+                    alt={t("data")}
                     width={28}
                     height={28}
                   />
-                  ข้อมูล
+                  {t("data")}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -139,11 +152,11 @@ export const SidebarContent = ({
                   >
                     <Image
                       src={FolderIcon}
-                      alt={item.label}
+                      alt={t(item.label)}
                       width={28}
                       height={28}
                     />
-                    {item.label}
+                    {t(item.label)}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>

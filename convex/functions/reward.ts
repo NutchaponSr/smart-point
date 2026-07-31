@@ -4,12 +4,42 @@ import z from "zod/v4";
 import {
   authMutation,
   authQuery,
+  privateMutation,
   publicMutation,
-  publicQuery,
 } from "../lib/crpc";
+import {
+  isLocalizedString,
+  localizedSearchText,
+  toLocalizedString,
+  type LocalizedString,
+} from "../lib/localized";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
 import { REWARD_IMAGE_MAX_BYTES } from "./upload";
+
+const localizedNameSchema = z.object({
+  th: z.string().trim().min(1),
+  en: z.string().trim().min(1),
+});
+
+const localizedDescriptionValueSchema = z
+  .object({
+    th: z.string().trim(),
+    en: z.string().trim(),
+  })
+  .transform((value) =>
+    value.th === "" && value.en === "" ? null : value,
+  );
+
+/** optional = ไม่ส่งมา; null / ว่างทั้งคู่ = ล้างค่า */
+const localizedDescriptionSchema = localizedDescriptionValueSchema
+  .nullable()
+  .optional();
+
+const localizedStringOutputSchema = z.object({
+  th: z.string(),
+  en: z.string(),
+});
 
 type RewardListInput = {
   q?: string | null;
@@ -222,12 +252,12 @@ const matchesRewardFilters = (params: {
   const { reward, input, filter, avgStarsForReward } = params;
 
   if (filter.hasQuery) {
-    const nameMatch = reward.name
+    const nameMatch = localizedSearchText(reward.name)
       .toLowerCase()
       .includes(filter.normalizedQuery);
-    const descriptionMatch =
-      reward.description?.toLowerCase().includes(filter.normalizedQuery) ??
-      false;
+    const descriptionMatch = localizedSearchText(reward.description)
+      .toLowerCase()
+      .includes(filter.normalizedQuery);
     if (!nameMatch && !descriptionMatch) return false;
   }
 
@@ -294,8 +324,8 @@ const filterSortAndPaginateRewards = (params: {
 const buildRewardPatch = async (
   ctx: Pick<MutationCtx, "storage">,
   input: {
-    name?: string;
-    description?: string | null;
+    name?: LocalizedString;
+    description?: LocalizedString | null;
     image?: string | null;
     pointCost?: number;
     stock?: number;
@@ -410,8 +440,8 @@ export const getMany = authQuery
   .paginated({
     limit: 10,
     item: z.object({
-      name: z.string(),
-      description: z.string().nullish(),
+      name: localizedStringOutputSchema,
+      description: localizedStringOutputSchema.nullish(),
       image: z.string().nullish(),
       pointCost: z.number(),
       stock: z.number(),
@@ -471,9 +501,16 @@ export const getMany = authQuery
       pageRewards.map(async (reward) => {
         const stats = statsMap.get(reward._id);
         const totalReviews = stats?.count ?? 0;
+        const name = toLocalizedString(reward.name);
+        if (!name) {
+          throw new CRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Reward name is missing",
+          });
+        }
         return {
-          name: reward.name,
-          description: reward.description,
+          name,
+          description: toLocalizedString(reward.description),
           image: await resolveStorageImageUrl(ctx.storage, reward.image),
           pointCost: reward.pointCost,
           stock: reward.stock,
@@ -704,8 +741,8 @@ export const exportAll = authMutation
 export const create = authMutation
   .input(
     z.object({
-      name: z.string().trim().min(1),
-      description: z.string().optional().nullable(),
+      name: localizedNameSchema,
+      description: localizedDescriptionSchema,
       image: z.string().optional().nullable(),
       pointCost: z.number().int().min(0),
       stock: z
@@ -722,7 +759,7 @@ export const create = authMutation
     await assertRewardImageUnderLimit(ctx, input.image);
     return await ctx.db.insert("reward", {
       name: input.name,
-      description: input.description,
+      description: input.description ?? null,
       image: input.image,
       pointCost: input.pointCost,
       stock: input.stock,
@@ -735,8 +772,8 @@ export const update = authMutation
   .input(
     z.object({
       rewardId: z.string().min(1),
-      name: z.string().trim().min(1).optional(),
-      description: z.string().optional().nullable(),
+      name: localizedNameSchema.optional(),
+      description: localizedDescriptionSchema,
       image: z.string().optional().nullable(),
       pointCost: z.number().int().min(0).optional(),
       stock: z
@@ -794,8 +831,8 @@ export const bulkCreate = publicMutation
     z.object({
       rows: z.array(
         z.object({
-          name: z.string().trim(),
-          description: z.string().trim().nullable(),
+          name: localizedNameSchema,
+          description: localizedDescriptionSchema,
           pointCost: z.coerce.number(),
           stock: z.coerce.number(),
           onePerOrder: z.coerce.boolean().optional(),
@@ -822,6 +859,35 @@ export const bulkCreate = publicMutation
 
     return { inserted };
   });
+
+/** Backfill name/description จาก string → { th, en } */
+export const migrateLocalizedStrings = privateMutation.mutation(
+  async ({ ctx }) => {
+    const rewards = await ctx.db.query("reward").collect();
+    let updated = 0;
+
+    for (const reward of rewards) {
+      const name = toLocalizedString(reward.name);
+      const description = toLocalizedString(reward.description);
+
+      if (!name) continue;
+
+      const nameNeedsUpdate = !isLocalizedString(reward.name);
+      const descriptionNeedsUpdate =
+        reward.description != null && !isLocalizedString(reward.description);
+
+      if (!nameNeedsUpdate && !descriptionNeedsUpdate) continue;
+
+      await ctx.db.patch(reward._id, {
+        name,
+        description,
+      });
+      updated += 1;
+    }
+
+    return { scanned: rewards.length, updated };
+  },
+);
 
 export const bulkDelete = authMutation
   .input(

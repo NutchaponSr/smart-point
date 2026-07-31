@@ -18,6 +18,9 @@ import {
  } from "react-icons/bs";
 
 
+import { useLocale } from "next-intl";
+
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -44,6 +47,7 @@ const categoryBadgeClassName: Record<Event["category"], string> = {
 };
 
 export const AllEventsScreen = () => {
+  const locale = useLocale();
   const crpc = useCRPC();
   const queryClient = useQueryClient();
 
@@ -86,7 +90,9 @@ export const AllEventsScreen = () => {
       { activityId: String(event.id) },
       {
         onSuccess: () => {
-          toast.success(`เข้าร่วม "${event.name}" เรียบร้อย`);
+          toast.success(
+            `เข้าร่วม "${pickLocalized(event.name, locale)}" เรียบร้อย`,
+          );
           queryClient.invalidateQueries({
             queryKey: crpc.activity.getMany.queryKey(),
           });
@@ -155,8 +161,12 @@ export const AllEventsScreen = () => {
                       {event.point}
                     </span>
                   </div>
-                  <h3 className="truncate text-base font-bold break-all">{event.name}</h3>
-                  <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground whitespace-pre-wrap break-all">{event.description}</p>
+                  <h3 className="truncate text-base font-bold break-all">
+                    {pickLocalized(event.name, locale)}
+                  </h3>
+                  <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground whitespace-pre-wrap break-all">
+                    {pickLocalized(event.description, locale)}
+                  </p>
                   {buRestrictedCategories.includes(
                     event.category as (typeof buRestrictedCategories)[number],
                   ) && (

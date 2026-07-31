@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,9 @@ export const UpdateShippingDialog = ({ row, open, onOpenChange }: Props) => {
         {row != null && (
           <div className="grid gap-4 px-6 py-5">
             <div className="rounded-md border-2 border-border bg-muted/40 p-3">
-              <p className="text-sm font-bold">{row.reward.name}</p>
+              <p className="text-sm font-bold">
+                {pickLocalized(row.reward.name, "th")}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {row.employee.name} ({row.employee.employeeId})
               </p>

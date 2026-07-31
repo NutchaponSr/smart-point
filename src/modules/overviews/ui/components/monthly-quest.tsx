@@ -3,16 +3,17 @@
 import Image from "next/image";
 
 import QuestIcon from "../../../../../public/quest.svg";
+import CompletedQuestIcon from "../../../../../public/quest-completed.svg";
 import SpecialCoin from "../../../../../public/ruby.svg";
 import BrickCorner from "../../../../../public/brick_high_slope_inverted_left_yellow_2.svg";
 
 import { useMemo } from "react";
 import { startOfMonth } from "date-fns";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
-
 
 interface QuestProgressBarProps {
   value: number;
@@ -21,6 +22,7 @@ interface QuestProgressBarProps {
 }
 
 function QuestProgressBar({ value, max, className }: QuestProgressBarProps) {
+  const t = useTranslations("overview.monthly-quest");
   const percent = max > 0 ? Math.min(100, (value / max) * 100) : 0;
 
   return (
@@ -33,7 +35,7 @@ function QuestProgressBar({ value, max, className }: QuestProgressBarProps) {
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={max}
-      aria-label={`ความคืบหน้า ${value} จาก ${max}`}
+      aria-label={t("progress-aria", { value, max })}
     >
       <div
         className="relative h-full rounded-full bg-[#58cc02] transition-[width] duration-500 ease-out"
@@ -41,7 +43,7 @@ function QuestProgressBar({ value, max, className }: QuestProgressBarProps) {
       >
         <div className="absolute inset-x-1.5 top-1 h-[3px] rounded-full bg-[#89e219]" />
       </div>
-      <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-[11px] font-bold text-[#e5e5e5]">
+      <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-[11px] font-bold text-white">
         {value} / {max}
       </span>
     </div>
@@ -49,12 +51,15 @@ function QuestProgressBar({ value, max, className }: QuestProgressBarProps) {
 }
 
 export const MonthlyQuest = () => {
+  const t = useTranslations("overview.monthly-quest");
   const crpc = useCRPC();
   const monthStart = useMemo(() => startOfMonth(new Date()).getTime(), []);
 
   const { data } = useSuspenseQuery(
     crpc.transaction.getMonthlyQuestProgress.queryOptions({ monthStart }),
   );
+
+  const isCompleted = data.count >= data.goal;
 
   return (
     <article className="relative overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white">
@@ -68,27 +73,32 @@ export const MonthlyQuest = () => {
         <div className="relative z-1 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-base font-bold leading-snug text-[#1cb0f6]">
-              ภารกิจประจำเดือน
+              {t("title")}
             </h2>
           </div>
         </div>
       </header>
 
       <div className="flex items-center w-full py-5 px-4">
-        <Image 
+        <Image
           src={SpecialCoin}
-          alt="Special Coin"
+          alt={t("special-coin-alt")}
           width={56}
           height={56}
-          className="me-[18px] self-start"
+          className="me-4.5 self-start"
         />
         <div className="flex flex-col gap-0.5 text-left w-full">
           <span className="text-sm leading-6 font-bold">
-            มอบคะแนนให้เพื่อน 1 ครั้ง รับ 1 Point (สูงสุด 20 Point/เดือน)
+            {t("description", { max: data.goal })}
           </span>
           <div className="flex items-center mr-1">
             <QuestProgressBar value={data.count} max={data.goal} />
-            <Image src={QuestIcon} alt="Quest Icon" width={36} height={36} />
+            <Image
+              src={isCompleted ? CompletedQuestIcon : QuestIcon}
+              alt={t("quest-icon-alt")}
+              width={36}
+              height={36}
+            />
           </div>
         </div>
       </div>

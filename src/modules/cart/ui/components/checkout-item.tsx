@@ -3,8 +3,10 @@
 import placeholder from "../../../../../public/placeholder.png";
 
 import { ApiOutputs } from "@convex/api";
+import { useLocale, useTranslations } from "next-intl";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -24,8 +26,12 @@ export const CheckoutItem = ({
   isRemoving,
   className,
 }: Props) => {
+  const t = useTranslations("cart");
+  const locale = useLocale();
   const { reward, quantity } = item;
   const lineTotal = reward.pointCost * quantity;
+  const name = pickLocalized(reward.name, locale);
+  const description = pickLocalized(reward.description, locale);
 
   return (
     <article
@@ -38,7 +44,7 @@ export const CheckoutItem = ({
         <figure className="size-20 overflow-hidden rounded-md border-2 sm:size-24">
           <img
             src={reward.image || placeholder.src}
-            alt={reward.name}
+            alt={name}
             loading="lazy"
             className="size-full object-cover transition-transform group-hover:scale-105"
           />
@@ -52,11 +58,11 @@ export const CheckoutItem = ({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <div className="line-clamp-2 text-base font-semibold leading-snug no-underline hover:text-[#1cb0f6] sm:text-lg">
-              {reward.name}
+              {name}
             </div>
-            {reward.description ? (
+            {description ? (
               <p className="line-clamp-2 text-sm text-muted-foreground">
-                {reward.description}
+                {description}
               </p>
             ) : null}
           </div>
@@ -74,7 +80,7 @@ export const CheckoutItem = ({
             className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-destructive"
           >
             <RiDeleteBin6Line className="size-4" />
-            ลบ
+            {t("remove")}
           </Button>
         </div>
       </div>

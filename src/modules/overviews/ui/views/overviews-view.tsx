@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -16,6 +17,7 @@ import { MonthlyQuest } from "@/modules/overviews/ui/components/monthly-quest";
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
 
 export const OverviewsView = () => {
+  const t = useTranslations("overview");
   const crpc = useCRPC();
 
   const { data: wallet } = useSuspenseQuery(crpc.wallet.getOne.queryOptions());
@@ -33,14 +35,14 @@ export const OverviewsView = () => {
             <div className="flex flex-row items-center justify-between">
               <h2 className="text-base font-bold">
                 {ENABLE_BU_RECOMMENDED
-                  ? "กิจกรรมสำหรับ BU ของคุณ"
-                  : "กิจกรรมสำหรับคุณ"}
+                  ? t("events-for-bu")
+                  : t("events-for-you")}
               </h2>
               <Link
                 href="/events"
                 className="text-sm font-medium text-[#1cb0f6]"
               >
-                ดูทั้งหมด
+                {t("view-all")}
               </Link>
             </div>
             <EventCarousel autoLoop />

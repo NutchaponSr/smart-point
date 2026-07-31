@@ -63,26 +63,30 @@ export const statuses = {
 } as const;
 
 export const eventHeaderMapping: Record<string, string> = {
-  Name: "name",
-  Description: "description",
+  "Name Th": "nameTh",
+  "Name En": "nameEn",
+  "Description Th": "descriptionTh",
+  "Description En": "descriptionEn",
   Point: "point",
   Category: "category",
   "Start Date": "startDate",
   "End Date": "endDate",
   "Max Participants": "maxParticipants",
   BU: "allowedDivisions",
-}
+};
 
 export const eventHeaders: Record<string, string> = {
-  "name": "Name",
-  "description": "Description",
-  "point": "Point",
-  "category": "Category",
-  "startDate": "Start Date",
-  "endDate": "End Date",
-  "maxParticipants": "Max Participants",
-  "allowedDivisions": "BU",
-}
+  nameTh: "Name Th",
+  nameEn: "Name En",
+  descriptionTh: "Description Th",
+  descriptionEn: "Description En",
+  point: "Point",
+  category: "Category",
+  startDate: "Start Date",
+  endDate: "End Date",
+  maxParticipants: "Max Participants",
+  allowedDivisions: "BU",
+};
 
 export const participantHeaderMapping: Record<string, string> = {
   "Employee Id": "employeeId",

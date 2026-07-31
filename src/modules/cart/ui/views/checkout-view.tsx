@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { RiArrowLeftLine } from "react-icons/ri";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { CartScreen } from "../screens/cart-screen";
 
 export const CheckoutView = () => {
+  const t = useTranslations("cart");
   const router = useRouter();
 
   return (
@@ -22,14 +24,14 @@ export const CheckoutView = () => {
             className="w-fit gap-1.5 px-0 text-muted-foreground hover:text-foreground"
           >
             <RiArrowLeftLine className="size-4" />
-            กลับไปเลือกรางวัล
+            {t("back-to-rewards")}
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              รถเข็น
+              {t("title")}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              ตรวจสอบรายการก่อนยืนยันแลกพอยต์
+              {t("subtitle")}
             </p>
           </div>
         </div>

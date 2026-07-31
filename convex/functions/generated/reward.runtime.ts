@@ -27,6 +27,7 @@ function createProcedureRegistry() {
   "getMany": ["query", typedProcedureResolver(api["reward"]["getMany"], () => (require("../reward") as Record<string, unknown>)["getMany"])],
   "getOne": ["query", typedProcedureResolver(api["reward"]["getOne"], () => (require("../reward") as Record<string, unknown>)["getOne"])],
   "getRecommend": ["query", typedProcedureResolver(api["reward"]["getRecommend"], () => (require("../reward") as Record<string, unknown>)["getRecommend"])],
+  "migrateLocalizedStrings": ["mutation", typedProcedureResolver(internal["reward"]["migrateLocalizedStrings"], () => (require("../reward") as Record<string, unknown>)["migrateLocalizedStrings"])],
   "remove": ["mutation", typedProcedureResolver(api["reward"]["remove"], () => (require("../reward") as Record<string, unknown>)["remove"])],
   "update": ["mutation", typedProcedureResolver(api["reward"]["update"], () => (require("../reward") as Record<string, unknown>)["update"])],
 } as const;

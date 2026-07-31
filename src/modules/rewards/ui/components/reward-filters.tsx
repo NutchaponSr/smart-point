@@ -2,6 +2,7 @@
 
 import { ListFilterIcon } from "lucide-react";
 import type { ComponentProps } from "react";
+import { useTranslations } from "next-intl";
 
 import { Accordion } from "@/components/accordion";
 import { CostFilter } from "@/components/cost-filter";
@@ -25,6 +26,7 @@ type Props =
     };
 
 export const RewardFilters = (props: Props) => {
+  const t = useTranslations("reward.filters");
   const [filters, setFilters] = useRewardFilters();
 
   const onChange = (key: keyof typeof filters, value: unknown) => {
@@ -50,7 +52,7 @@ export const RewardFilters = (props: Props) => {
         )}
       >
         <h2 className="relative z-1 text-base font-bold leading-snug">
-          ตัวกรอง
+          {t("title")}
         </h2>
         {hasActiveFilters && (
           <div className="grow text-right">
@@ -59,12 +61,12 @@ export const RewardFilters = (props: Props) => {
               className="cursor-pointer underline"
               onClick={onClear}
             >
-              รีเซ็ต
+              {t("reset")}
             </button>
           </div>
         )}
       </header>
-      <Accordion title="พอยต์">
+      <Accordion title={t("points")}>
         <CostFilter
           minCost={filters.minCost}
           maxCost={filters.maxCost}
@@ -72,7 +74,7 @@ export const RewardFilters = (props: Props) => {
           onMaxCostChange={(maxCost) => onChange("maxCost", maxCost)}
         />
       </Accordion>
-      <Accordion title="เรตติ้ง">
+      <Accordion title={t("rating")}>
         <StarFilter
           star={filters.star}
           onStarChange={(star) => onChange("star", star)}
@@ -104,7 +106,7 @@ export const RewardFilters = (props: Props) => {
 
   return (
     <section
-      aria-label="ตัวกรอง"
+      aria-label={t("aria-label")}
       className="grid max-h-[calc(100vh-2rem)] divide-y-2 divide-solid divide-border overflow-y-auto rounded-md border-2 bg-background lg:sticky lg:inset-y-4"
     >
       {body}

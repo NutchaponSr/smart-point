@@ -12,6 +12,9 @@ import {
   BsFileEarmarkPdfFill,
 } from "react-icons/bs";
 
+import { useLocale } from "next-intl";
+
+import { pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -63,6 +66,8 @@ function validateEvidenceFile(file: File): string | null {
 }
 
 export const AttachButton = ({ event }: Props) => {
+  const locale = useLocale();
+  const eventName = pickLocalized(event.name, locale);
   const crpc = useCRPC();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -211,7 +216,7 @@ export const AttachButton = ({ event }: Props) => {
             </span>
           </div>
           <h3 className="text-base font-bold text-[#4b4b4b] break-all">
-            {event.name}
+            {eventName}
           </h3>
         </div>
 

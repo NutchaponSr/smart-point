@@ -1,26 +1,17 @@
-"use client";
-
- 
 import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
 import { useQuery } from "@tanstack/react-query";
+import { useLocale } from "next-intl";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import { StarRating } from "@/components/star-rating";
+import { pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 import type { RewardFormInput } from "@/modules/rewards/schema";
 
-import { StarRating } from "@/components/star-rating";
-
-function stockLabel(stock: unknown) {
-  if (stock === -1) return "คงเหลือ: ไม่จำกัด";
-  const n = typeof stock === "number" ? stock : Number(stock);
-  if (stock === undefined || stock === null || Number.isNaN(n))
-    return "คงเหลือ: —";
-  return `คงเหลือ: ${n}`;
-}
-
 export const RewardPreview = () => {
+  const locale = useLocale();
   const { control } = useFormContext<RewardFormInput>();
   const name = useWatch({ control, name: "name" });
   const image = useWatch({ control, name: "image" });
@@ -36,7 +27,7 @@ export const RewardPreview = () => {
     enabled: Boolean(storageId),
   });
 
-  const title = typeof name === "string" && name.trim();
+  const title = pickLocalized(name, locale);
   const src = fileUrl ?? placeholder.src;
   const cost =
     pointCost === undefined ||
@@ -44,12 +35,12 @@ export const RewardPreview = () => {
     Number.isNaN(Number(pointCost))
       ? "—"
       : String(pointCost);
-  const des = typeof description === "string" && description.trim();
+  const des = pickLocalized(description, locale);
 
   return (
     <article className="relative grid rounded-md border-2 bg-background lg:grid-cols-[2fr_1fr]">
       <figure className="relative col-span-full aspect-4/3 overflow-hidden border-b-2 border-border bg-(image:--product-cover-placeholder) bg-cover rounded-t-md">
-        <div style={{ aspectRatio: "1.7/1" }} className="flex h-full snap-x snap-mandatory items-center overflow-x-scroll overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"> 
+        <div style={{ aspectRatio: "1.7/1" }} className="flex h-full snap-x snap-mandatory items-center overflow-x-scroll overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="mt-0! flex min-h-px flex-[1_0_100%] snap-start justify-center border-0! p-0!">
             <img src={src} alt="Image" className="w-full" />
           </div>
@@ -82,7 +73,7 @@ export const RewardPreview = () => {
         <section className="grid gap-4 p-3 not-first:border-t">
           <div className="flex items-center justify-center gap-2 p-2 border-2 rounded-md text-[10px] text-center w-full bg-[#58cc02] text-primary-foreground border-[#0003] border-b-4">
             Add to checkout
-          </div>  
+          </div>
         </section>
       </section>
     </article>

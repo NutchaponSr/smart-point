@@ -1,14 +1,36 @@
+"use client";
+
 import Coin from "../../../../../public/coin.svg";
 import placeholder from "../../../../../public/placeholder.png";
 
 import { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
+import { useLocale } from "next-intl";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { pickLocalized } from "@/lib/i18n/localized";
 
 import { RewardActions } from "@/modules/rewards/ui/components/reward-actions";
 
 type Reward = ApiOutputs["reward"]["getList"]["page"][0];
+
+function RewardNameCell({ reward }: { reward: Reward }) {
+  const locale = useLocale();
+  const name = pickLocalized(reward.name, locale);
+
+  return (
+    <div className="flex items-center gap-2">
+      <figure className="size-8 rounded-xs border-[1.5px] border-border">
+        <img
+          src={reward.imageUrl ?? placeholder.src}
+          alt={name}
+          className="size-full object-cover"
+        />
+      </figure>
+      <span className="text-base font-normal line-clamp-1">{name}</span>
+    </div>
+  );
+}
 
 export const columns = (): ColumnDef<Reward>[] => {
   return [
@@ -39,20 +61,9 @@ export const columns = (): ColumnDef<Reward>[] => {
       enableHiding: false,
     },
     {
-      accessorKey: "name",
+      id: "name",
       header: "รางวัล",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <figure className="size-8 rounded-xs border-[1.5px] border-border">
-            <img
-              src={row.original.imageUrl ?? placeholder.src}
-              alt={row.original.name}
-              className="size-full object-cover"
-            />
-          </figure>
-          <span className="text-base font-normal line-clamp-1">{row.original.name}</span>
-        </div>
-      ),
+      cell: ({ row }) => <RewardNameCell reward={row.original} />,
     },
     {
       accessorKey: "stock",
@@ -75,9 +86,7 @@ export const columns = (): ColumnDef<Reward>[] => {
     },
     {
       id: "actions",
-      cell: ({ row }) => (
-        <RewardActions reward={row.original} />
-      ),
-    }
-  ]
-}
+      cell: ({ row }) => <RewardActions reward={row.original} />,
+    },
+  ];
+};

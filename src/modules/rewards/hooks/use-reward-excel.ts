@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
+import { isLocalizedString } from "@/lib/i18n/localized";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 
 import type { ValidationError } from "@/types/excel";
@@ -53,8 +54,15 @@ export function useRewardExcel({
 
       await bulkCreate.mutateAsync({
         rows: result.data.map((row) => ({
-          name: row.name,
-          description: row.description,
+          name: { th: row.nameTh, en: row.nameEn },
+          description:
+            (row.descriptionTh ?? "") === "" &&
+            (row.descriptionEn ?? "") === ""
+              ? null
+              : {
+                  th: row.descriptionTh ?? "",
+                  en: row.descriptionEn ?? "",
+                },
           pointCost: row.pointCost,
           stock: row.stock,
           onePerOrder: row.onePerOrder,
@@ -91,19 +99,35 @@ export function useRewardExcel({
       });
 
       exportToExcel(
-        data.map((e) => ({
-          name: e.name,
-          description: e.description,
-          pointCost: e.pointCost,
-          stock: e.stock,
-          onePerOrder: e.onePerOrder,
-          isActive: e.isActive,
-        })),
+        data.map((e) => {
+          const name = isLocalizedString(e.name)
+            ? e.name
+            : { th: String(e.name ?? ""), en: String(e.name ?? "") };
+          const description = isLocalizedString(e.description)
+            ? e.description
+            : e.description
+              ? {
+                  th: String(e.description),
+                  en: String(e.description),
+                }
+              : { th: "", en: "" };
+
+          return {
+            nameTh: name.th,
+            nameEn: name.en,
+            descriptionTh: description.th,
+            descriptionEn: description.en,
+            pointCost: e.pointCost,
+            stock: e.stock,
+            onePerOrder: e.onePerOrder,
+            isActive: e.isActive,
+          };
+        }),
         {
           filename: "reward-export",
           sheetName: "Reward Export",
           headers: rewardHeaders as Record<string, string>,
-        }
+        },
       );
 
       setState({ status: "success", operation: "export" });

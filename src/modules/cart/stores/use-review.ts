@@ -1,11 +1,12 @@
 import { create } from "zustand";
 
+import type { LocalizedString } from "@/lib/i18n/localized";
 import type { Id } from "../../../../convex/functions/_generated/dataModel";
 
 type ReviewReward = {
   _id: Id<"reward">;
   image?: string;
-  name: string;
+  name: LocalizedString | string;
 };
 
 interface ReviewStore {

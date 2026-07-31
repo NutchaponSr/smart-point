@@ -3,11 +3,18 @@ import z from "zod/v4";
 
 import { ENABLE_BU_RECOMMENDED } from "../lib/activity-features";
 import { appendActivityLog } from "../lib/activity-log";
-import { authMutation, authQuery, publicQuery } from "../lib/crpc";
+import { authMutation, authQuery, privateMutation, publicQuery } from "../lib/crpc";
 import {
   isBuRestrictedCategory,
   VALID_DIVISION_SLUGS,
 } from "../lib/divisions";
+import {
+  isLocalizedString,
+  localizedLabel,
+  localizedSearchText,
+  toLocalizedString,
+  type LocalizedString,
+} from "../lib/localized";
 import { awardSpecialPoints } from "../lib/points";
 
 import type { Id } from "./_generated/dataModel";
@@ -21,6 +28,16 @@ const activityCategory = z.enum([
 ]);
 
 const slugList = z.array(z.string().min(1)).optional();
+
+const localizedNameSchema = z.object({
+  th: z.string().trim().min(1),
+  en: z.string().trim().min(1),
+});
+
+const localizedDescriptionSchema = z.object({
+  th: z.string().trim().min(1),
+  en: z.string().trim().min(1),
+});
 
 function normalizeSlugList(value: (string | null)[] | null | undefined): string[] {
   return (value ?? []).filter((item): item is string => item != null && item !== "");
@@ -112,8 +129,8 @@ const ALLOWED_ACTIVITY_EVIDENCE_MIME_TYPES = [
 
 function matchesActivitySearch(
   row: {
-    name: string;
-    description: string | null;
+    name: LocalizedString | string;
+    description: LocalizedString | string | null;
     category: "external" | "internal" | "internal_bu" | "specials_point";
     point: number;
   },
@@ -121,8 +138,10 @@ function matchesActivitySearch(
 ) {
   if (!normalizedQuery) return true;
   return (
-    row.name.toLowerCase().includes(normalizedQuery) ||
-    (row.description ?? "").toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.name).toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.description)
+      .toLowerCase()
+      .includes(normalizedQuery) ||
     row.category.toLowerCase().includes(normalizedQuery) ||
     String(row.point).includes(normalizedQuery)
   );
@@ -269,7 +288,7 @@ function hasActivityEnded(
 async function assertCanDeleteActivity(
   ctx: MutationCtx,
   activityId: Id<"activity">,
-  activity: { name: string; endDate?: number | null },
+  activity: { name: LocalizedString | string; endDate?: number | null },
 ) {
   const participants = await countActiveParticipants(ctx, activityId);
   if (participants === 0) return;
@@ -277,7 +296,7 @@ async function assertCanDeleteActivity(
   if (!hasActivityEnded(activity, Date.now())) {
     throw new CRPCError({
       code: "BAD_REQUEST",
-      message: `ไม่สามารถลบ "${activity.name}" ได้ เนื่องจากมีพนักงานเข้าร่วมอยู่ จนกว่ากิจกรรมจะสิ้นสุด`,
+      message: `ไม่สามารถลบ "${localizedLabel(activity.name)}" ได้ เนื่องจากมีพนักงานเข้าร่วมอยู่ จนกว่ากิจกรรมจะสิ้นสุด`,
     });
   }
 }
@@ -381,7 +400,7 @@ async function approveActivityParticipantReward(input: {
     delta: activity.point,
     sourceType: "activity",
     sourceId,
-    note: `Activity reward: ${activity.name}`,
+    note: `Activity reward: ${localizedLabel(activity.name)}`,
   });
   const pointAwarded = award.awarded ? activity.point : 0;
 
@@ -401,7 +420,9 @@ async function approveActivityParticipantReward(input: {
       activityId: String(activity._id),
       participantId: String(participant._id),
       employeeId: String(participant.employeeId),
-      activityName: activity.name,
+      activityName: localizedLabel(activity.name),
+      activityNameTh: localizedLabel(activity.name, "th"),
+      activityNameEn: localizedLabel(activity.name, "en"),
       pointAwarded,
     },
   });
@@ -474,8 +495,8 @@ async function rejectActivityParticipant(input: {
 
 const activityRow = z
   .object({
-    name: z.string().trim().min(1),
-    description: z.string().optional().nullable(),
+    name: localizedNameSchema,
+    description: localizedDescriptionSchema.nullable().optional(),
     point: z.number().int().min(1),
     category: activityCategory,
     startDate: z.number(),
@@ -517,8 +538,8 @@ export const update = authMutation
   .input(
     z.object({
       activityId: z.string().min(1),
-      name: z.string().trim().min(1).optional(),
-      description: z.string().optional().nullable(),
+      name: localizedNameSchema.optional(),
+      description: localizedDescriptionSchema.nullable().optional(),
       point: z.number().int().optional(),
       category: activityCategory.optional(),
       startDate: z.number().optional(),
@@ -536,8 +557,8 @@ export const update = authMutation
       throw new CRPCError({ code: "NOT_FOUND", message: "Activity not found" });
     }
     const patch: {
-      name?: string;
-      description?: string | null;
+      name?: LocalizedString;
+      description?: LocalizedString | null;
       point?: number;
       category?:
         | "external"
@@ -647,6 +668,36 @@ export const bulkDelete = authMutation
     return { deleted };
   });
 
+/** Backfill activity name/description จาก string → { th, en } */
+export const migrateLocalizedStrings = privateMutation.mutation(
+  async ({ ctx }) => {
+    const activities = await ctx.db.query("activity").collect();
+    let updated = 0;
+
+    for (const activity of activities) {
+      const name = toLocalizedString(activity.name);
+      const description = toLocalizedString(activity.description);
+
+      if (!name) continue;
+
+      const nameNeedsUpdate = !isLocalizedString(activity.name);
+      const descriptionNeedsUpdate =
+        activity.description != null &&
+        !isLocalizedString(activity.description);
+
+      if (!nameNeedsUpdate && !descriptionNeedsUpdate) continue;
+
+      await ctx.db.patch(activity._id, {
+        name,
+        description,
+      });
+      updated += 1;
+    }
+
+    return { scanned: activities.length, updated };
+  },
+);
+
 export const bulkAddParticipants = authMutation
   .input(
     z.object({
@@ -715,18 +766,20 @@ export const bulkAddParticipants = authMutation
             actorEmployeeId: emp._id,
             type: "event_joined",
             sourceId: String(existing._id),
-            summary: `เข้าร่วมกิจกรรม: ${activity.name}`,
+            summary: `เข้าร่วมกิจกรรม: ${localizedLabel(activity.name)}`,
             meta: {
               activityId: String(activityId),
               participantId: String(existing._id),
               employeeId: String(emp._id),
-              activityName: activity.name,
+              activityName: localizedLabel(activity.name),
+              activityNameTh: localizedLabel(activity.name, "th"),
+              activityNameEn: localizedLabel(activity.name, "en"),
             },
           });
           await awardJoinSpecialPoints(ctx, {
             employeeId: emp._id,
             participantId: existing._id,
-            activityName: activity.name,
+            activityName: localizedLabel(activity.name),
           });
           reactivated += 1;
           activeCount += 1;
@@ -750,18 +803,20 @@ export const bulkAddParticipants = authMutation
           actorEmployeeId: emp._id,
           type: "event_joined",
           sourceId: String(participantId),
-          summary: `เข้าร่วมกิจกรรม: ${activity.name}`,
+          summary: `เข้าร่วมกิจกรรม: ${localizedLabel(activity.name)}`,
           meta: {
             activityId: String(activityId),
             participantId: String(participantId),
             employeeId: String(emp._id),
-            activityName: activity.name,
+            activityName: localizedLabel(activity.name),
+            activityNameTh: localizedLabel(activity.name, "th"),
+            activityNameEn: localizedLabel(activity.name, "en"),
           },
         });
         await awardJoinSpecialPoints(ctx, {
           employeeId: emp._id,
           participantId,
-          activityName: activity.name,
+          activityName: localizedLabel(activity.name),
         });
         added += 1;
         activeCount += 1;
@@ -1245,19 +1300,21 @@ export const join = authMutation
       actorEmployeeId: employeeId,
       type: "event_joined",
       sourceId: String(participantId),
-      summary: `เข้าร่วมกิจกรรม: ${activity.name}`,
+      summary: `เข้าร่วมกิจกรรม: ${localizedLabel(activity.name)}`,
       meta: {
         activityId: String(activityId),
         participantId: String(participantId),
         employeeId: String(employeeId),
-        activityName: activity.name,
+        activityName: localizedLabel(activity.name),
+        activityNameTh: localizedLabel(activity.name, "th"),
+        activityNameEn: localizedLabel(activity.name, "en"),
       },
     });
 
     await awardJoinSpecialPoints(ctx, {
       employeeId,
       participantId,
-      activityName: activity.name,
+      activityName: localizedLabel(activity.name),
     });
 
     return { joined: true };

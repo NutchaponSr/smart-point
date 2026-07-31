@@ -24,6 +24,7 @@ function createProcedureRegistry() {
   "getLatest": ["query", typedProcedureResolver(api["news"]["getLatest"], () => (require("../news") as Record<string, unknown>)["getLatest"])],
   "getList": ["query", typedProcedureResolver(api["news"]["getList"], () => (require("../news") as Record<string, unknown>)["getList"])],
   "getOne": ["query", typedProcedureResolver(api["news"]["getOne"], () => (require("../news") as Record<string, unknown>)["getOne"])],
+  "migrateLocalizedStrings": ["mutation", typedProcedureResolver(internal["news"]["migrateLocalizedStrings"], () => (require("../news") as Record<string, unknown>)["migrateLocalizedStrings"])],
   "remove": ["mutation", typedProcedureResolver(api["news"]["remove"], () => (require("../news") as Record<string, unknown>)["remove"])],
   "update": ["mutation", typedProcedureResolver(api["news"]["update"], () => (require("../news") as Record<string, unknown>)["update"])],
 } as const;

@@ -1,9 +1,20 @@
 import z from "zod/v4";
 
-/** ฟิลด์ร่วม: ฟอร์ม + Excel (ไม่รวม `image` — ใช้เฉพาะในฟอร์ม) */
+const localizedNameSchema = z.object({
+  th: z.string().trim().min(1, { message: "กรุณากรอกชื่อ (ไทย)" }),
+  en: z.string().trim().min(1, { message: "Please enter name (English)" }),
+});
+
+/** ในฟอร์มเก็บ object เสมอ — ว่างทั้งคู่แปลงเป็น null ตอนส่ง API */
+const localizedDescriptionFormSchema = z.object({
+  th: z.string().trim(),
+  en: z.string().trim(),
+});
+
+/** ฟิลด์ร่วม: ฟอร์ม (ไม่รวม `image` — ใช้เฉพาะในฟอร์ม) */
 const rewardCoreFields = {
-  name: z.string().trim().min(1, { message: "กรุณากรอกชื่อ" }),
-  description: z.string().trim().nullable(),
+  name: localizedNameSchema,
+  description: localizedDescriptionFormSchema,
   /** สอดคล้องกับ `reward.create` (integer ≥ 0) */
   pointCost: z.coerce
     .number()
@@ -25,10 +36,31 @@ export const rewardSchema = z.object({
   image: z.string().trim().optional().nullable(),
 });
 
+/** Excel: แบนคอลัมน์ th/en */
 export const rewardExportSchema = z.object({
-  ...rewardCoreFields,
+  nameTh: z.string().trim().min(1, { message: "กรุณากรอกชื่อ (ไทย)" }),
+  nameEn: z.string().trim().min(1, { message: "Please enter name (English)" }),
+  descriptionTh: z.string().trim().nullable(),
+  descriptionEn: z.string().trim().nullable(),
+  pointCost: z.coerce
+    .number()
+    .int({ message: "จำนวนพอยต์ต้องเป็นจำนวนเต็ม" })
+    .min(0, { message: "กรุณากรอกจำนวนคะแนน" }),
   stock: z.coerce.number().min(-1, { message: "กรุณากรอกจำนวนคงเหลือ" }),
+  onePerOrder: z.coerce.boolean().optional(),
+  isActive: z.coerce.boolean().default(true),
 });
+
+export function toApiDescription(
+  description: { th: string; en: string } | null | undefined,
+): { th: string; en: string } | null {
+  if (description == null) return null;
+  if (description.th.trim() === "" && description.en.trim() === "") return null;
+  return {
+    th: description.th.trim(),
+    en: description.en.trim(),
+  };
+}
 
 /** ค่าหลัง parse — ใช้เวลา submit/บันทึก */
 export type RewardSchema = z.infer<typeof rewardSchema>;

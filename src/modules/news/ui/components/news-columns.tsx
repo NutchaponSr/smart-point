@@ -1,13 +1,78 @@
+"use client";
+
 import { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { enUS, th } from "date-fns/locale";
 import { PinIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { pickLocalized } from "@/lib/i18n/localized";
 import { NewsActions } from "@/modules/news/ui/components/news-actions";
 
 type NewsRow = ApiOutputs["news"]["getList"]["page"][0];
+
+const getDateFnsLocale = (locale: string) => (locale === "th" ? th : enUS);
+
+function NewsTitleCell({ news }: { news: NewsRow }) {
+  const locale = useLocale();
+  const title = pickLocalized(news.title, locale);
+  const summary = pickLocalized(news.summary, locale);
+
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <div className="flex items-center gap-1.5">
+        {news.isPinned && (
+          <PinIcon className="size-3.5 shrink-0 text-pink" />
+        )}
+        <span className="line-clamp-1 text-base font-normal">{title}</span>
+      </div>
+      {summary && (
+        <span className="line-clamp-1 text-sm text-muted-foreground">
+          {summary}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function NewsStatusCell({ published }: { published: boolean }) {
+  const t = useTranslations("news.admin.columns");
+  return (
+    <span
+      className={
+        published
+          ? "text-sm font-medium text-[#58cc02]"
+          : "text-sm text-muted-foreground"
+      }
+    >
+      {published ? t("published") : t("draft")}
+    </span>
+  );
+}
+
+function NewsPublishedAtCell({ publishedAt }: { publishedAt: number | null }) {
+  const locale = useLocale();
+  return (
+    <span className="text-base font-normal">
+      {publishedAt
+        ? format(new Date(publishedAt), "d MMM yyyy", {
+            locale: getDateFnsLocale(locale),
+          })
+        : "—"}
+    </span>
+  );
+}
+
+function ColumnHeader({
+  labelKey,
+}: {
+  labelKey: "title" | "status" | "published-at";
+}) {
+  const t = useTranslations("news.admin.columns");
+  return <>{t(labelKey)}</>;
+}
 
 export const columns = (): ColumnDef<NewsRow>[] => {
   return [
@@ -39,51 +104,23 @@ export const columns = (): ColumnDef<NewsRow>[] => {
     },
     {
       accessorKey: "title",
-      header: "หัวข้อ",
-      cell: ({ row }) => (
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-1.5">
-            {row.original.isPinned && (
-              <PinIcon className="size-3.5 shrink-0 text-pink" />
-            )}
-            <span className="line-clamp-1 text-base font-normal">
-              {row.original.title}
-            </span>
-          </div>
-          {row.original.summary && (
-            <span className="line-clamp-1 text-sm text-muted-foreground">
-              {row.original.summary}
-            </span>
-          )}
-        </div>
-      ),
+      header: () => <ColumnHeader labelKey="title" />,
+      cell: ({ row }) => <NewsTitleCell news={row.original} />,
     },
     {
       accessorKey: "isPublished",
-      header: "สถานะ",
+      header: () => <ColumnHeader labelKey="status" />,
       cell: ({ row }) => (
-        <span
-          className={
-            row.original.isPublished
-              ? "text-sm font-medium text-[#58cc02]"
-              : "text-sm text-muted-foreground"
-          }
-        >
-          {row.original.isPublished ? "เผยแพร่แล้ว" : "แบบร่าง"}
-        </span>
+        <NewsStatusCell published={row.original.isPublished} />
       ),
     },
     {
       accessorKey: "publishedAt",
-      header: "วันที่เผยแพร่",
+      header: () => <ColumnHeader labelKey="published-at" />,
       cell: ({ row }) => (
-        <span className="text-base font-normal">
-          {row.original.publishedAt
-            ? format(new Date(row.original.publishedAt), "d MMM yyyy", {
-                locale: th,
-              })
-            : "—"}
-        </span>
+        <NewsPublishedAtCell
+          publishedAt={row.original.publishedAt ?? null}
+        />
       ),
     },
     {

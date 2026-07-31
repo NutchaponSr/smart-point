@@ -1,10 +1,16 @@
 {
   "nav": {
-    "transaction": "ธุรกรรม",
+    "home": "หน้าหลัก",
     "reward": "รางวัล",
+    "purchases": "ประวัติการแลก",
     "leaderboard": "กระดานผู้นำ",
+    "events": "กิจกรรม",
     "dashboard": "แดชบอร์ด",
-    "events": "กิจกรรม"
+    "data": "ข้อมูล",
+    "employees": "พนักงาน",
+    "transaction": "ธุรกรรม",
+    "redemptions": "จัดส่งรางวัล",
+    "news": "ข่าวสาร"
   },
   "purchases": {
     "title": "ประวัติการแลก",
@@ -17,6 +23,11 @@
       "purchase-date": "วันที่ซื้อ",
       "limit": "จำนวนรายการ"
     }
+  },
+  "filter": {
+    "min": "ขั้นต่ำ",
+    "max": "สูงสุด",
+    "rating-up": "ขึ้นไป"
   },
   "events": {
     "title": "กิจกรรม",
@@ -31,6 +42,215 @@
       "recently-updated": "ล่าสุด",
       "event-date": "วันที่กิจกรรม",
       "limit": "จำนวนรายการ"
+    }
+  },
+  "wallet": {
+    "send-title": "เพื่อนพนักงานที่คุณต้องการชื่นชม",
+    "complete": "ส่งคะแนนสำเร็จ!",
+    "search-employee": "ค้นหาชื่อหรือรหัสพนักงาน",
+    "select-employee": "เลือกพนักงาน",
+    "commendation-message": "ข้อความชื่นชม",
+    "praise-message": "บอกเล่าสิ่งที่คุณชื่นชม...",
+    "points-to-give": "คะแนนที่มอบให้",
+    "points-help": {
+      "aria-label": "ดูเงื่อนไขการให้ Point",
+      "title": "เงื่อนไขการให้ Point",
+      "subtitle": "เลือกมอบ 5, 10 หรือ 20 คะแนนตามระดับพฤติกรรม"
+    },
+    "points": {
+      "5-points": "พฤติกรรมเล็กๆ น้อยๆ ในชีวิตประจำวัน ที่ช่วยสร้างบรรยากาศที่ดีในการทำงาน แสดงถึงความมีน้ำใจ หรือการปฏิบัติตามวัฒนธรรมองค์กรเป็นปกติ",
+      "10-points": "พฤติกรรมที่แสดงถึงความทุ่มเทที่ มากกว่า หน้าที่ปกติของตัวเอง มีการสละเวลามาช่วยเหลือ หรือช่วยแก้ปัญหาเฉพาะหน้าให้งานของเพื่อนร่วมงานหรือทีมราบรื่นขึ้น",
+      "20-points": "พฤติกรรมที่สร้างผลกระทบเชิงบวกต่อตัวบุคคล ทีม หรือองค์กร แสดงถึงศักยภาพที่โดดเด่น ความคิดสร้างสรรค์ การสร้างชื่อเสียงให้องค์กรหรือการกอบกู้สถานการณ์วิกฤต"
+    },
+    "sending": "กำลังส่ง...",
+    "send-again": "ส่งอีกครั้ง",
+    "send": "ส่ง",
+    "complete-title": "คำชมของคุณ ส่งถึงผู้รับสำเร็จ",
+    "complete-description": "รายการของคุณถูกบันทึกแล้ว สามารตรวจสอบได้ในบันทึกการกระทำ หรือ กิจกรรมพอยต์",
+    "currency": {
+      "giving-budget": "คะแนนให้เพื่อน",
+      "giving-budget-description": "คะแนนที่ใช้ชื่นชมเพื่อนร่วมงาน รีเซ็ตทุกต้นเดือนและหมดอายุสิ้นเดือน",
+      "receiving-budget": "คะแนนที่ได้รับ",
+      "receiving-budget-description": "คะแนนที่ได้รับจากเพื่อนร่วมงาน ใช้แลกรางวัลในร้านค้าได้",
+      "special-budget": "คะแนนพิเศษ",
+      "special-budget-description": "คะแนนที่ได้รับจากกิจกรรมพิเศษ ใช้แลกรางวัลพิเศษได้"
+    }
+  },
+  "feed": {
+    "title": "กิจกรรมพอยต์",
+    "load-more": "ดูเพิ่มเติม",
+    "details": "รายละเอียด",
+    "employee-id": "รหัส: {id}",
+    "department": "แผนก: {department}",
+    "view": {
+      "all": "ทั้งหมด",
+      "sent": "ส่งให้คนอื่น",
+      "received": "ได้รับ"
+    },
+    "filters": {
+      "aria-label": "ตัวกรองกิจกรรมพอยต์",
+      "title": "ตัวกรอง",
+      "reset": "รีเซ็ต",
+      "search-placeholder": "ค้นหาชื่อ ข้อความ หรือรหัสธุรกรรม",
+      "type": "ประเภท",
+      "points": "จำนวนพอยต์",
+      "date-range": "ช่วงเวลา"
+    },
+    "empty": {
+      "title": "ยังไม่มีกิจกรรมในฟีด",
+      "description": "เมื่อมีการมอบคะแนน รายการจะแสดงขึ้นที่นี่"
+    },
+    "headline": {
+      "received": "ส่งพอยต์ให้คุณ",
+      "sent": "คุณมอบพอยต์ให้"
+    },
+    "detail": {
+      "title": "รายละเอียดธุรกรรม",
+      "sender": "ผู้ส่ง",
+      "receiver": "ผู้รับ",
+      "points": "จำนวนพอยต์",
+      "status": "สถานะ",
+      "created-at": "วันที่สร้าง",
+      "reviewed-at": "วันที่ตรวจสอบ",
+      "smart-culture-tag": "แท็ก SMART Culture",
+      "message": "ข้อความ",
+      "rejection-reason": "เหตุผลที่ปฏิเสธ",
+      "empty-value": "-"
+    },
+    "comments": {
+      "empty-title": "ยังไม่มีความคิดเห็น",
+      "empty-description": "เริ่มแสดงความคิดเห็นเป็นคนแรก",
+      "placeholder": "เขียนความคิดเห็น..."
+    }
+  },
+  "overview": {
+    "events-for-you": "กิจกรรมสำหรับคุณ",
+    "events-for-bu": "กิจกรรมสำหรับ BU ของคุณ",
+    "view-all": "ดูทั้งหมด",
+    "monthly-quest": {
+      "title": "ภารกิจประจำเดือน",
+      "description": "มอบคะแนนให้เพื่อน 1 ครั้ง รับ 1 Point (สูงสุด {max} Point/เดือน)",
+      "progress-aria": "ความคืบหน้า {value} จาก {max}",
+      "special-coin-alt": "คะแนนพิเศษ",
+      "quest-icon-alt": "ไอคอนภารกิจ"
+    }
+  },
+  "reward": {
+    "go-to-cart": "ไปที่รถเข็น",
+    "go-to-cart-with-count": "ไปที่รถเข็น ({count})",
+    "load-more": "ดูเพิ่มเติม",
+    "empty-alt": "ไม่มีรางวัล",
+    "no-rewards": {
+      "title": "ยังไม่มีรางวัล",
+      "description": "ลองปรับตัวกรอง หรือกดดูเพิ่มเติมเพื่อโหลดรายการถัดไป"
+    },
+    "filters": {
+      "title": "ตัวกรอง",
+      "reset": "รีเซ็ต",
+      "aria-label": "ตัวกรอง",
+      "points": "พอยต์",
+      "rating": "เรตติ้ง"
+    },
+    "sort": {
+      "curated": "คัดสรร",
+      "trending": "เป็นกระแส",
+      "hot_and_new": "ใหม่ล่าสุด",
+      "curated-title": "คัดสรรสำหรับคุณ",
+      "trending-title": "กำลังเป็นกระแส",
+      "hot_and_new-title": "รายการใหม่ล่าสุด"
+    },
+    "view-more": "ดูเพิ่มเติม",
+    "loading": "กำลังโหลด...",
+    "add-to-cart": "เพิ่มลงรถเข็น",
+    "rating": "เรตติ้ง",
+    "star": "{count} ดาว"
+  },
+  "cart": {
+    "back-to-rewards": "กลับไปเลือกรางวัล",
+    "title": "รถเข็น",
+    "subtitle": "ตรวจสอบรายการก่อนยืนยันแลกพอยต์",
+    "empty": {
+      "title": "รถเข็นว่างเปล่า",
+      "description": "ยังไม่มีรางวัลในรถเข็น เลือกรางวัลที่ชอบแล้วกลับมาแลกพอยต์ได้ที่นี่",
+      "browse": "ค้นหารางวัล"
+    },
+    "items-title": "รายการรางวัล",
+    "available-points": "พอยต์ที่ใช้แลกได้",
+    "insufficient": "พอยต์ไม่เพียงพอ ขาดอีก {amount} พอยต์",
+    "remaining-after": "หลังแลกจะเหลือ <receiving></receiving> + <special></special> พอยต์",
+    "confirm": "ยืนยันแลกรางวัล",
+    "confirming": "กำลังดำเนินการ...",
+    "success": "แลกรางวัลสำเร็จ",
+    "error": "แลกรางวัลไม่สำเร็จ",
+    "remove-error": "ลบรายการไม่สำเร็จ",
+    "remove": "ลบ",
+    "summary": {
+      "item-count-label": "จำนวนรายการ",
+      "item-count": "{count} รายการ",
+      "total": "รวมทั้งหมด",
+      "deduct": "หัก <receiving></receiving> จากคะแนนที่ได้รับ",
+      "deduct-special": " + <special></special> จากคะแนนพิเศษ"
+    }
+  },
+  "news": {
+    "tabs": {
+      "news": "ข่าวสาร",
+      "logs": "บันทึกการกระทำ"
+    },
+    "loading": "กำลังโหลด...",
+    "empty": {
+      "title": "ยังไม่มีข่าวสาร",
+      "description": "ข่าวสารจะถูกแสดงที่นี่"
+    },
+    "admin": {
+      "section-info": "ข้อมูลข่าวสาร",
+      "section-publish": "การเผยแพร่",
+      "title-th": "หัวข้อ",
+      "title-en": "Title",
+      "summary-th": "สรุปย่อ",
+      "summary-en": "Summary",
+      "body-th": "เนื้อหา",
+      "body-en": "Body",
+      "title-placeholder-th": "หัวข้อข่าวสาร",
+      "title-placeholder-en": "News title",
+      "summary-placeholder-th": "ข้อความสั้นๆ สำหรับแสดงในรายการ",
+      "summary-placeholder-en": "Short text for the list view",
+      "body-placeholder-th": "รายละเอียดข่าวสาร",
+      "body-placeholder-en": "News details",
+      "publish": "เผยแพร่ข่าวสาร",
+      "pin": "ปักหมุดข่าวสำคัญ",
+      "preview": "ตัวอย่าง",
+      "preview-title-fallback": "หัวข้อข่าวสาร",
+      "preview-body-fallback": "เนื้อหาข่าวสารจะแสดงที่นี่",
+      "preview-published": "จะแสดงบนหน้าหลัก",
+      "preview-draft": "แบบร่าง — ยังไม่แสดง",
+      "pinned": "ปักหมุด",
+      "new-title": "เพิ่มข่าวสาร",
+      "columns": {
+        "title": "หัวข้อ",
+        "status": "สถานะ",
+        "published-at": "วันที่เผยแพร่",
+        "published": "เผยแพร่แล้ว",
+        "draft": "แบบร่าง"
+      }
+    }
+  },
+  "activityLog": {
+    "empty": {
+      "title": "ยังไม่มีบันทึกการกระทำ",
+      "description": "การกระทำของคุณจะแสดงที่นี่"
+    },
+    "ref": {
+      "transaction": "ธุรกรรม"
+    },
+    "types": {
+      "point_transfer_sent": "โอน {amount} พอยต์ให้ {name}",
+      "point_transfer_approved": "คำชมของคุณได้รับการอนุมัติ",
+      "point_transfer_rejected": "คำชมของคุณได้รับการปฏิเสธ กรุณาระบุพฤติกรรมให้ชัดเจน",
+      "daily_login": "รับโบนัสเข้าสู่ระบบประจำวัน",
+      "event_joined": "เข้าร่วมกิจกรรม: {activityName}",
+      "event_completed": "ขอบคุณสำหรับการร่วมกิจกรรม: {activityName}",
+      "event_rejected": "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม"
     }
   }
 }

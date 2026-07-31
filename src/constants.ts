@@ -23,32 +23,32 @@ export type MetadataItem = {
 export const navigations: NavigationItem[] = [
   {
     icon: HomeIcon,
-    label: "หน้าหลัก",
+    label: "home",
     href: "/",
   },
   {
     icon: ShopIcon,
-    label: "รางวัล",
+    label: "reward",
     href: "/rewards",
   },
   {
     icon: HistoryIcon,
-    label: "ประวัติการแลก",
+    label: "purchases",
     href: "/purchases",
   },
   {
     icon: LeaderboardIcon,
-    label: "ตารางคะแนน",
+    label: "leaderboard",
     href: "/leaderboard",
   },
   {
     icon: EventsIcon,
-    label: "กิจกรรม",
+    label: "events",
     href: "/events",
   },
   {
     icon: DashboardIcon,
-    label: "แดชบอร์ด",
+    label: "dashboard",
     href: "/dashboard",
     isAdmin: true,
   },
@@ -56,32 +56,32 @@ export const navigations: NavigationItem[] = [
 
 export const metadata: MetadataItem[] = [
   {
-    label: "พนักงาน",
+    label: "employees",
     href: "/meta/employees",
     isAdmin: true,
   },
   {
-    label: "รางวัล",
+    label: "reward",
     href: "/meta/rewards",
     isAdmin: true,
   },
   {
-    label: "ธุรกรรม",
+    label: "transaction",
     href: "/meta/transactions?status=pending",
     isAdmin: true,
   },
   {
-    label: "จัดส่งรางวัล",
+    label: "redemptions",
     href: "/meta/redemptions?shippingStatus=pending&shippingStatus=processing",
     isAdmin: true,
   },
   {
-    label: "กิจกรรม",
+    label: "events",
     href: "/meta/events",
     isAdmin: true,
   },
   {
-    label: "ข่าวสาร",
+    label: "news",
     href: "/meta/news",
     isAdmin: true,
   },

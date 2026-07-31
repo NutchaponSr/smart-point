@@ -1,4 +1,10 @@
-import { arrayOf, boolean, convexTable, custom, defineRelations, defineSchema, id, index, integer, searchIndex, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
+import { arrayOf, boolean, convexTable, defineRelations, defineSchema, id, index, integer, objectOf, searchIndex, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
+
+const localizedStringField = () =>
+  objectOf({
+    th: text().notNull(),
+    en: text().notNull(),
+  });
 
 export const user = convexTable("user", {
   name: text().notNull(),
@@ -149,8 +155,8 @@ export const comment = convexTable("comment", {
 ]);
 
 export const reward = convexTable("reward", {
-  name: text().notNull(),
-  description: text(),
+  name: localizedStringField().notNull(),
+  description: localizedStringField(),
   image: text(),
   pointCost: integer().notNull(),
   stock: integer().notNull(),
@@ -214,8 +220,8 @@ export const redemption = convexTable("redemption", {
 ]);
 
 export const activity = convexTable("activity", {
-  name: text().notNull(),
-  description: text(),
+  name: localizedStringField().notNull(),
+  description: localizedStringField(),
   point: integer().notNull(),
   category: textEnum(["external", "internal", "internal_bu", "specials_point"] as const).notNull(),
   startDate: timestamp().notNull(),
@@ -267,9 +273,9 @@ export const activityParticipant = convexTable("activityParticipant", {
 ]);
 
 export const news = convexTable("news", {
-  title: text().notNull(),
-  summary: text(),
-  body: text().notNull(),
+  title: localizedStringField().notNull(),
+  summary: localizedStringField(),
+  body: localizedStringField().notNull(),
   isPublished: boolean().notNull(),
   publishedAt: timestamp(),
   isPinned: boolean(),

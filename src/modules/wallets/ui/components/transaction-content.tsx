@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 
+import { toast } from "sonner";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
@@ -35,17 +36,18 @@ interface Props {
   className?: string;
 }
 
-const stepTitles: Record<Step, string> = {
-  send: "เพื่อนพนักงานที่คุณต้องการชื่นชม",
-  complete: "ส่งคำชมสำเร็จ!",
-};
-
 export const TransactionContent = ({
   showHeader = true,
   givingBudget,
   className,
 }: Props) => {
   const crpc = useCRPC();
+  const t = useTranslations("wallet");
+
+  const stepTitles: Record<Step, string> = {
+    send: t("send-title"),
+    complete: t("complete"),
+  };
 
   const { data: user } = useSuspenseQuery(
     crpc.user.getCurrentUser.queryOptions(),
@@ -160,7 +162,7 @@ export const TransactionContent = ({
         <Button
           size="lg"
           variant="secondary"
-          className="w-full rounded-md font-bold tracking-wide uppercase"
+          className="w-full rounded-md font-bold tracking-wide"
           disabled={transaction.isPending || quotaBlocksSend}
           onClick={async () => {
             if (step === "complete") {
@@ -195,10 +197,10 @@ export const TransactionContent = ({
           }}
         >
           {transaction.isPending
-            ? "กำลังส่ง..."
+            ? t("sending")
             : step === "send"
-              ? "ส่ง"
-              : "ส่งอีกครั้ง"}
+              ? t("send")
+              : t("send-again")}
         </Button>
       </footer>
     </section>

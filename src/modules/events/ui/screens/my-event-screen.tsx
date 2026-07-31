@@ -11,6 +11,9 @@ import {
   BsCheckCircleFill,
 } from "react-icons/bs";
 
+import { useLocale } from "next-intl";
+
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -43,6 +46,7 @@ const statusActionClassName =
   "flex h-10 items-center justify-center gap-1.5 rounded-md text-sm font-medium";
 
 export const MyEventScreen = () => {
+  const locale = useLocale();
   const crpc = useCRPC();
 
   const [filters, setFilters] = useEventFilters();
@@ -138,10 +142,10 @@ export const MyEventScreen = () => {
                     </span>
                   </div>
                   <h3 className="truncate text-base font-bold break-all">
-                    {event.name}
+                    {pickLocalized(event.name, locale)}
                   </h3>
                   <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground whitespace-pre-wrap break-all">
-                    {event.description}
+                    {pickLocalized(event.description, locale)}
                   </p>
                   <div className="grid max-w-md gap-2 pt-1">
                     <div className="flex flex-wrap items-center gap-2">

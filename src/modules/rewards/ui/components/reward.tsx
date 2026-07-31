@@ -3,11 +3,13 @@
 import { Suspense, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 
 import placeholder from "../../../../../public/placeholder.png";
 
 import { ApiOutputs } from "@convex/api";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { Button } from "@/components/ui/button";
@@ -26,9 +28,14 @@ interface Props {
 }
 
 export const Reward = ({ reward }: Props) => {
+  const t = useTranslations("reward");
+
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const crpc = useCRPC();
   const queryClient = useQueryClient();
+  const name = pickLocalized(reward.name, locale);
+  const description = pickLocalized(reward.description, locale);
 
   const rewardQueryOptions = crpc.reward.getOne.staticQueryOptions({
     rewardId: reward._id,
@@ -43,15 +50,15 @@ export const Reward = ({ reward }: Props) => {
     <div className="flex flex-row items-start gap-4 md:gap-8">
       <img
         src={reward.image || placeholder.src}
-        alt={reward.name}
+        alt={name}
         width={100}
         height={100}
-        className="bg-no-repeat bg-position-[50%] inline-block h-[100px] w-[100px] rounded-md border-2 border-border object-cover"
+        className="bg-no-repeat bg-position-[50%] inline-block h-25 w-25 rounded-md border-2 border-border object-cover"
       />
 
       <div className="flex flex-col gap-1 min-w-0 grow">
         <h3 className="text-base md:text-lg font-bold py-2 whitespace-pre-wrap break-all overflow-hidden">
-          {reward.name}
+          {name}
         </h3>
         <div className="flex flex-col items-start gap-1">
           <CombinedPointsBadge amount={reward.pointCost} size="sm" />
@@ -62,15 +69,15 @@ export const Reward = ({ reward }: Props) => {
           />
         </div>
         <p className="text-sm md:text-base text-[#777] m-0 leading-[1.7] line-clamp-2 break-all overflow-hidden">
-          {reward.description}
+          {description}
         </p>
         <div className="block md:hidden md:mt-0 mt-2">
-          <Button onClick={openDialog}>ดูเพิ่มเติม</Button>
+          <Button onClick={openDialog}>{t("view-more")}</Button>
         </div>
       </div>
 
       <div className="hidden md:block">
-        <Button onClick={openDialog}>ดูเพิ่มเติม</Button>
+        <Button onClick={openDialog}>{t("view-more")}</Button>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -79,7 +86,7 @@ export const Reward = ({ reward }: Props) => {
           <Suspense
             fallback={
               <div className="p-8 text-center text-muted-foreground">
-                กำลังโหลด...
+                {t("loading")}
               </div>
             }
           >

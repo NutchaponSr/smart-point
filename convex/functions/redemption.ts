@@ -3,6 +3,10 @@ import z from "zod/v4";
 
 import { requireAdmin } from "../lib/auth-helper";
 import { authMutation, authQuery } from "../lib/crpc";
+import {
+  localizedSearchText,
+  type LocalizedString,
+} from "../lib/localized";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
@@ -92,8 +96,12 @@ function redemptionAndRewardMatchesQuery(
   if (!reward) return false;
   if (!normalizedQuery) return true;
   return (
-    reward.name.toLowerCase().includes(normalizedQuery) ||
-    (reward.description?.toLowerCase().includes(normalizedQuery) ?? false)
+    localizedSearchText(reward.name)
+      .toLowerCase()
+      .includes(normalizedQuery) ||
+    localizedSearchText(reward.description)
+      .toLowerCase()
+      .includes(normalizedQuery)
   );
 }
 
@@ -114,7 +122,7 @@ type RedemptionListPageRow = {
   };
   reward: {
     _id: Id<"reward">;
-    name: string;
+    name: LocalizedString;
     image: string;
     pointCost: number;
   };
@@ -239,8 +247,12 @@ function redemptionAdminMatchesQuery(
   if (!normalizedQuery) return true;
 
   return (
-    reward.name.toLowerCase().includes(normalizedQuery) ||
-    (reward.description?.toLowerCase().includes(normalizedQuery) ?? false) ||
+    localizedSearchText(reward.name)
+      .toLowerCase()
+      .includes(normalizedQuery) ||
+    localizedSearchText(reward.description)
+      .toLowerCase()
+      .includes(normalizedQuery) ||
     employee.name.toLowerCase().includes(normalizedQuery) ||
     employee.employeeId.toLowerCase().includes(normalizedQuery) ||
     (redemption.trackingNumber?.toLowerCase().includes(normalizedQuery) ??

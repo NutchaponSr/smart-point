@@ -17,9 +17,11 @@ import { GoPersonFill } from "react-icons/go";
 import { useDebounce } from "@uidotdev/usehooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
+import { useLocale } from "next-intl";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -45,6 +47,7 @@ interface Props {
 }
 
 export const JoinEventView = ({ eventId }: Props) => {
+  const locale = useLocale();
   const crpc = useCRPC();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -62,6 +65,7 @@ export const JoinEventView = ({ eventId }: Props) => {
   });
 
   const { data: activity } = useSuspenseQuery(crpc.activity.getOne.queryOptions({ activityId: eventId }));
+  const activityName = pickLocalized(activity.name, locale);
 
   const bulkLeave = useMutation(crpc.activity.bulkLeave.mutationOptions());
   const join = useMutation(crpc.activity.join.mutationOptions());
@@ -233,7 +237,7 @@ export const JoinEventView = ({ eventId }: Props) => {
       <header className="flex h-[82px] flex-col justify-center gap-4 border-b-2 border-border p-4 md:p-8">
         <div className="flex min-h-8 items-center justify-between gap-2">
           <h1 className="line-clamp-2 hidden! text-2xl sm:block!">
-            {activity.name}
+            {activityName}
           </h1>
           
           <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
@@ -248,7 +252,7 @@ export const JoinEventView = ({ eventId }: Props) => {
           <section className="border-b-2 border-border bg-background">
             <header className="grid gap-4 p-3 not-first:border-t">
               <h1 className="text-lg font-normal leading-[1.2]">
-                {activity.name}
+                {activityName}
               </h1>
             </header>
             <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,full)]">
@@ -270,7 +274,7 @@ export const JoinEventView = ({ eventId }: Props) => {
             </section>
             <section className="border-t-2 border-border p-3">
               <p className="text-xs">
-                {activity.description}
+                {pickLocalized(activity.description, locale)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 เข้าร่วมแล้วได้คะแนนพิเศษ 5 แต้ม · แนบหลักฐานแล้วรอ admin อนุมัติ/ปฏิเสธ · อนุมัติจะบวกคะแนนพิเศษ

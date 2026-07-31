@@ -19,8 +19,10 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { ApiOutputs } from "@convex/api";
+import { useLocale } from "next-intl";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -72,6 +74,7 @@ interface Props {
 export const EventCarousel = ({
   autoLoop = false,
 }: Props) => {
+  const locale = useLocale();
   const crpc = useCRPC();
   const queryClient = useQueryClient();
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -164,7 +167,9 @@ export const EventCarousel = ({
       { activityId: String(event.id) },
       {
         onSuccess: () => {
-          toast.success(`เข้าร่วม "${event.name}" เรียบร้อย`);
+          toast.success(
+            `เข้าร่วม "${pickLocalized(event.name, locale)}" เรียบร้อย`,
+          );
           queryClient.invalidateQueries({
             queryKey: crpc.activity.recommended.queryKey(),
           });
@@ -283,7 +288,7 @@ export const EventCarousel = ({
                       {categories[event.category].th}
                     </span>
                     <h3 className="line-clamp-2 text-lg font-extrabold leading-snug">
-                      {event.name}
+                      {pickLocalized(event.name, locale)}
                     </h3>
                   </div>
                   <span className="flex shrink-0 items-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-sm font-extrabold">
@@ -294,7 +299,8 @@ export const EventCarousel = ({
 
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
-                    {event.description || "ไม่มีรายละเอียดกิจกรรม"}
+                    {pickLocalized(event.description, locale) ||
+                      "ไม่มีรายละเอียดกิจกรรม"}
                   </p>
 
                   {buRestrictedCategories.includes(

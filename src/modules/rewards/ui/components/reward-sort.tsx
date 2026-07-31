@@ -1,38 +1,30 @@
+import { useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
 
+const SORT_OPTIONS = ["curated", "trending", "hot_and_new"] as const;
+
 export const RewardSort = () => {
+  const t = useTranslations("reward.sort");
   const [filters, setFilters] = useRewardFilters();
 
   return (
     <div role="tablist" className="flex gap-3 overflow-x-auto">
-      <Button 
-        size="sm" 
-        variant={filters.sort === "curated" ? "default" : "ghost"} 
-        onClick={() => setFilters({ sort: "curated" })}
-        className={cn(filters.sort === "curated" && "text-[#1cb0f6]")}
-      >
-        คัดสรร
-      </Button>
-      <Button 
-        size="sm" 
-        variant={filters.sort === "trending" ? "default" : "ghost"} 
-        onClick={() => setFilters({ sort: "trending" })}
-        className={cn(filters.sort === "trending" && "text-[#1cb0f6]")}
-      >
-        เป็นกระแส
-      </Button>
-      <Button 
-        size="sm" 
-        variant={filters.sort === "hot_and_new" ? "default" : "ghost"} 
-        onClick={() => setFilters({ sort: "hot_and_new" })}
-        className={cn(filters.sort === "hot_and_new" && "text-[#1cb0f6]")}
-      >
-        ใหม่ล่าสุด
-      </Button>
+      {SORT_OPTIONS.map((sort) => (
+        <Button
+          key={sort}
+          size="sm"
+          variant={filters.sort === sort ? "default" : "ghost"}
+          onClick={() => setFilters({ sort })}
+          className={cn(filters.sort === sort && "text-[#1cb0f6]")}
+        >
+          {t(sort)}
+        </Button>
+      ))}
     </div>
   );
 };

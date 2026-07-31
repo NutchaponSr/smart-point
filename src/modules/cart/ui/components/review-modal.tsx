@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useLocale } from "next-intl";
 import { toast } from "sonner";
 
 import ElementEditable from "@/components/element-editable";
 import placeholder from "../../../../../public/placeholder.png";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { Button } from "@/components/ui/button";
@@ -22,9 +24,11 @@ import { StarPicker } from "@/components/star-picker";
 import { useReviewStore } from "../../stores/use-review";
 
 export const ReviewModal = () => {
+  const locale = useLocale();
   const crpc = useCRPC();
 
   const { redemptionId, reward, isOpen, onClose } = useReviewStore();
+  const rewardName = pickLocalized(reward?.name, locale);
 
   const review = useMutation(crpc.redemption.reviewRedemption.mutationOptions());
 
@@ -80,7 +84,7 @@ export const ReviewModal = () => {
               <figure className="size-14 shrink-0 overflow-hidden rounded-xs border-2 border-border">
                 <img
                   src={reward.image || placeholder.src}
-                  alt={reward.name}
+                  alt={rewardName}
                   className="size-full object-cover"
                 />
               </figure>
@@ -89,7 +93,7 @@ export const ReviewModal = () => {
                   href={`/rewards/${reward._id}`}
                   className="line-clamp-2 text-base font-bold text-[#4b4b4b] no-underline hover:underline"
                 >
-                  {reward.name}
+                  {rewardName}
                 </Link>
                 <p className="mt-1 text-sm text-muted-foreground">
                   รางวัลที่คุณแลกไปแล้ว

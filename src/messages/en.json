@@ -1,10 +1,21 @@
 {
   "nav": {
-    "transaction": "Transactions",
+    "home": "Home",
     "reward": "Rewards",
+    "purchases": "Transaction History",
     "leaderboard": "Leaderboard",
+    "events": "Events",
     "dashboard": "Dashboard",
-    "events": "Events"
+    "data": "Data",
+    "employees": "Employees",
+    "transaction": "Transactions",
+    "redemptions": "Redemptions",
+    "news": "News"
+  },
+  "filter": {
+    "min": "Min",
+    "max": "Max",
+    "rating-up": "Up to"
   },
   "purchases": {
     "title": "Purchases",
@@ -31,6 +42,215 @@
       "recently-updated": "Recently Updated",
       "event-date": "Event Date",
       "limit": "Limit"
+    }
+  },
+  "wallet": {
+    "send-title": "Your Commendation",
+    "complete": "Send Commendation Successfully!",
+    "search-employee": "Search Employee",
+    "select-employee": "Select Employee",
+    "commendation-message": "Praise Message",
+    "praise-message": "Describe your appreciation...",
+    "points-to-give": "Points",
+    "points-help": {
+      "aria-label": "View point-giving guidelines",
+      "title": "Point-giving guidelines",
+      "subtitle": "Choose 5, 10, or 20 points based on the behavior level"
+    },
+    "points": {
+      "5-points": "Everyday small actions that create a positive working atmosphere, demonstrate kindness, or reflect standard adherence to company culture.",
+      "10-points": "Actions that go above and beyond regular duties, such as dedicating time to assist colleagues or helping resolve immediate issues to ensure smooth teamwork.",
+      "20-points": "Actions that make a significant positive impact on individuals, teams, or the organization, demonstrating outstanding potential, creativity, or exceptional crisis resolution."
+    },
+    "sending": "Sending...",
+    "send-again": "Send Again",
+    "send": "Send",
+    "complete-title": "Your Commendation has been sent to the recipient",
+    "complete-description": "Your transaction has been recorded and can be checked in the transaction history or event points.",
+    "currency": {
+      "giving-budget": "Points for giving",
+      "giving-budget-description": "Points used to commend colleagues, reset at the start of each month and expire at the end of each month",
+      "receiving-budget": "Points received",
+      "receiving-budget-description": "Points received from colleagues, can be used to redeem rewards in the store",
+      "special-budget": "Bonus points",
+      "special-budget-description": "Points received from special activities, can be used to redeem special rewards"
+    }
+  },
+  "feed": {
+    "title": "Point Activities",
+    "load-more": "Load more",
+    "details": "Details",
+    "employee-id": "ID: {id}",
+    "department": "Dept: {department}",
+    "view": {
+      "all": "All",
+      "sent": "Sent",
+      "received": "Received"
+    },
+    "filters": {
+      "aria-label": "Filter point activities",
+      "title": "Filters",
+      "reset": "Reset",
+      "search-placeholder": "Search name, message, or transaction ID",
+      "type": "Type",
+      "points": "Points",
+      "date-range": "Date range"
+    },
+    "empty": {
+      "title": "No activity in the feed yet",
+      "description": "When points are given, items will appear here"
+    },
+    "headline": {
+      "received": "sent you points",
+      "sent": "You gave points to"
+    },
+    "detail": {
+      "title": "Transaction details",
+      "sender": "Sender",
+      "receiver": "Receiver",
+      "points": "Points",
+      "status": "Status",
+      "created-at": "Created at",
+      "reviewed-at": "Reviewed at",
+      "smart-culture-tag": "SMART Culture tag",
+      "message": "Message",
+      "rejection-reason": "Rejection reason",
+      "empty-value": "-"
+    },
+    "comments": {
+      "empty-title": "No comments yet",
+      "empty-description": "Be the first to comment",
+      "placeholder": "Write a comment..."
+    }
+  },
+  "overview": {
+    "events-for-you": "Events for you",
+    "events-for-bu": "Events for your BU",
+    "view-all": "View all",
+    "monthly-quest": {
+      "title": "Missiony monthly",
+      "description": "Praise a colleague 1 time to receive 1 point (max 20 points/month)",
+      "progress-aria": "Progress {value} of {max}",
+      "special-coin-alt": "Special points",
+      "quest-icon-alt": "Quest icon"
+    }
+  },
+  "reward": {
+    "go-to-cart": "Go to cart",
+    "go-to-cart-with-count": "Go to cart ({count})",
+    "load-more": "Load more",
+    "empty-alt": "No rewards",
+    "no-rewards": {
+      "title": "No rewards yet",
+      "description": "Try adjusting the filters or load more to see the next items"
+    },
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset",
+      "aria-label": "Filters",
+      "points": "Points",
+      "rating": "Rating"
+    },
+    "sort": {
+      "curated": "Curated",
+      "trending": "Trending",
+      "hot_and_new": "Newest",
+      "curated-title": "Curated for you",
+      "trending-title": "Trending now",
+      "hot_and_new-title": "Newest items"
+    },
+    "view-more": "View details",
+    "loading": "Loading...",
+    "add-to-cart": "Add to cart",
+    "rating": "Rating",
+    "star": "{count} {count, plural, one {star} other {stars}}"
+  },
+  "cart": {
+    "back-to-rewards": "Back to rewards",
+    "title": "Cart",
+    "subtitle": "Review your items before redeeming points",
+    "empty": {
+      "title": "Your cart is empty",
+      "description": "No rewards in your cart yet. Pick ones you like and come back to redeem points here",
+      "browse": "Browse rewards"
+    },
+    "items-title": "Reward items",
+    "available-points": "Redeemable points",
+    "insufficient": "Not enough points. You need {amount} more",
+    "remaining-after": "After redeeming you will have <receiving></receiving> + <special></special> points left",
+    "confirm": "Confirm redemption",
+    "confirming": "Processing...",
+    "success": "Rewards redeemed successfully",
+    "error": "Could not redeem rewards",
+    "remove-error": "Could not remove item",
+    "remove": "Remove",
+    "summary": {
+      "item-count-label": "Items",
+      "item-count": "{count} items",
+      "total": "Total",
+      "deduct": "Deduct <receiving></receiving> from received points",
+      "deduct-special": " + <special></special> from bonus points"
+    }
+  },
+  "news": {
+    "tabs": {
+      "news": "News",
+      "logs": "Activity log"
+    },
+    "loading": "Loading...",
+    "empty": {
+      "title": "No news yet",
+      "description": "News will appear here"
+    },
+    "admin": {
+      "section-info": "News details",
+      "section-publish": "Publishing",
+      "title-th": "Title",
+      "title-en": "Title",
+      "summary-th": "Summary",
+      "summary-en": "Summary",
+      "body-th": "Body",
+      "body-en": "Body",
+      "title-placeholder-th": "News title",
+      "title-placeholder-en": "News title",
+      "summary-placeholder-th": "Short text for the list view",
+      "summary-placeholder-en": "Short text for the list view",
+      "body-placeholder-th": "News details",
+      "body-placeholder-en": "News details",
+      "publish": "Publish news",
+      "pin": "Pin important news",
+      "preview": "Preview",
+      "preview-title-fallback": "News title",
+      "preview-body-fallback": "News body will appear here",
+      "preview-published": "Will show on the home page",
+      "preview-draft": "Draft — not visible yet",
+      "pinned": "Pinned",
+      "new-title": "Add news",
+      "columns": {
+        "title": "Title",
+        "status": "Status",
+        "published-at": "Published at",
+        "published": "Published",
+        "draft": "Draft"
+      }
+    }
+  },
+  "activityLog": {
+    "empty": {
+      "title": "No activity yet",
+      "description": "Your actions will appear here"
+    },
+    "ref": {
+      "transaction": "Transaction"
+    },
+    "types": {
+      "point_transfer_sent": "Transferred {amount} points to {name}",
+      "point_transfer_approved": "Your commendation was approved",
+      "point_transfer_rejected": "Your commendation was rejected. Please describe the behavior more clearly",
+      "daily_login": "Claimed daily login bonus",
+      "event_joined": "Joined event: {activityName}",
+      "event_completed": "Thanks for joining: {activityName}",
+      "event_rejected": "Please attach evidence as required by the event"
     }
   }
 }

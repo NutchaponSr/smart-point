@@ -29,9 +29,19 @@ const allowedDivisionsExcelField = z
     }),
   );
 
+const localizedNameSchema = z.object({
+  th: z.string().trim().min(1, { message: "กรุณากรอกชื่อ (ไทย)" }),
+  en: z.string().trim().min(1, { message: "Please enter name (English)" }),
+});
+
+const localizedDescriptionSchema = z.object({
+  th: z.string().trim().min(1, { message: "กรุณากรอกนิยาม (ไทย)" }),
+  en: z.string().trim().min(1, { message: "Please enter description (English)" }),
+});
+
 const eventObjectSchema = z.object({
-  name: z.string().min(1, { message: "กรุณากรอกชื่อ" }),
-  description: z.string().min(1, { message: "กรุณากรอกนิยาม" }),
+  name: localizedNameSchema,
+  description: localizedDescriptionSchema,
   point: z.number().min(1, { message: "กรุณากรอกจำนวนคะแนน" }),
   category: z.enum(["external", "internal", "internal_bu", "specials_point"]),
   startDate: z.number(),
@@ -54,10 +64,21 @@ export const eventSchema = eventObjectSchema.refine(
   eventDateOrderRefineOptions,
 );
 
-/** นำเข้า Excel: คอลัมน์ BU เป็นสตริงคั่นด้วย comma */
-export const eventExcelSchema = eventObjectSchema
-  .extend({
+/** นำเข้า Excel: คอลัมน์ BU เป็นสตริงคั่นด้วย comma + ชื่อแยก th/en */
+export const eventExcelSchema = z
+  .object({
+    nameTh: z.string().trim().min(1, { message: "กรุณากรอกชื่อ (ไทย)" }),
+    nameEn: z.string().trim().min(1, { message: "Please enter name (English)" }),
+    descriptionTh: z
+      .string()
+      .trim()
+      .min(1, { message: "กรุณากรอกนิยาม (ไทย)" }),
+    descriptionEn: z
+      .string()
+      .trim()
+      .min(1, { message: "Please enter description (English)" }),
     point: z.coerce.number().min(1, { message: "กรุณากรอกจำนวนคะแนน" }),
+    category: z.enum(["external", "internal", "internal_bu", "specials_point"]),
     startDate: excelDateField,
     endDate: excelOptionalDateField,
     maxParticipants: z.coerce
@@ -89,4 +110,5 @@ export const participantSchema = z.object({
 });
 
 export type EventSchema = z.infer<typeof eventSchema>;
+export type EventFormInput = z.input<typeof eventSchema>;
 export type JoinEventSchema = z.infer<typeof joinEventSchema>;

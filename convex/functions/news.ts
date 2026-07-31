@@ -2,15 +2,37 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { requireAdmin } from "../lib/auth-helper";
-import { authMutation, authQuery } from "../lib/crpc";
+import { authMutation, authQuery, privateMutation } from "../lib/crpc";
+import {
+  isLocalizedString,
+  localizedSearchText,
+  toLocalizedString,
+} from "../lib/localized";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
 
+const localizedRequiredSchema = z.object({
+  th: z.string().trim().min(1),
+  en: z.string().trim().min(1),
+});
+
+const localizedOptionalSchema = z
+  .object({
+    th: z.string().trim(),
+    en: z.string().trim(),
+  })
+  .transform((value) => {
+    if (value.th === "" && value.en === "") return null;
+    return value;
+  })
+  .nullable()
+  .optional();
+
 const newsRow = z.object({
-  title: z.string().trim().min(1),
-  summary: z.string().optional().nullable(),
-  body: z.string().trim().min(1),
+  title: localizedRequiredSchema,
+  summary: localizedOptionalSchema,
+  body: localizedRequiredSchema,
   isPublished: z.boolean(),
   isPinned: z.boolean().optional(),
 });
@@ -22,11 +44,14 @@ const toNewsId = (newsId: string): Id<"news"> => newsId as Id<"news">;
 
 function matchesNewsSearch(row: Doc<"news">, normalizedQuery: string) {
   if (!normalizedQuery) return true;
-  return (
-    row.title.toLowerCase().includes(normalizedQuery) ||
-    (row.summary ?? "").toLowerCase().includes(normalizedQuery) ||
-    row.body.toLowerCase().includes(normalizedQuery)
-  );
+  const haystack = [
+    localizedSearchText(row.title),
+    localizedSearchText(row.summary),
+    localizedSearchText(row.body),
+  ]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(normalizedQuery);
 }
 
 function sortNewsForFeed(a: Doc<"news">, b: Doc<"news">) {
@@ -131,9 +156,9 @@ export const update = authMutation
   .input(
     z.object({
       newsId: z.string().min(1),
-      title: z.string().trim().min(1).optional(),
-      summary: z.string().optional().nullable(),
-      body: z.string().trim().min(1).optional(),
+      title: localizedRequiredSchema.optional(),
+      summary: localizedOptionalSchema,
+      body: localizedRequiredSchema.optional(),
       isPublished: z.boolean().optional(),
       isPinned: z.boolean().optional(),
     }),
@@ -198,3 +223,37 @@ export const bulkDelete = authMutation
     }
     return { deleted };
   });
+
+/** Backfill title/summary/body จาก string → { th, en } */
+export const migrateLocalizedStrings = privateMutation.mutation(
+  async ({ ctx }) => {
+    const rows = await ctx.db.query("news").collect();
+    let updated = 0;
+
+    for (const row of rows) {
+      const title = toLocalizedString(row.title);
+      const summary = toLocalizedString(row.summary);
+      const body = toLocalizedString(row.body);
+
+      if (!title || !body) continue;
+
+      const titleNeedsUpdate = !isLocalizedString(row.title);
+      const summaryNeedsUpdate =
+        row.summary != null && !isLocalizedString(row.summary);
+      const bodyNeedsUpdate = !isLocalizedString(row.body);
+
+      if (!titleNeedsUpdate && !summaryNeedsUpdate && !bodyNeedsUpdate) {
+        continue;
+      }
+
+      await ctx.db.patch(row._id, {
+        title,
+        summary,
+        body,
+      });
+      updated += 1;
+    }
+
+    return { scanned: rows.length, updated };
+  },
+);

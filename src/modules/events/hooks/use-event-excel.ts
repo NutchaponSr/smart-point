@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
 import { defaultCRPCTransformer } from "better-convex/crpc";
 
+import { isLocalizedString } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 
@@ -59,8 +60,11 @@ export function useEventExcel({
 
       await bulkCreate.mutateAsync({
         rows: result.data.map((row) => ({
-          name: row.name,
-          description: row.description,
+          name: { th: row.nameTh, en: row.nameEn },
+          description: {
+            th: row.descriptionTh,
+            en: row.descriptionEn,
+          },
           point: row.point,
           category: row.category,
           startDate: row.startDate,
@@ -104,21 +108,35 @@ export function useEventExcel({
       const data = defaultCRPCTransformer.deserialize(raw) as typeof raw;
 
       exportToExcel(
-        data.map((e) => ({
-          name: e.name,
-          description: e.description,
-          point: e.point,
-          category: e.category,
-          startDate: format(e.startDate, "LLL dd, y"),
-          endDate: e.endDate ? format(e.endDate, "LLL dd, y") : "",
-          maxParticipants: e.maxParticipants ?? "Unlimited",
-          allowedDivisions: formatBuExcelColumn(e.allowedDivisions),
-        })),
+        data.map((e) => {
+          const name = isLocalizedString(e.name)
+            ? e.name
+            : { th: String(e.name ?? ""), en: String(e.name ?? "") };
+          const description = isLocalizedString(e.description)
+            ? e.description
+            : {
+                th: String(e.description ?? ""),
+                en: String(e.description ?? ""),
+              };
+
+          return {
+            nameTh: name.th,
+            nameEn: name.en,
+            descriptionTh: description.th,
+            descriptionEn: description.en,
+            point: e.point,
+            category: e.category,
+            startDate: format(e.startDate, "LLL dd, y"),
+            endDate: e.endDate ? format(e.endDate, "LLL dd, y") : "",
+            maxParticipants: e.maxParticipants ?? "Unlimited",
+            allowedDivisions: formatBuExcelColumn(e.allowedDivisions),
+          };
+        }),
         {
           filename: "event-export",
           sheetName: "Event Export",
           headers: eventHeaders as Record<string, string>,
-        }
+        },
       );
 
       setState({ status: "success", operation: "export" });

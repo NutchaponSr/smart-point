@@ -1,3 +1,6 @@
+import Image from "next/image";
+
+import { ChevronDownIcon } from "lucide-react";
 import { Controller, useFormContext } from "react-hook-form";
 
 import {
@@ -18,7 +21,6 @@ import { DatePicker } from "@/components/date-picker";
 import { formatThaiDate } from "@/lib/format-thai-date";
 
 import { EventSchema } from "../../schema";
-import { ChevronDownIcon } from "lucide-react";
 import { categories } from "../../constants";
 
 export const EventForm = () => {
@@ -30,24 +32,62 @@ export const EventForm = () => {
         <h2 className="text-xl leading-snug">
           กิจกรรม
         </h2>
-        <Controller
-          control={control}
-          name="name"
-          render={({ field, fieldState }) => (
-            <FieldSet label="ชื่อ" errorMessage={fieldState.error?.message}>
-              <Input {...field} />
-            </FieldSet>
-          )}
-        />
-        <Controller
-          control={control}
-          name="description"
-          render={({ field, fieldState }) => (
-            <FieldSet label="นิยาม" errorMessage={fieldState.error?.message}>
-              <Textarea {...field} />
-            </FieldSet>
-          )}
-        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Controller
+            control={control}
+            name="name.th"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="ชื่อ"
+                image={<Image src="/TH.svg" alt="Name" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Input {...field} />
+              </FieldSet>
+            )}
+          />
+          <Controller
+            control={control}
+            name="name.en"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="Name"
+                image={<Image src="/US.svg" alt="Name" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Input {...field} />
+              </FieldSet>
+            )}
+          />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Controller
+            control={control}
+            name="description.th"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="คำอธิบาย"
+                image={<Image src="/TH.svg" alt="Description" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Textarea {...field} />
+              </FieldSet>
+            )}
+          />
+          <Controller
+            control={control}
+            name="description.en"
+            render={({ field, fieldState }) => (
+              <FieldSet
+                label="Description (English)"
+                image={<Image src="/US.svg" alt="Description" width={20} height={20} />}
+                errorMessage={fieldState.error?.message}
+              >
+                <Textarea {...field} />
+              </FieldSet>
+            )}
+          />
+        </div>
         <Controller
           control={control}
           name="point"

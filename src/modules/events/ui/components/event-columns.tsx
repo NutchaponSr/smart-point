@@ -1,8 +1,12 @@
+"use client";
+
 import { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
+import { useLocale } from "next-intl";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
+import { pickLocalized } from "@/lib/i18n/localized";
 
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 import { EventActions } from "@/modules/events/ui/components/event-actions";
@@ -11,6 +15,15 @@ import { categories, buRestrictedCategories } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
 
 type Event = ApiOutputs["activity"]["getMany"]["page"][0];
+
+function EventNameCell({ event }: { event: Event }) {
+  const locale = useLocale();
+  return (
+    <span className="text-base font-normal line-clamp-1">
+      {pickLocalized(event.name, locale)}
+    </span>
+  );
+}
 
 export const columns = (): ColumnDef<Event>[] => {
   return [
@@ -41,14 +54,17 @@ export const columns = (): ColumnDef<Event>[] => {
       enableHiding: false,
     },
     {
-      accessorKey: "name",
+      id: "name",
       header: "กิจกรรม",
+      cell: ({ row }) => <EventNameCell event={row.original} />,
     },
     {
       accessorKey: "category",
       header: "ประเภท",
       cell: ({ row }) => (
-        <span className="text-base font-normal">{categories[row.original.category].th}</span>
+        <span className="text-base font-normal">
+          {categories[row.original.category].th}
+        </span>
       ),
     },
     {
@@ -97,16 +113,16 @@ export const columns = (): ColumnDef<Event>[] => {
             />
           ))}
           <AvatarGroupCount className="border-[1.5px] border-border!">
-            {row.original.participantsPreview.length - 3 > 0 ? `${row.original.participantsPreview.length - 3}` : 0}
+            {row.original.participantsPreview.length - 3 > 0
+              ? `${row.original.participantsPreview.length - 3}`
+              : 0}
           </AvatarGroupCount>
         </AvatarGroup>
       ),
     },
     {
       id: "actions",
-      cell: ({ row }) => (
-        <EventActions activity={row.original} />
-      ),
-    }
-  ]
-}
+      cell: ({ row }) => <EventActions activity={row.original} />,
+    },
+  ];
+};

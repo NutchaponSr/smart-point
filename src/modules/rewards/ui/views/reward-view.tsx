@@ -5,6 +5,7 @@ import Link from "next/link";
 import { HiShoppingBag } from "react-icons/hi2";
 import { useInfiniteQuery } from "better-convex/react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -19,6 +20,7 @@ import { RewardFilters } from "@/modules/rewards/ui/components/reward-filters";
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
 
 export const RewardView = () => {
+  const t = useTranslations("reward");
   const crpc = useCRPC();
 
   const [filters, setFilters] = useRewardFilters();
@@ -43,11 +45,15 @@ export const RewardView = () => {
   );
 
   const cartCount = cart?.items.length ?? 0;
+  const cartLabel =
+    cartCount > 0
+      ? t("go-to-cart-with-count", { count: cartCount })
+      : t("go-to-cart");
 
   return (
     <div className="flex flex-col gap-6 px-6">
       <div className="flex flex-col gap-6 lg:flex-row-reverse lg:gap-12">
-        <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-[368px] lg:shrink-0 lg:self-start">
+        <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-92 lg:shrink-0 lg:self-start">
           <div className="mb-2 flex h-11 flex-row items-center justify-between">
             <Currencies />
           </div>
@@ -60,8 +66,7 @@ export const RewardView = () => {
           <Link href="/checkout" className="hidden lg:block">
             <Button variant="secondary" size="lg" className="w-full">
               <HiShoppingBag className="size-7" />
-              ไปที่รถเข็น
-              {cartCount > 0 ? ` (${cartCount})` : null}
+              {cartLabel}
             </Button>
           </Link>
         </aside>
@@ -82,8 +87,7 @@ export const RewardView = () => {
         <Link href="/checkout">
           <Button variant="secondary" size="lg" className="w-full">
             <HiShoppingBag className="size-7" />
-            ไปที่รถเข็น
-            {cartCount > 0 ? ` (${cartCount})` : null}
+            {cartLabel}
           </Button>
         </Link>
       </div>

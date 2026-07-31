@@ -76,11 +76,11 @@ export type DataModel = {
       allowedDivisions?: null | Array<null | string>;
       category: "external" | "internal" | "internal_bu" | "specials_point";
       createdAt?: number;
-      description?: null | string;
+      description?: null | { en: string; th: string };
       endDate?: null | number;
       isActive: boolean;
       maxParticipants?: null | number;
-      name: string;
+      name: { en: string; th: string };
       point: number;
       startDate: number;
       updatedAt?: null | number;
@@ -94,11 +94,15 @@ export type DataModel = {
       | "createdAt"
       | "_creationTime"
       | "description"
+      | "description.en"
+      | "description.th"
       | "endDate"
       | "_id"
       | "isActive"
       | "maxParticipants"
       | "name"
+      | "name.en"
+      | "name.th"
       | "point"
       | "startDate"
       | "updatedAt";
@@ -692,20 +696,22 @@ export type DataModel = {
   };
   news: {
     document: {
-      body: string;
+      body: { en: string; th: string };
       createdAt?: number;
       createdBy: Id<"user">;
       isPinned?: null | boolean;
       isPublished: boolean;
       publishedAt?: null | number;
-      summary?: null | string;
-      title: string;
+      summary?: null | { en: string; th: string };
+      title: { en: string; th: string };
       updatedAt?: null | number;
       _id: Id<"news">;
       _creationTime: number;
     };
     fieldPaths:
       | "body"
+      | "body.en"
+      | "body.th"
       | "createdAt"
       | "createdBy"
       | "_creationTime"
@@ -714,7 +720,11 @@ export type DataModel = {
       | "isPublished"
       | "publishedAt"
       | "summary"
+      | "summary.en"
+      | "summary.th"
       | "title"
+      | "title.en"
+      | "title.th"
       | "updatedAt";
     indexes: {
       by_id: ["_id"];
@@ -866,10 +876,10 @@ export type DataModel = {
   reward: {
     document: {
       createdAt?: number;
-      description?: null | string;
+      description?: null | { en: string; th: string };
       image?: null | string;
       isActive: boolean;
-      name: string;
+      name: { en: string; th: string };
       onePerOrder?: null | boolean;
       pointCost: number;
       stock: number;
@@ -881,10 +891,14 @@ export type DataModel = {
       | "createdAt"
       | "_creationTime"
       | "description"
+      | "description.en"
+      | "description.th"
       | "_id"
       | "image"
       | "isActive"
       | "name"
+      | "name.en"
+      | "name.th"
       | "onePerOrder"
       | "pointCost"
       | "stock"

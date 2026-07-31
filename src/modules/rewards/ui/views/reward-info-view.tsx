@@ -6,7 +6,9 @@ import { Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { GoStarFill } from "react-icons/go";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -24,10 +26,14 @@ interface Props {
 }
 
 export const RewardInfoView = ({ rewardId, className }: Props) => {
+  const t = useTranslations("reward");
+  const locale = useLocale();
   const crpc = useCRPC();
   const router = useRouter();
 
   const { data: reward } = useSuspenseQuery(crpc.reward.getOne.queryOptions({ rewardId }));
+  const name = pickLocalized(reward.name, locale);
+  const description = pickLocalized(reward.description, locale);
 
   const addCart = useMutation(crpc.cart.addCart.mutationOptions());
 
@@ -53,12 +59,12 @@ export const RewardInfoView = ({ rewardId, className }: Props) => {
     >
       <article className="relative grid rounded-xs border-2 border-border bg-background lg:grid-cols-[2fr_1.5fr]">
         <figure className="group relative col-span-full overflow-hidden rounded-t-xs border-b-2 border-border bg-cover">
-          <img src={reward.imageUrl || placeholder.src} alt={reward.name} loading="lazy" className="w-full" />
+          <img src={reward.imageUrl || placeholder.src} alt={name} loading="lazy" className="w-full" />
         </figure>
 
         <section className="lg:border-r-2 border-b-2">
           <header className="grid gap-4 p-6 not-first:border-t-2">
-            <h1 className="text-[2rem] font-normal leading-[1.2]">{reward.name}</h1>
+            <h1 className="text-[2rem] font-normal leading-[1.2]">{name}</h1>
           </header>
           <section className="grid grid-cols-1 lg:grid-cols-[auto_1fr] border-t-2 border-border p-0">
             <div className="px-6 py-4 flex w-full border-b-2">
@@ -68,26 +74,26 @@ export const RewardInfoView = ({ rewardId, className }: Props) => {
               <StarRating rating={reward.reviewRating} text={String(reward.reviewCount)} />
             </div>
           </section>
-          {reward.description && (
+          {description ? (
             <section className="lg:border-t-0 border-t-2 border-border p-6">
               <p className="text-sm">
-                {reward.description}
+                {description}
               </p>
             </section>
-          )}
+          ) : null}
         </section>
         
         <section>
           <form onSubmit={onSubmit} className="grid gap-4 p-6 not-first:border-t-2">
             <Button type="submit" disabled={addCart.isPending}>
-              เพิ่มลงรถเข็น
+              {t("add-to-cart")}
             </Button>
           </form>
 
           <section className="grid gap-4 p-6 not-first:border-t-2">
             <header className="flex items-center justify-between">
               <h3 className="flex items-center justify-between">
-                เร็ตติ่ง
+                {t("rating")}
               </h3>
               <div className="flex shrink-0 items-center gap-1">
                 <GoStarFill className="size-4.5" />
@@ -105,7 +111,7 @@ export const RewardInfoView = ({ rewardId, className }: Props) => {
                     : 0;
                 return (
                 <Fragment key={star}>
-                  <div className="font-medium">{star} {star === 1 ? "ดาว" : "ดาว"}</div>
+                  <div className="font-medium">{t("star", { count: star })}</div>
                   <Progress 
                     value={pct}
                     className="h-lh"

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import checkoutImage from "../../../../../public/checkout.png";
@@ -5,6 +7,7 @@ import checkoutImage from "../../../../../public/checkout.png";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { RiShoppingBag3Line } from "react-icons/ri";
 
 import { useCRPC } from "@/lib/convex/crpc";
@@ -38,6 +41,8 @@ function splitCheckoutCost(
 }
 
 export const CartScreen = () => {
+  const t = useTranslations("cart");
+  const locale = useLocale();
   const crpc = useCRPC();
   const router = useRouter();
 
@@ -64,16 +69,16 @@ export const CartScreen = () => {
         </figure>
 
         <div className="grid max-w-md gap-2">
-          <h2 className="text-xl font-semibold">รถเข็นว่างเปล่า</h2>
+          <h2 className="text-xl font-semibold">{t("empty.title")}</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            ยังไม่มีรางวัลในรถเข็น เลือกรางวัลที่ชอบแล้วกลับมาแลกพอยต์ได้ที่นี่
+            {t("empty.description")}
           </p>
         </div>
 
         <Link href="/rewards">
           <Button size="lg" variant="secondary">
             <RiShoppingBag3Line className="size-5" />
-            ค้นหารางวัล
+            {t("empty.browse")}
           </Button>
         </Link>
       </div>
@@ -91,18 +96,18 @@ export const CartScreen = () => {
           {
             onSuccess: () => {
               router.push("/purchases");
-              toast.success("แลกรางวัลสำเร็จ");
+              toast.success(t("success"));
             },
             onError: (err) => {
               const msg =
-                err instanceof Error ? err.message : "แลกรางวัลไม่สำเร็จ";
+                err instanceof Error ? err.message : t("error");
               toast.error(msg);
             },
           },
         )
       }
     >
-      {checkout.isPending ? "กำลังดำเนินการ..." : "ยืนยันแลกรางวัล"}
+      {checkout.isPending ? t("confirming") : t("confirm")}
     </Button>
   );
 
@@ -111,7 +116,7 @@ export const CartScreen = () => {
       <section className="grid gap-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">
-            รายการรางวัล
+            {t("items-title")}
             <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({itemCount})
             </span>
@@ -129,7 +134,7 @@ export const CartScreen = () => {
                   {
                     onError: (err) => {
                       const msg =
-                        err instanceof Error ? err.message : "ลบรายการไม่สำเร็จ";
+                        err instanceof Error ? err.message : t("remove-error");
                       toast.error(msg);
                     },
                   },
@@ -144,10 +149,10 @@ export const CartScreen = () => {
       </section>
 
       <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
-        <Currencies />  
+        <Currencies />
         <div className="flex items-center justify-between gap-3 rounded-md border-2 bg-background px-4 py-3">
           <span className="text-sm font-medium text-muted-foreground">
-            พอยต์ที่ใช้แลกได้
+            {t("available-points")}
           </span>
           <CombinedPointsBadge amount={payment.available} size="sm" />
         </div>
@@ -161,20 +166,24 @@ export const CartScreen = () => {
 
         {!payment.canAfford ? (
           <p className="rounded-md border-2 border-[#ff0000] px-4 py-3 text-sm font-semibold text-[#ff0000]">
-            พอยต์ไม่เพียงพอ ขาดอีก {payment.shortfall.toLocaleString("th-TH")}{" "}
-            พอยต์
+            {t("insufficient", {
+              amount: payment.shortfall.toLocaleString(locale),
+            })}
           </p>
         ) : (
           <p className="px-1 text-sm text-muted-foreground">
-            หลังแลกจะเหลือ{" "}
-            <span className="font-semibold tabular-nums text-[#1cb0f6]">
-              {payment.remainingReceiving.toLocaleString("th-TH")}
-            </span>
-            {" + "}
-            <span className="font-semibold tabular-nums text-[#cc348d]">
-              {payment.remainingSpecial.toLocaleString("th-TH")}
-            </span>{" "}
-            พอยต์
+            {t.rich("remaining-after", {
+              receiving: () => (
+                <span className="font-semibold tabular-nums text-[#1cb0f6]">
+                  {payment.remainingReceiving.toLocaleString(locale)}
+                </span>
+              ),
+              special: () => (
+                <span className="font-semibold tabular-nums text-[#cc348d]">
+                  {payment.remainingSpecial.toLocaleString(locale)}
+                </span>
+              ),
+            })}
           </p>
         )}
 

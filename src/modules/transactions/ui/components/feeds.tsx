@@ -8,13 +8,14 @@ import CoinGiveIcon from "../../../../../public/coin-give.svg";
 import { useState, type ReactNode } from "react";
 import { ApiOutputs } from "@convex/api";
 import { format, formatDistanceToNow, startOfDay } from "date-fns";
-import { th } from "date-fns/locale";
+import { enUS, th } from "date-fns/locale";
 import { CheckIcon, ListFilterIcon } from "lucide-react";
 import { BsArrowUpCircleFill } from "react-icons/bs";
 import { useInfiniteQuery } from "better-convex/react";
 import { GoComment, GoHeart, GoHeartFill } from "react-icons/go";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
+import { useLocale, useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
@@ -47,16 +48,18 @@ import { Id } from "../../../../../convex/functions/_generated/dataModel";
 type Feed = ApiOutputs["transaction"]["feeds"]["page"][number];
 type FeedView = "all" | "sent" | "received";
 
-const FEED_VIEW_OPTIONS: { value: FeedView; label: string }[] = [
-  { value: "all", label: "ทั้งหมด" },
-  { value: "sent", label: "ส่งให้คนอื่น" },
-  { value: "received", label: "ได้รับ" },
-];
+const FEED_VIEW_OPTIONS: FeedView[] = ["all", "sent", "received"];
 
 const DATE_LABEL_PATTERN = "dd/MM/yyyy";
 
-const formatDateRangeLabel = (from: number | null, to: number | null): string => {
-  if (from == null) return "ช่วงเวลา";
+const getDateFnsLocale = (locale: string) => (locale === "th" ? th : enUS);
+
+const formatDateRangeLabel = (
+  from: number | null,
+  to: number | null,
+  fallback: string,
+): string => {
+  if (from == null) return fallback;
 
   const fromDate = new Date(from);
   const toDate = to != null ? new Date(to) : fromDate;
@@ -67,8 +70,15 @@ const formatDateRangeLabel = (from: number | null, to: number | null): string =>
   return `${format(fromDate, DATE_LABEL_PATTERN)} – ${format(toDate, DATE_LABEL_PATTERN)}`;
 };
 
-const formatDistanceTh = (date: Date | number, addSuffix = true) =>
-  formatDistanceToNow(new Date(date), { addSuffix, locale: th });
+const formatDistanceLocalized = (
+  date: Date | number,
+  locale: string,
+  addSuffix = true,
+) =>
+  formatDistanceToNow(new Date(date), {
+    addSuffix,
+    locale: getDateFnsLocale(locale),
+  });
 
 const FEED_AVATAR_CLASS = {
   sender: {
@@ -121,6 +131,8 @@ function PartyCard({
   image: string | null | undefined;
   accent?: boolean;
 }) {
+  const t = useTranslations("feed");
+
   return (
     <div className="flex items-start gap-3 rounded-md border-2 border-[#e5e5e5] bg-[#fafafa] p-3">
       <UserAvatar
@@ -136,9 +148,11 @@ function PartyCard({
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-[#afafaf]">{label}</p>
         <p className="text-sm font-bold text-[#4b4b4b]">{name}</p>
-        {id ? <p className="text-xs text-[#777]">รหัส: {id}</p> : null}
+        {id ? <p className="text-xs text-[#777]">{t("employee-id", { id })}</p> : null}
         {department ? (
-          <p className="text-xs text-[#777]">แผนก: {department}</p>
+          <p className="text-xs text-[#777]">
+            {t("department", { department })}
+          </p>
         ) : null}
       </div>
     </div>
@@ -154,6 +168,8 @@ function FeedHeadline({
   senderName: string;
   receiverName: string;
 }) {
+  const t = useTranslations("feed");
+
   if (isReceived) {
     return (
       <p className="flex min-w-0 items-baseline gap-1 text-sm leading-snug">
@@ -161,7 +177,7 @@ function FeedHeadline({
           {senderName}
         </span>
         <span className="shrink-0 font-medium text-[#4b4b4b]">
-          ส่งพอยต์ให้คุณ
+          {t("headline.received")}
         </span>
       </p>
     );
@@ -169,7 +185,9 @@ function FeedHeadline({
 
   return (
     <p className="flex min-w-0 items-baseline gap-1 text-sm leading-snug">
-      <span className="shrink-0 font-medium text-[#4b4b4b]">คุณมอบพอยต์ให้</span>
+      <span className="shrink-0 font-medium text-[#4b4b4b]">
+        {t("headline.sent")}
+      </span>
       <span className="min-w-0 truncate font-bold text-[#f1c40f]">
         {receiverName}
       </span>
@@ -257,6 +275,7 @@ function FeedLikeButton({
 }
 
 function FeedFiltersPopover() {
+  const t = useTranslations("feed");
   const [filters, setFilters] = useFeedFilters();
 
   const hasActiveFilters =
@@ -267,7 +286,11 @@ function FeedFiltersPopover() {
     filters.feedFrom != null ||
     filters.feedTo != null;
 
-  const dateRangeLabel = formatDateRangeLabel(filters.feedFrom, filters.feedTo);
+  const dateRangeLabel = formatDateRangeLabel(
+    filters.feedFrom,
+    filters.feedTo,
+    t("filters.date-range"),
+  );
 
   const onClear = () => {
     void setFilters({
@@ -286,7 +309,7 @@ function FeedFiltersPopover() {
         <Button
           variant="primaryOutline"
           size="icon"
-          aria-label="ตัวกรองกิจกรรมพอยต์"
+          aria-label={t("filters.aria-label")}
           className={cn(hasActiveFilters && "border-[#1cb0f6] text-[#1cb0f6]")}
         >
           <ListFilterIcon className="size-4" />
@@ -299,7 +322,7 @@ function FeedFiltersPopover() {
       >
         <header className="flex flex-wrap items-center justify-between gap-4 p-4">
           <h3 className="relative z-1 text-base font-bold leading-snug">
-            ตัวกรอง
+            {t("filters.title")}
           </h3>
           {hasActiveFilters ? (
             <button
@@ -307,7 +330,7 @@ function FeedFiltersPopover() {
               className="cursor-pointer underline"
               onClick={onClear}
             >
-              รีเซ็ต
+              {t("filters.reset")}
             </button>
           ) : null}
         </header>
@@ -315,35 +338,35 @@ function FeedFiltersPopover() {
         <div className="p-4">
           <SearchInput
             value={filters.feedQ}
-            placeholder="ค้นหาชื่อ ข้อความ หรือรหัสธุรกรรม"
+            placeholder={t("filters.search-placeholder")}
             onChange={(feedQ) => void setFilters({ ...filters, feedQ })}
           />
         </div>
 
-        <Accordion title="ประเภท">
+        <Accordion title={t("filters.type")}>
           {FEED_VIEW_OPTIONS.map((option) => (
             <label
-              key={option.value}
+              key={option}
               className="inline-flex cursor-pointer items-center gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
             >
               <span className="relative inline-flex shrink-0 items-center justify-center">
                 <input
                   type="radio"
                   name="feed-view"
-                  checked={filters.feedView === option.value}
+                  checked={filters.feedView === option}
                   onChange={() =>
-                    void setFilters({ ...filters, feedView: option.value })
+                    void setFilters({ ...filters, feedView: option })
                   }
                   className="peer size-[calc(1lh+0.125rem)] shrink-0 cursor-pointer appearance-none rounded-xs border-[1.5px] border-border bg-background text-base leading-snug checked:bg-pink disabled:cursor-not-allowed disabled:opacity-30"
                 />
                 <CheckIcon className="pointer-events-none absolute hidden size-4.5 text-accent-foreground peer-checked:block" />
               </span>
-              {option.label}
+              {t(`view.${option}`)}
             </label>
           ))}
         </Accordion>
 
-        <Accordion title="จำนวนพอยต์">
+        <Accordion title={t("filters.points")}>
           <CostFilter
             decimalScale={0}
             minCost={filters.feedMin}
@@ -382,6 +405,7 @@ export const Feeds = () => {
   const crpc = useCRPC();
   const [filters] = useFeedFilters();
   const debouncedQuery = useDebounce(filters.feedQ, 400);
+  const t = useTranslations("feed");
 
   const { data: wallet } = useSuspenseQuery(crpc.wallet.getOne.queryOptions());
 
@@ -405,7 +429,7 @@ export const Feeds = () => {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-base font-bold text-[#4b4b4b]">กิจกรรมพอยต์</h2>
+        <h2 className="text-base font-bold text-[#4b4b4b]">{t("title")}</h2>
         <FeedFiltersPopover />
       </div>
 
@@ -440,11 +464,9 @@ export const Feeds = () => {
               </div>
               <div className="grid gap-1">
                 <h3 className="text-lg font-bold text-[#4b4b4b]">
-                  ยังไม่มีกิจกรรมในฟีด
+                  {t("empty.title")}
                 </h3>
-                <p className="text-sm text-[#777]">
-                  เมื่อมีการมอบคะแนน รายการจะแสดงขึ้นที่นี่
-                </p>
+                <p className="text-sm text-[#777]">{t("empty.description")}</p>
               </div>
             </div>
           </li>
@@ -457,7 +479,7 @@ export const Feeds = () => {
               className="w-full rounded-xl font-bold"
               onClick={() => fetchNextPage()}
             >
-              ดูเพิ่มเติม
+              {t("load-more")}
             </Button>
           </li>
         ) : null}
@@ -475,21 +497,19 @@ const FeedItem = ({
   currentEmployeeId: Id<"employee">;
   onLike: () => void;
 }) => {
+  const t = useTranslations("feed");
+  const locale = useLocale();
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const isReceived = feed.receiverId === currentEmployeeId;
-  const timeAgo = formatDistanceTh(feed.createdAt);
+  const timeAgo = formatDistanceLocalized(feed.createdAt, locale);
 
   const avatarName = isReceived ? feed.sender.name : feed.receiver.name;
   const avatarImage = isReceived ? feed.sender.image : feed.receiver.image;
 
   return (
     <>
-      <li
-        className={cn(
-          "p-4 transition-colors bg-background",
-        )}
-      >
+      <li className={cn("p-4 transition-colors bg-background")}>
         <div className="flex min-w-0 items-start gap-3 overflow-hidden">
           <button
             type="button"
@@ -533,13 +553,6 @@ const FeedItem = ({
                     ) : null}
                   </>
                 )}
-
-                {/* <p
-                  className="truncate font-mono text-[10px] text-[#afafaf]"
-                  title={feed._id}
-                >
-                  ID: {feed._id}
-                </p> */}
               </div>
             </div>
 
@@ -567,7 +580,7 @@ const FeedItem = ({
             variant="primaryOutline"
             onClick={() => setIsDetailOpen(true)}
           >
-            รายละเอียด
+            {t("details")}
           </Button>
         </div>
       </li>
@@ -609,40 +622,39 @@ function FeedDetailDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const tagLabel = feed.tags ? (tags[feed.tags] ?? feed.tags) : "-";
+  const t = useTranslations("feed");
+  const locale = useLocale();
+  const dateLocale = getDateFnsLocale(locale);
+  const emptyValue = t("detail.empty-value");
+  const tagLabel = feed.tags ? (tags[feed.tags] ?? feed.tags) : emptyValue;
   const createdAt = format(new Date(feed.createdAt), "d MMM yyyy HH:mm", {
-    locale: th,
+    locale: dateLocale,
   });
   const reviewedAt =
     feed.reviewedAt > 0
-      ? format(new Date(feed.reviewedAt), "d MMM yyyy HH:mm", { locale: th })
+      ? format(new Date(feed.reviewedAt), "d MMM yyyy HH:mm", {
+          locale: dateLocale,
+        })
       : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>รายละเอียดธุรกรรม</DialogTitle>
+          <DialogTitle>{t("detail.title")}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4">
-          {/* <InfoRow
-            label="รหัสธุรกรรม"
-            value={
-              <p className="break-all font-mono text-xs text-[#777]">{feed._id}</p>
-            }
-          /> */}
-
           <div className="grid gap-3 sm:grid-cols-2">
             <PartyCard
-              label="ผู้ส่ง"
+              label={t("detail.sender")}
               name={feed.sender.name}
               id={feed.sender.employeeId}
               department={feed.sender.department}
               image={feed.sender.image}
             />
             <PartyCard
-              label="ผู้รับ"
+              label={t("detail.receiver")}
               name={feed.receiver.name}
               id={feed.receiver.employeeId}
               department={feed.receiver.department}
@@ -653,7 +665,7 @@ function FeedDetailDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <InfoRow
-              label="จำนวนพอยต์"
+              label={t("detail.points")}
               value={
                 <span className="flex items-center gap-1 text-lg font-bold text-[#F7C100]">
                   <Image
@@ -668,7 +680,7 @@ function FeedDetailDialog({
               }
             />
             <InfoRow
-              label="สถานะ"
+              label={t("detail.status")}
               value={
                 <TransactionStatusBadge
                   status={
@@ -683,30 +695,33 @@ function FeedDetailDialog({
             />
           </div>
 
-          <InfoRow label="วันที่สร้าง" value={createdAt} />
+          <InfoRow label={t("detail.created-at")} value={createdAt} />
 
           {reviewedAt ? (
-            <InfoRow label="วันที่ตรวจสอบ" value={reviewedAt} />
+            <InfoRow label={t("detail.reviewed-at")} value={reviewedAt} />
           ) : null}
 
-          <InfoRow label="แท็ก SMART Culture" value={tagLabel || "-"} />
+          <InfoRow
+            label={t("detail.smart-culture-tag")}
+            value={tagLabel || emptyValue}
+          />
 
           <InfoRow
-            label="ข้อความ"
+            label={t("detail.message")}
             value={
               feed.message ? (
                 <p className="whitespace-pre-wrap rounded-md border-2 border-[#e5e5e5] bg-[#fafafa] p-3 text-sm leading-relaxed">
                   {feed.message}
                 </p>
               ) : (
-                "-"
+                emptyValue
               )
             }
           />
 
           {feed.rejectionReason ? (
             <InfoRow
-              label="เหตุผลที่ปฏิเสธ"
+              label={t("detail.rejection-reason")}
               value={
                 <p className="whitespace-pre-wrap rounded-md border-2 border-rose-200 bg-rose-50 p-3 text-sm text-rose-600">
                   {feed.rejectionReason}
@@ -754,6 +769,8 @@ export const FeedDialog = ({
   transactionId: Id<"transaction">;
   likedByCurrentUser: boolean;
 }) => {
+  const t = useTranslations("feed");
+  const locale = useLocale();
   const crpc = useCRPC();
 
   const { data: currentUser } = useSuspenseQuery(
@@ -798,13 +815,13 @@ export const FeedDialog = ({
               <>
                 {message ? <FeedMessageBubble message={message} /> : null}
                 <span className="text-xs font-bold text-[#afafaf]">
-                  {formatDistanceTh(createdAt)}
+                  {formatDistanceLocalized(createdAt, locale)}
                 </span>
               </>
             ) : (
               <>
                 <span className="text-xs font-bold text-[#afafaf]">
-                  {formatDistanceTh(createdAt)}
+                  {formatDistanceLocalized(createdAt, locale)}
                 </span>
                 {message ? <FeedMessageBubble message={message} /> : null}
               </>
@@ -827,7 +844,7 @@ export const FeedDialog = ({
           </div>
         </div>
 
-        <div className="max-h-[280px] overflow-x-hidden overflow-y-auto bg-white px-4 py-4">
+        <div className="max-h-70 overflow-x-hidden overflow-y-auto bg-white px-4 py-4">
           {comments.length > 0 ? (
             <ul className="flex flex-col gap-4">
               {comments.map((item) => (
@@ -845,7 +862,7 @@ export const FeedDialog = ({
                       content={item.content}
                     />
                     <p className="mt-2 text-xs font-bold text-[#afafaf]">
-                      {formatDistanceTh(item.createdAt)}
+                      {formatDistanceLocalized(item.createdAt, locale)}
                     </p>
                   </div>
                 </li>
@@ -856,10 +873,10 @@ export const FeedDialog = ({
               <GoComment className="size-8 text-[#e5e5e5]" />
               <div className="grid gap-1">
                 <h3 className="text-base font-bold text-[#4b4b4b]">
-                  ยังไม่มีความคิดเห็น
+                  {t("comments.empty-title")}
                 </h3>
                 <p className="text-sm text-[#777]">
-                  เริ่มแสดงความคิดเห็นเป็นคนแรก
+                  {t("comments.empty-description")}
                 </p>
               </div>
             </div>
@@ -879,7 +896,7 @@ export const FeedDialog = ({
                 rows={1}
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
-                placeholder="เขียนความคิดเห็น..."
+                placeholder={t("comments.placeholder")}
                 className="field-sizing-content h-auto max-w-full min-w-0 w-full resize-none overflow-hidden bg-transparent text-sm leading-snug break-all text-[#4b4b4b] placeholder:text-[#afafaf] focus-visible:outline-none"
               />
               <button

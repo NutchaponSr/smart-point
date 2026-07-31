@@ -27,19 +27,23 @@ export const shippingStatuses: Record<
 };
 
 export const rewardHeaderMapping: Record<string, string> = {
-  Name: "name",
-  Description: "description",
+  "Name Th": "nameTh",
+  "Name En": "nameEn",
+  "Description Th": "descriptionTh",
+  "Description En": "descriptionEn",
   "Point Cost": "pointCost",
   Stock: "stock",
   "One Per Order": "onePerOrder",
   "Is Active": "isActive",
-}
+};
 
 export const rewardHeaders: Record<string, string> = {
-  "name": "Name",
-  "description": "Description",
-  "pointCost": "Point Cost",
-  "stock": "Stock",
-  "onePerOrder": "One Per Order",
-  "isActive": "Is Active",
-}
+  nameTh: "Name Th",
+  nameEn: "Name En",
+  descriptionTh: "Description Th",
+  descriptionEn: "Description En",
+  pointCost: "Point Cost",
+  stock: "Stock",
+  onePerOrder: "One Per Order",
+  isActive: "Is Active",
+};

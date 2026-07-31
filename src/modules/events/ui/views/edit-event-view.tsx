@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useLocale } from "next-intl";
 
+import { isLocalizedString, pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { useConfirm } from "@/hooks/use-confirm";
@@ -24,6 +26,7 @@ interface Props {
 }
 
 export const EditEventView = ({ eventId }: Props) => {
+  const locale = useLocale();
   const crpc = useCRPC();
   const router = useRouter();
 
@@ -39,11 +42,21 @@ export const EditEventView = ({ eventId }: Props) => {
     activity.endDate != null && new Date(activity.endDate).getTime() < Date.now();
   const canDelete = activity.joinedCount <= 0 || hasEnded;
 
+  const name = isLocalizedString(activity.name)
+    ? activity.name
+    : { th: String(activity.name ?? ""), en: String(activity.name ?? "") };
+  const description = isLocalizedString(activity.description)
+    ? activity.description
+    : {
+        th: String(activity.description ?? ""),
+        en: String(activity.description ?? ""),
+      };
+
   const form = useForm<EventSchema>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
-      name: activity.name,
-      description: activity?.description ?? "",
+      name,
+      description,
       point: activity?.point,
       category: activity.category,
       startDate: activity?.startDate,
@@ -84,7 +97,10 @@ export const EditEventView = ({ eventId }: Props) => {
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <ConfirmationDialog />
-        <FormHeader title={activity.name} backHref="/meta/events" />
+        <FormHeader
+          title={pickLocalized(activity.name, locale)}
+          backHref="/meta/events"
+        />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <EventForm />

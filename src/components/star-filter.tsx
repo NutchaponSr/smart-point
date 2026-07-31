@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { GoStar, GoStarFill } from "react-icons/go";
 
 interface Props {
@@ -6,6 +7,8 @@ interface Props {
 }
 
 export const StarFilter = ({ star, onStarChange }: Props) => {
+  const t = useTranslations("filter");
+
   return (
     <fieldset className="flex flex-col border-none gap-2" role="group">
       {Array.from({ length: 4 }, (_, index) => 4 - index).map((rating) => (
@@ -21,7 +24,7 @@ export const StarFilter = ({ star, onStarChange }: Props) => {
                 <GoStar key={index} className="size-5 stroke-[0.25]" />
               )
             )}
-            ขึ้นไป
+            {t("rating-up")}
           </span>
           <span className="relative inline-flex shrink-0 items-center justify-center ml-auto">
             <input

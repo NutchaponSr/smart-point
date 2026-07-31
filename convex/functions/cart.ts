@@ -3,6 +3,7 @@ import z from "zod/v4";
 import { CRPCError } from "better-convex/server";
 
 import { authMutation, authQuery } from "../lib/crpc";
+import { localizedSearchText } from "../lib/localized";
 import { splitRedeemCost } from "../lib/points";
 
 import type { Doc, Id } from "./_generated/dataModel";
@@ -274,7 +275,7 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
     if (reward.stock !== -1 && totalQtyForReward > reward.stock) {
       throw new CRPCError({
         code: "BAD_REQUEST",
-        message: `Insufficient stock for ${reward.name}`,
+        message: `Insufficient stock for ${localizedSearchText(reward.name).trim() || "reward"}`,
       });
     }
     const linePoints = reward.pointCost * item.quantity;

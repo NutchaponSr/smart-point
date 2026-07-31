@@ -3,13 +3,16 @@
 import Ruby from "../../../../../public/ruby.svg";
 
 import { GoPersonFill } from "react-icons/go";
+import { useLocale } from "next-intl";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import type { EventSchema } from "@/modules/events/schema";
 import { categories, buRestrictedCategories } from "../../constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
 
 export const EventPreview = () => {
+  const locale = useLocale();
   const { control } = useFormContext<EventSchema>();
 
   const name = useWatch({ control, name: "name" });
@@ -20,23 +23,24 @@ export const EventPreview = () => {
   const allowedDivisions = useWatch({ control, name: "allowedDivisions" });
   const allowedDepartments = useWatch({ control, name: "allowedDepartments" });
 
-  const title = typeof name === "string" && name.trim();
-  const cost = point === undefined || point === null || Number.isNaN(Number(point)) ? "—" : String(point);
-  const des = typeof description === "string" && description.trim();
+  const title = pickLocalized(name, locale);
+  const cost =
+    point === undefined || point === null || Number.isNaN(Number(point))
+      ? "—"
+      : String(point);
+  const des = pickLocalized(description, locale);
   const categoryName = categories[category]?.th;
   const buLabels = buRestrictedCategories.includes(
     category as (typeof buRestrictedCategories)[number],
   )
     ? formatAllowedBuLabels(allowedDivisions, allowedDepartments)
     : [];
-  
+
   return (
     <article className="relative grid rounded-md border-2 bg-background lg:grid-cols-[2fr_1fr]">
       <section className="lg:border-r-2">
         <header className="grid gap-4 p-3 not-first:border-t">
-          <h1 className="text-lg font-normal leading-[1.2]">
-            {title}
-          </h1>
+          <h1 className="text-lg font-normal leading-[1.2]">{title}</h1>
         </header>
         <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,full)]">
           <div className="p-3 outline-2outline-offset-0 outline-border border-r-2">
@@ -54,9 +58,7 @@ export const EventPreview = () => {
           </div>
         </section>
         <section className="border-t-2 border-border p-3">
-          <p className="text-xs">
-            {des}
-          </p>
+          <p className="text-xs">{des}</p>
         </section>
         {buLabels.length > 0 && (
           <section className="border-t-2 border-border p-3">
@@ -80,7 +82,7 @@ export const EventPreview = () => {
         <section className="grid gap-4 p-3 not-first:border-t">
           <div className="flex items-center justify-center gap-2 p-2 border-2 rounded-md text-[10px] text-center w-full bg-[#58cc02] text-primary-foreground border-[#0003] border-b-4">
             Join
-          </div>  
+          </div>
         </section>
       </section>
     </article>

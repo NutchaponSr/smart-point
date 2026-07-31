@@ -19,6 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 const currencyColors = cva("", {
   variants: {
@@ -35,6 +36,7 @@ const currencyColors = cva("", {
 
 export const Currencies = () => {
   const crpc = useCRPC();
+  const t = useTranslations("wallet");
 
   const { data: wallet } = useSuspenseQuery(crpc.wallet.getOne.queryOptions());
 
@@ -44,22 +46,22 @@ export const Currencies = () => {
         amount={wallet.givingBudget}
         image={CoinGivingIcon}
         color="yellow"
-        title="คะแนนให้เพื่อน"
-        description="คะแนนที่ใช้ชื่นชมเพื่อนร่วมงาน รีเซ็ตทุกต้นเดือนและหมดอายุสิ้นเดือน"
+        title={t("currency.giving-budget")}
+        description={t("currency.giving-budget-description")}
       />
       <Currency
         amount={wallet.receivingBudget}
         image={CoinIcon}
         color="blue"
-        title="คะแนนที่ได้รับ"
-        description="คะแนนที่ได้รับจากเพื่อนร่วมงาน ใช้แลกรางวัลในร้านค้าได้"
+        title={t("currency.receiving-budget")}
+        description={t("currency.receiving-budget-description")}
       />
       <Currency
         amount={wallet.specialBudget}
         image={RubyIcon}
         color="red"
-        title="คะแนนพิเศษ"
-        description="คะแนนที่ได้รับจากกิจกรรมพิเศษ ใช้แลกรางวัลพิเศษได้"
+        title={t("currency.special-budget")}
+        description={t("currency.special-budget-description")}
       />
     </div>
   );
@@ -139,10 +141,10 @@ export const Currency = ({
           variant="ghost"
           className={currencyColors({
             color,
-            className: "h-auto flex-col gap-0.5 px-2 py-1",
+            className: "h-auto flex-col gap-0.5 px-2 py-1 justify-start items-start",
           })}
         >
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 justify-start">
             <Image src={image} alt="" width={20} height={20} />
             <span className="tabular-nums">{amount}</span>
           </span>

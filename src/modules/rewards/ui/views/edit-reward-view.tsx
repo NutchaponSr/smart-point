@@ -6,15 +6,18 @@ import {
   useMutation,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { FormHeader } from "@/components/form-header";
+import { isLocalizedString, pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 import {
   type RewardFormInput,
   type RewardSchema,
   rewardSchema,
+  toApiDescription,
 } from "@/modules/rewards/schema";
 import { RewardForm } from "@/modules/rewards/ui/components/reward-form";
 import { RewardPreview } from "@/modules/rewards/ui/components/reward-preview";
@@ -22,9 +25,18 @@ import { RewardPreview } from "@/modules/rewards/ui/components/reward-preview";
 type RewardGetOne = ApiOutputs["reward"]["getOne"];
 
 function toFormInput(r: RewardGetOne): RewardFormInput {
+  const name = isLocalizedString(r.name)
+    ? r.name
+    : { th: String(r.name ?? ""), en: String(r.name ?? "") };
+  const description = isLocalizedString(r.description)
+    ? r.description
+    : r.description
+      ? { th: String(r.description), en: String(r.description) }
+      : { th: "", en: "" };
+
   return {
-    name: r.name,
-    description: r.description ?? null,
+    name,
+    description,
     pointCost: r.pointCost,
     stock: r.stock,
     onePerOrder: r.onePerOrder ?? false,
@@ -38,6 +50,7 @@ interface Props {
 }
 
 export const EditRewardView = ({ rewardId }: Props) => {
+  const locale = useLocale();
   const crpc = useCRPC();
 
   const { data: reward } = useSuspenseQuery(
@@ -58,7 +71,7 @@ export const EditRewardView = ({ rewardId }: Props) => {
       {
         rewardId,
         name: data.name,
-        description: data.description,
+        description: toApiDescription(data.description),
         pointCost: data.pointCost,
         stock: data.stock,
         onePerOrder: data.onePerOrder,
@@ -67,7 +80,10 @@ export const EditRewardView = ({ rewardId }: Props) => {
       },
       {
         onSuccess: () => {
-          form.reset(data);
+          form.reset({
+            ...data,
+            description: data.description ?? { th: "", en: "" },
+          });
           toast.success("บันทึกรางวัลแล้ว");
         },
         onError: (error) => {
@@ -82,7 +98,10 @@ export const EditRewardView = ({ rewardId }: Props) => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormHeader title={reward.name} backHref="/meta/rewards" />
+        <FormHeader
+          title={pickLocalized(reward.name, locale)}
+          backHref="/meta/rewards"
+        />
         <div className="lg:grid lg:grid-cols-[1fr_30vw]">
           <div>
             <RewardForm />

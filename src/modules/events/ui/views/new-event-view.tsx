@@ -24,8 +24,8 @@ export const NewEventView = () => {
   const form = useForm<EventSchema>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: { th: "", en: "" },
+      description: { th: "", en: "" },
       point: 0,
       category: "specials_point",
       startDate: new Date().getTime(),

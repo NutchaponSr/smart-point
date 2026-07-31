@@ -243,6 +243,13 @@ export const Selection = ({
             onMouseEnter={() => {
               setOnScrollbar(true);
             }}
+            onMouseDown={(e) => {
+              // Prevent the input from blurring on tap/click within the
+              // list. Without this, tapping an item on touch devices
+              // (e.g. Android) blurs the input before the click/onSelect
+              // fires, closing the dropdown and swallowing the selection.
+              e.preventDefault();
+            }}
             onMouseUp={() => {
               inputRef.current?.focus();
             }}

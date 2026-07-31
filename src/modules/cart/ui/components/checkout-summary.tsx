@@ -1,3 +1,7 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 
 import { CombinedPointsBadge } from "@/modules/cart/ui/components/currency";
@@ -17,6 +21,9 @@ export const CheckoutSummary = ({
   fromSpecial,
   className,
 }: Props) => {
+  const t = useTranslations("cart.summary");
+  const locale = useLocale();
+
   const showSplit =
     fromReceiving != null &&
     fromSpecial != null &&
@@ -30,33 +37,37 @@ export const CheckoutSummary = ({
       )}
     >
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>จำนวนรายการ</span>
-        <span className="font-medium text-foreground">{itemCount} รายการ</span>
+        <span>{t("item-count-label")}</span>
+        <span className="font-medium text-foreground">
+          {t("item-count", { count: itemCount })}
+        </span>
       </div>
 
       <div className="h-0.5 bg-border" />
 
       <div className="flex items-center justify-between gap-4">
-        <span className="text-base font-semibold sm:text-lg">รวมทั้งหมด</span>
+        <span className="text-base font-semibold sm:text-lg">{t("total")}</span>
         <CombinedPointsBadge amount={totalPoints} />
       </div>
 
       {showSplit ? (
         <p className="text-xs text-muted-foreground">
-          หัก{" "}
-          <span className="font-semibold tabular-nums text-[#1cb0f6]">
-            {fromReceiving.toLocaleString("th-TH")}
-          </span>{" "}
-          จากคะแนนที่ได้รับ
-          {fromSpecial > 0 ? (
-            <>
-              {" + "}
-              <span className="font-semibold tabular-nums text-[#cc348d]">
-                {fromSpecial.toLocaleString("th-TH")}
-              </span>{" "}
-              จากคะแนนพิเศษ
-            </>
-          ) : null}
+          {t.rich("deduct", {
+            receiving: () => (
+              <span className="font-semibold tabular-nums text-[#1cb0f6]">
+                {fromReceiving.toLocaleString(locale)}
+              </span>
+            ),
+          })}
+          {fromSpecial > 0
+            ? t.rich("deduct-special", {
+                special: () => (
+                  <span className="font-semibold tabular-nums text-[#cc348d]">
+                    {fromSpecial.toLocaleString(locale)}
+                  </span>
+                ),
+              })
+            : null}
         </p>
       ) : null}
     </div>

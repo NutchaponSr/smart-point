@@ -1,6 +1,11 @@
 import z from "zod/v4";
 
 import { authQuery } from "../lib/crpc";
+import {
+  isLocalizedString,
+  toLocalizedString,
+  type LocalizedString,
+} from "../lib/localized";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
@@ -8,7 +13,7 @@ import type { QueryCtx } from "./generated/server";
 type ActivityLogType = Doc<"activityLog">["type"];
 
 type ActivityLogRef = {
-  label: string;
+  kind: "transaction";
   id: string;
 };
 
@@ -47,7 +52,7 @@ function buildRefs(
     case "point_transfer_rejected":
       return [
         {
-          label: "ธุรกรรม",
+          kind: "transaction",
           id: metaString(meta, "transactionId") ?? sourceId,
         },
       ];
@@ -56,27 +61,26 @@ function buildRefs(
   }
 }
 
-async function resolveSummaryForViewer(input: {
-  row: Doc<"activityLog">;
-  viewerId: Id<"employee">;
-  actorName: string | null;
-  meta: Record<string, unknown> | null;
-}): Promise<string> {
-  const { row, viewerId, actorName, meta } = input;
-  const amount = metaNumber(meta, "amount");
-
-  if (
-    row.type === "point_transfer_sent" &&
-    row.subjectEmployeeId === viewerId &&
-    row.actorEmployeeId !== viewerId
-  ) {
-    const points = amount != null ? `${amount} พอยต์` : "พอยต์";
-    return actorName
-      ? `ได้รับ ${points} จาก ${actorName}`
-      : `ได้รับ ${points}`;
+async function resolveActivityName(
+  ctx: QueryCtx,
+  meta: Record<string, unknown> | null,
+): Promise<LocalizedString | string | null> {
+  const activityId = metaString(meta, "activityId");
+  if (activityId) {
+    const activity = await ctx.db.get(activityId as Id<"activity">);
+    if (activity?.name != null) {
+      if (isLocalizedString(activity.name)) return activity.name;
+      return toLocalizedString(activity.name);
+    }
   }
 
-  return row.summary;
+  const th = metaString(meta, "activityNameTh");
+  const en = metaString(meta, "activityNameEn");
+  if (th || en) {
+    return { th: th ?? en ?? "", en: en ?? th ?? "" };
+  }
+
+  return metaString(meta, "activityName");
 }
 
 async function enrichActivityLog(
@@ -100,20 +104,21 @@ async function enrichActivityLog(
     }
   }
 
-  const summary = await resolveSummaryForViewer({
-    row,
-    viewerId,
-    actorName: actor?.name ?? null,
-    meta,
-  });
+  const activityName = await resolveActivityName(ctx, meta);
+  const amount = metaNumber(meta, "amount");
+  const viewerRole: "actor" | "subject" =
+    row.actorEmployeeId === viewerId ? "actor" : "subject";
 
   return {
     _id: row._id,
     type: row.type,
-    summary,
+    summary: row.summary,
     sourceId: row.sourceId,
     refs: buildRefs(row.type, row.sourceId, meta),
     meta,
+    amount,
+    activityName,
+    viewerRole,
     createdAt: row._creationTime,
     actor: actor
       ? {

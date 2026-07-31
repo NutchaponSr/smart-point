@@ -1,7 +1,8 @@
-import { useEffect, useMemo } from "react";
 import Image from "next/image";
 
 import { ApiOutputs } from "@convex/api";
+import { useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useController, useFormContext } from "react-hook-form";
@@ -12,14 +13,15 @@ import { useCRPC } from "@/lib/convex/crpc";
 import { Selection } from "@/components/selection";
 import ElementEditable from "@/components/element-editable";
 
-import { SendTransactionSchema } from "@/modules/wallets/schema";
 import { SendPointHelpPopover } from "@/modules/wallets/ui/components/send-point-help-popover";
-import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
+
 import {
   isSmartCultureTagId,
   smartCulturePillars,
   type SmartCulturePillarKey,
 } from "@/modules/transactions/constants";
+import { SendTransactionSchema } from "@/modules/wallets/schema";
+import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
 
 import CoinGivingIcon from "../../../../../public/coin-give.svg";
 const sendAmountOptions = [5, 10, 20] as const;
@@ -44,6 +46,8 @@ export const SendStep = ({
   canSendUnlimitedPoints = false,
 }: Props) => {
   const crpc = useCRPC();
+  const t = useTranslations("wallet");
+  
   const { query, setQuery } = useSearchEmployee();
 
   const debouncedQuery = useDebounce(query, 300);
@@ -130,7 +134,9 @@ export const SendStep = ({
   return (
     <div className="grid gap-4">
       <section className="grid gap-1.5">
-        <h3 className="text-sm font-bold text-[#4b4b4b]">เลือกพนักงาน</h3>
+        <h3 className="text-sm font-bold text-[#4b4b4b]">
+          {t("select-employee")}
+        </h3>
         <div
           className={cn(
             "[&_[class*='rounded-xs']]:rounded-xl",
@@ -143,7 +149,7 @@ export const SendStep = ({
           )}
         >
           <Selection
-            placeholder="ค้นหาชื่อหรือรหัสพนักงาน"
+            placeholder={t("search-employee")}
             selectedValue={employeeValue.id || undefined}
             selectedLabel={employeeValue.name || undefined}
             onClear={() => {
@@ -201,10 +207,12 @@ export const SendStep = ({
       </section>
 
       <section className="grid gap-1.5">
-        <h3 className="text-sm font-bold text-[#4b4b4b]">ข้อความชื่นชม</h3>
+        <h3 className="text-sm font-bold text-[#4b4b4b]">
+          {t("commendation-message")}
+        </h3>
         <ElementEditable
           value={messageField.value ?? ""}
-          placeholder="บอกเล่าสิ่งที่คุณชื่นชม..."
+          placeholder={t("praise-message")}
           onChange={messageField.onChange}
           onBlur={messageField.onBlur}
           className={{
@@ -228,7 +236,9 @@ export const SendStep = ({
       <div className="grid gap-1.5" key={formBlockKey}>
         <section className="grid gap-1.5">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-bold text-[#4b4b4b]">คะแนนที่มอบให้</h3>
+            <h3 className="text-sm font-bold text-[#4b4b4b]">
+              {t("points-to-give")}
+            </h3>
             <SendPointHelpPopover />
           </div>
 
