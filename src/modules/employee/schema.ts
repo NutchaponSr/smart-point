@@ -1,31 +1,81 @@
 import z from "zod/v4";
 
-/** Shared fields: form + Excel import ใช้รูปแบบเดียวกัน ยกเว้น employeeId / citizenId ที่ parse ต่างกัน */
-const employeeNameFields = {
-  name: z.string().trim().min(1, { message: "กรุณากรอกชื่อ" }),
+const localizedNameSchema = z.object({
+  th: z.string().trim().min(1, { message: "กรุณากรอกชื่อ (ไทย)" }),
+  en: z.string().trim().min(1, { message: "Please enter name (English)" }),
+});
+
+const localizedDepartmentSchema = z.object({
+  th: z.string().trim().min(1, { message: "กรุณากรอกแผนก (ไทย)" }),
+  en: z.string().trim().min(1, { message: "Please enter department (English)" }),
+});
+
+const localizedPositionSchema = z.object({
+  th: z.string().trim().min(1, { message: "กรุณากรอกตำแหน่ง (ไทย)" }),
+  en: z.string().trim().min(1, { message: "Please enter position (English)" }),
+});
+
+/** ฟอร์มสร้าง */
+export const employeeSchema = z.object({
   email: z.string().optional().nullable(),
-  department: z.string().trim().min(1, { message: "กรุณากรอกแผนก" }),
-  position: z.string().trim().min(1, { message: "กรุณากรอกตำแหน่ง" }),
+  name: localizedNameSchema,
+  department: localizedDepartmentSchema,
+  position: localizedPositionSchema,
   rank: z.string().trim().min(1, { message: "กรุณากรอกระดับ" }),
   division: z.string().trim().min(1, { message: "กรุณากรอกหน่วยงาน" }),
-};
-
-/** ฟอร์ม: รหัส / เลขประชาชน เป็นสตริงจาก input */
-export const employeeSchema = z.object({
-  ...employeeNameFields,
   employeeId: z.string().trim().min(1, { message: "กรุณากรอกรหัสพนักงาน" }),
-  citizenId: z.string().trim().min(1, { message: "กรุณากรอกเลขบัตรประชาชน" }).max(5, { message: "กรุณากรอกเลขบัตรประชาชน 5 หลัก" }),
+  citizenId: z
+    .string()
+    .trim()
+    .min(1, { message: "กรุณากรอกเลขบัตรประชาชน" })
+    .max(5, { message: "กรุณากรอกเลขบัตรประชาชน 5 หลัก" }),
+});
+
+/** ฟอร์มแก้ไข */
+export const employeeEditSchema = z.object({
+  name: localizedNameSchema,
+  employeeId: z.string().trim().min(1, { message: "กรุณากรอกรหัสพนักงาน" }),
+  department: localizedDepartmentSchema,
+  position: localizedPositionSchema,
+  rank: z.string().trim().min(1, { message: "กรุณากรอกระดับ" }),
+  division: z.string().trim().min(1, { message: "กรุณากรอกหน่วยงาน" }),
+  citizenId: z
+    .string()
+    .trim()
+    .refine((v) => v.length === 0 || v.length <= 5, {
+      message: "กรุณากรอกเลขบัตรประชาชน 5 หลัก",
+    }),
+  newPassword: z
+    .string()
+    .trim()
+    .refine((v) => v.length === 0 || (v.length >= 5 && v.length <= 20), {
+      message: "รหัสผ่านต้องมี 5–20 ตัวอักษร หรือเว้นว่างถ้าไม่เปลี่ยน",
+    }),
 });
 
 /**
- * นำเข้า Excel: คอลัมน์มักเป็นตัวเลข / สตริงผสม — coerce ก่อน map ไป API
- * (หลีกเลี่ยง z.coerce ในฟอร์มเพื่อไม่ให้ input type กลายเป็น `unknown` กับ zodResolver)
+ * นำเข้า Excel: คอลัมน์ localization แยก TH/EN — coerce ตัวเลขก่อน map ไป API
  */
 export const employeeExportSchema = z.object({
-  ...employeeNameFields,
   employeeId: z.coerce.number(),
+  nameTh: z.string().trim().min(1, { message: "กรุณากรอกชื่อ (ไทย)" }),
+  nameEn: z.string().trim().min(1, { message: "Please enter name (English)" }),
+  email: z.string().optional().nullable(),
+  departmentTh: z.string().trim().min(1, { message: "กรุณากรอกแผนก (ไทย)" }),
+  departmentEn: z
+    .string()
+    .trim()
+    .min(1, { message: "Please enter department (English)" }),
+  positionTh: z.string().trim().min(1, { message: "กรุณากรอกตำแหน่ง (ไทย)" }),
+  positionEn: z
+    .string()
+    .trim()
+    .min(1, { message: "Please enter position (English)" }),
+  rank: z.string().trim().min(1, { message: "กรุณากรอกระดับ" }),
+  division: z.string().trim().min(1, { message: "กรุณากรอกหน่วยงาน" }),
   citizenId: z.coerce.number(),
 });
 
 export type EmployeeSchema = z.infer<typeof employeeSchema>;
+export type EmployeeEditSchema = z.infer<typeof employeeEditSchema>;
 export type EmployeeExportSchema = z.infer<typeof employeeExportSchema>;

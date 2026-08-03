@@ -829,6 +829,8 @@ export const update = authMutation
       position: zLocalizedName,
       rank: z.string().trim().min(1),
       division: z.string().trim(),
+      /** ไม่ส่ง = ไม่เปลี่ยนเลขบัตรประชาชน */
+      citizenId: z.string().trim().min(1).max(20).optional().nullable(),
       /** ว่าง/ไม่ส่ง = ไม่เปลี่ยนรหัสผ่าน */
       newPassword: z.string().trim().min(5).max(20).optional().nullable(),
     }),
@@ -847,6 +849,8 @@ export const update = authMutation
     const position = requireLocalizedName(input.position);
     const rank = input.rank.trim();
     const nextBusinessId = normalizeText(input.businessEmployeeId, 5);
+    const citizenId =
+      input.citizenId == null ? undefined : normalizeText(input.citizenId, 5);
 
     await syncBusinessEmployeeId(
       ctx,
@@ -854,12 +858,16 @@ export const update = authMutation
       nextBusinessId,
       employee.employeeId,
     );
+    if (citizenId !== undefined) {
+      await assertCitizenIdAvailable(ctx, citizenId, input.employeeId);
+    }
     await applyEmployeeProfilePatch(ctx, input.employeeId, {
       name,
       department,
       position,
       rank,
       division: input.division,
+      citizenId,
     });
 
     const rawPassword = input.newPassword?.trim() ?? "";
