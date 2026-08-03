@@ -1,11 +1,30 @@
 import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
-import { authMutation, authQuery, privateAuthAction } from "../lib/crpc";
+import {
+  authMutation,
+  authQuery,
+  privateAuthAction,
+  privateMutation,
+} from "../lib/crpc";
+import {
+  findDepartmentBySlug,
+  findPositionBySlug,
+  resolveDepartment,
+  resolvePosition,
+} from "../lib/employee-directory";
 import { normalizeText } from "../lib/employee-id";
+import {
+  isLocalizedString,
+  localizedSearchText,
+  toLocalizedString,
+  type LocalizedString,
+} from "../lib/localized";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
+
+const NEVER_MATCHES_DEPARTMENT: LocalizedString = { th: " ", en: " " };
 
 const zEmployeeDocId = z.custom<Id<"employee">>(
   (val): val is Id<"employee"> => typeof val === "string" && val.length > 0,
@@ -41,8 +60,8 @@ async function insertEmployeeWalletAndScheduleSignup(
     employeeId: businessEmployeeId,
     name: row.name,
     email: row.email,
-    department: row.department,
-    position: row.position,
+    department: resolveDepartment(row.department),
+    position: resolvePosition(row.position),
     rank: row.rank,
     division: row.division,
   });
@@ -68,11 +87,11 @@ async function insertEmployeeWalletAndScheduleSignup(
 
 /** บัญชี admin จาก seed (scripts/employee.csv) — position/rank/division เป็น Admin ทั้งสาม */
 function isSystemAdminEmployee(row: {
-  position: string;
+  position: LocalizedString;
   rank: string;
   division: string;
 }) {
-  return row.position === "Admin" && row.rank === "Admin" && row.division === "Admin";
+  return row.position.en === "Admin" && row.rank === "Admin" && row.division === "Admin";
 }
 
 async function getAdminEmployeeDocIds(
@@ -90,8 +109,8 @@ type EmployeeListRow = {
   employeeId: string;
   name: string;
   email: string | null;
-  department: string;
-  position: string;
+  department: LocalizedString;
+  position: LocalizedString;
   rank: string;
   division: string;
 };
@@ -121,8 +140,8 @@ function matchesEmployeeSearch(row: EmployeeListRow, normalizedQuery: string) {
   return (
     row.employeeId.toLowerCase().includes(normalizedQuery) ||
     row.name.toLowerCase().includes(normalizedQuery) ||
-    row.department.toLowerCase().includes(normalizedQuery) ||
-    row.position.toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.department).toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.position).toLowerCase().includes(normalizedQuery) ||
     row.rank.toLowerCase().includes(normalizedQuery) ||
     row.division.toLowerCase().includes(normalizedQuery) ||
     (row.email ?? "").toLowerCase().includes(normalizedQuery)
@@ -146,7 +165,9 @@ function matchesEmployeeListFilters(
   }
   if (
     filters.departments.length > 0 &&
-    !filters.departments.includes(row.department)
+    !filters.departments.some(
+      (slug) => findDepartmentBySlug(slug)?.en === row.department.en,
+    )
   ) {
     return false;
   }
@@ -181,10 +202,12 @@ function buildEmployeeListQuery(
 
   // ใช้ equality index ได้เมื่อเลือกค่าเดียวในมิตินั้น
   if (divisions.length === 1 && departments.length === 1) {
+    const departmentValue =
+      findDepartmentBySlug(departments[0]!) ?? NEVER_MATCHES_DEPARTMENT;
     return ctx.orm.query.employee
       .select()
       .withIndex("by_division_department_employeeId", (q) =>
-        q.eq("division", divisions[0]!).eq("department", departments[0]!),
+        q.eq("division", divisions[0]!).eq("department", departmentValue),
       )
       .orderBy({ employeeId: "asc" })
       .filter(matches)
@@ -203,10 +226,12 @@ function buildEmployeeListQuery(
   }
 
   if (departments.length === 1) {
+    const departmentValue =
+      findDepartmentBySlug(departments[0]!) ?? NEVER_MATCHES_DEPARTMENT;
     return ctx.orm.query.employee
       .select()
       .withIndex("by_department_employeeId", (q) =>
-        q.eq("department", departments[0]!),
+        q.eq("department", departmentValue),
       )
       .orderBy({ employeeId: "asc" })
       .filter(matches)
@@ -547,8 +572,8 @@ export const update = authMutation
 
     await ctx.db.patch(input.employeeId, {
       name: input.name,
-      department: input.department,
-      position: input.position,
+      department: resolveDepartment(input.department),
+      position: resolvePosition(input.position),
       rank: input.rank,
       division: input.division,
     });
@@ -741,3 +766,34 @@ export const bulkDelete = authMutation
 
     return { deleted, skipped };
   });
+
+/** Backfill department/position จาก string (slug หรือชื่อเดิม) → { th, en } */
+export const migrateEmployeeLocalizedFields = privateMutation.mutation(
+  async ({ ctx }) => {
+    const employees = await ctx.db.query("employee").collect();
+    let updated = 0;
+
+    for (const employee of employees) {
+      const departmentNeedsUpdate = !isLocalizedString(employee.department);
+      const positionNeedsUpdate = !isLocalizedString(employee.position);
+
+      if (!departmentNeedsUpdate && !positionNeedsUpdate) continue;
+
+      const department = departmentNeedsUpdate
+        ? (findDepartmentBySlug(employee.department as unknown as string) ??
+          toLocalizedString(employee.department as unknown as string))
+        : employee.department;
+      const position = positionNeedsUpdate
+        ? (findPositionBySlug(employee.position as unknown as string) ??
+          toLocalizedString(employee.position as unknown as string))
+        : employee.position;
+
+      if (!department || !position) continue;
+
+      await ctx.db.patch(employee._id, { department, position });
+      updated += 1;
+    }
+
+    return { scanned: employees.length, updated };
+  },
+);
