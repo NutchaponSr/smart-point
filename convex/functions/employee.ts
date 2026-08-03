@@ -594,60 +594,99 @@ export const bulkImport = authMutation
   )
   .mutation(async ({ ctx, input }) => {
     let inserted = 0;
+    let updated = 0;
     let skipped = 0;
     const errors: Array<{
       rowIndex: number;
       employeeId: string;
       message: string;
     }> = [];
-    const seenInBatch = new Set<string>();
+    const seenEmployeeIds = new Set<string>();
+    const seenCitizenIds = new Set<string>();
 
     for (const row of input.rows) {
       const businessEmployeeId = normalizeText(row.employeeId, 5);
+      const citizenId = normalizeText(row.password, 5);
 
-      if (seenInBatch.has(businessEmployeeId)) {
+      if (
+        seenEmployeeIds.has(businessEmployeeId) ||
+        seenCitizenIds.has(citizenId)
+      ) {
         skipped += 1;
-        console.log("bulkImport skip (duplicate in batch)", {
-          rowIndex: row.rowIndex,
-          employeeId: businessEmployeeId,
-        });
         continue;
       }
-      seenInBatch.add(businessEmployeeId);
+      seenEmployeeIds.add(businessEmployeeId);
+      seenCitizenIds.add(citizenId);
 
       try {
         const email = normalizeOptionalEmail(row.email);
-        const existing = await ctx.db
-          .query("employee")
-          .withIndex("by_employeeId", (q) => q.eq("employeeId", businessEmployeeId))
-          .first();
+        const byEmployeeId = await findEmployeeByBusinessId(
+          ctx,
+          businessEmployeeId,
+        );
+        const byCitizenId = await findEmployeeByCitizenId(ctx, citizenId);
 
-        if (existing) {
-          skipped += 1;
-          console.log("bulkImport skip (already exists)", {
+        if (
+          byEmployeeId &&
+          byCitizenId &&
+          byEmployeeId._id !== byCitizenId._id
+        ) {
+          errors.push({
             rowIndex: row.rowIndex,
-            employeeId: businessEmployeeId,
+            employeeId: row.employeeId,
+            message: "employeeId และ citizenId ชี้คนละคน",
           });
+          continue;
+        }
+
+        const target = byEmployeeId ?? byCitizenId ?? null;
+
+        if (target) {
+          if (
+            target.citizenId &&
+            target.citizenId !== citizenId &&
+            byEmployeeId &&
+            !byCitizenId
+          ) {
+            errors.push({
+              rowIndex: row.rowIndex,
+              employeeId: row.employeeId,
+              message: "citizenId ไม่ตรงกับพนักงานรหัสนี้",
+            });
+            continue;
+          }
+
+          await syncBusinessEmployeeId(
+            ctx,
+            target._id,
+            businessEmployeeId,
+            target.employeeId,
+          );
+          await applyEmployeeProfilePatch(ctx, target._id, {
+            name: requireLocalizedName(row.name),
+            department: coerceDepartment(row.department),
+            position: coercePosition(row.position),
+            rank: row.rank.trim(),
+            division: row.division,
+            citizenId,
+          });
+          updated += 1;
           continue;
         }
 
         await insertEmployeeWalletAndScheduleSignup(ctx, {
           businessEmployeeId,
+          citizenId,
           name: row.name,
           email,
           department: row.department,
           position: row.position,
           rank: row.rank,
           division: row.division,
-          citizenId: normalizeText(row.password, 5),
-          password: normalizeText(row.password, 5),
+          password: citizenId,
         });
 
         inserted += 1;
-        console.log("bulkImport created", {
-          rowIndex: row.rowIndex,
-          employeeId: businessEmployeeId,
-        });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "เกิดข้อผิดพลาดขณะนำเข้า";
@@ -664,7 +703,7 @@ export const bulkImport = authMutation
       }
     }
 
-    return { inserted, skipped, errors };
+    return { inserted, updated, skipped, errors };
   });
 
 export const signUpEmployeeInternal = privateAuthAction
