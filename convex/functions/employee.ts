@@ -1,9 +1,11 @@
 import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
+import { requireAdmin } from "../lib/auth-helper";
 import {
   authMutation,
   authQuery,
+  privateAction,
   privateAuthAction,
   privateMutation,
 } from "../lib/crpc";
@@ -16,15 +18,51 @@ import {
 import { normalizeText } from "../lib/employee-id";
 import {
   isLocalizedString,
+  localizedLabel,
   localizedSearchText,
   toLocalizedString,
   type LocalizedString,
 } from "../lib/localized";
+import { hashPassword } from "../lib/password";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
 
+const zAccountDocId = z.custom<Id<"account">>(
+  (val): val is Id<"account"> => typeof val === "string" && val.length > 0,
+);
+
+const zUserDocId = z.custom<Id<"user">>(
+  (val): val is Id<"user"> => typeof val === "string" && val.length > 0,
+);
+
 const NEVER_MATCHES_DEPARTMENT: LocalizedString = { th: " ", en: " " };
+
+const zLocalizedName = z.object({
+  th: z.string().trim().min(1),
+  en: z.string().trim().min(1),
+});
+
+function requireLocalizedName(
+  value: LocalizedString | string,
+): LocalizedString {
+  const name = toLocalizedString(value);
+  if (!name) {
+    throw new CRPCError({
+      code: "BAD_REQUEST",
+      message: "ชื่อพนักงานต้องไม่ว่าง",
+    });
+  }
+  return name;
+}
+
+function nameSearchFrom(name: LocalizedString): string {
+  return localizedSearchText(name).trim();
+}
+
+function departmentSearchFrom(department: LocalizedString): string {
+  return localizedSearchText(department).trim();
+}
 
 const zEmployeeDocId = z.custom<Id<"employee">>(
   (val): val is Id<"employee"> => typeof val === "string" && val.length > 0,
@@ -41,14 +79,124 @@ function normalizeOptionalEmail(email: string | null | undefined): string | unde
 
 type NewEmployeePayload = {
   businessEmployeeId: string;
-  name: string;
+  name: LocalizedString | string;
   email: string | undefined;
-  department: string;
-  position: string;
+  department: LocalizedString | string;
+  position: LocalizedString | string;
   rank: string;
   division: string;
   password: string;
 };
+
+function coerceDepartment(value: LocalizedString | string): LocalizedString {
+  return isLocalizedString(value)
+    ? requireLocalizedName(value)
+    : resolveDepartment(value);
+}
+
+function coercePosition(value: LocalizedString | string): LocalizedString {
+  return isLocalizedString(value)
+    ? requireLocalizedName(value)
+    : resolvePosition(value);
+}
+
+async function findEmployeeByBusinessId(
+  ctx: QueryCtx | MutationCtx,
+  businessEmployeeId: string,
+) {
+  return await ctx.db
+    .query("employee")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", businessEmployeeId))
+    .first();
+}
+
+async function findEmployeeByCitizenId(
+  ctx: QueryCtx | MutationCtx,
+  citizenId: string,
+) {
+  return await ctx.db
+    .query("employee")
+    .withIndex("by_citizenId", (q) => q.eq("citizenId", citizenId))
+    .first();
+}
+
+async function assertCitizenIdAvailable(
+  ctx: QueryCtx | MutationCtx,
+  citizenId: string,
+  exceptEmployeeDocId?: Id<"employee">,
+) {
+  const existing = await findEmployeeByCitizenId(ctx, citizenId);
+  if (existing && existing._id !== exceptEmployeeDocId) {
+    throw new CRPCError({
+      code: "CONFLICT",
+      message: "เลขบัตรประชาชนนี้ถูกใช้แล้ว",
+    });
+  }
+}
+
+async function syncBusinessEmployeeId(
+  ctx: MutationCtx,
+  employeeDocId: Id<"employee">,
+  nextBusinessId: string,
+  currentBusinessId: string,
+) {
+  if (nextBusinessId === currentBusinessId) return;
+
+  const conflictEmployee = await findEmployeeByBusinessId(ctx, nextBusinessId);
+  if (conflictEmployee && conflictEmployee._id !== employeeDocId) {
+    throw new CRPCError({
+      code: "CONFLICT",
+      message: "รหัสพนักงานนี้ถูกใช้แล้ว",
+    });
+  }
+
+  const conflictUser = await ctx.db
+    .query("user")
+    .withIndex("by_username", (q) => q.eq("username", nextBusinessId))
+    .first();
+  const linkedUser = await ctx.db
+    .query("user")
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", employeeDocId))
+    .first();
+  if (conflictUser && (!linkedUser || conflictUser._id !== linkedUser._id)) {
+    throw new CRPCError({
+      code: "CONFLICT",
+      message: "ชื่อผู้ใช้งานนี้ถูกใช้แล้ว",
+    });
+  }
+
+  await ctx.db.patch(employeeDocId, { employeeId: nextBusinessId });
+  if (linkedUser) {
+    await ctx.db.patch(linkedUser._id, {
+      username: nextBusinessId,
+      displayUsername: nextBusinessId,
+    });
+  }
+}
+
+async function applyEmployeeProfilePatch(
+  ctx: MutationCtx,
+  employeeDocId: Id<"employee">,
+  fields: {
+    name: LocalizedString;
+    department: LocalizedString;
+    position: LocalizedString;
+    rank: string;
+    division: string;
+    citizenId?: string;
+  },
+) {
+  await ctx.db.patch(employeeDocId, {
+    name: fields.name,
+    nameSearch: nameSearchFrom(fields.name),
+    department: fields.department,
+    departmentSearch: departmentSearchFrom(fields.department),
+    position: fields.position,
+    rank: fields.rank,
+    division: fields.division,
+    ...(fields.citizenId !== undefined ? { citizenId: fields.citizenId } : {}),
+  });
+}
 
 async function insertEmployeeWalletAndScheduleSignup(
   ctx: MutationCtx,
@@ -56,13 +204,18 @@ async function insertEmployeeWalletAndScheduleSignup(
 ): Promise<Id<"employee">> {
   const businessEmployeeId = normalizeText(row.businessEmployeeId, 5);
 
+  const name = requireLocalizedName(row.name);
+  const department = coerceDepartment(row.department);
+
   const employeeDocId = await ctx.db.insert("employee", {
     employeeId: businessEmployeeId,
-    name: row.name,
+    name,
+    nameSearch: nameSearchFrom(name),
     email: row.email,
-    department: resolveDepartment(row.department),
-    position: resolvePosition(row.position),
-    rank: row.rank,
+    department,
+    departmentSearch: departmentSearchFrom(department),
+    position: coercePosition(row.position),
+    rank: row.rank.trim(),
     division: row.division,
   });
 
@@ -75,7 +228,7 @@ async function insertEmployeeWalletAndScheduleSignup(
   });
 
   await ctx.scheduler.runAfter(0, internal.employee.signUpEmployeeInternal, {
-    name: row.name,
+    name: localizedLabel(name, "th"),
     email: row.email ?? defaultSignupEmail(businessEmployeeId),
     password: row.password,
     username: businessEmployeeId,
@@ -87,11 +240,18 @@ async function insertEmployeeWalletAndScheduleSignup(
 
 /** บัญชี admin จาก seed (scripts/employee.csv) — position/rank/division เป็น Admin ทั้งสาม */
 function isSystemAdminEmployee(row: {
-  position: LocalizedString;
-  rank: string;
+  position: LocalizedString | string;
+  rank: LocalizedString | string;
   division: string;
 }) {
-  return row.position.en === "Admin" && row.rank === "Admin" && row.division === "Admin";
+  const positionEn = isLocalizedString(row.position)
+    ? row.position.en
+    : row.position;
+  return (
+    positionEn === "Admin" &&
+    rankText(row.rank) === "Admin" &&
+    row.division === "Admin"
+  );
 }
 
 async function getAdminEmployeeDocIds(
@@ -107,13 +267,17 @@ async function getAdminEmployeeDocIds(
 
 type EmployeeListRow = {
   employeeId: string;
-  name: string;
+  name: LocalizedString | string;
   email: string | null;
-  department: LocalizedString;
-  position: LocalizedString;
-  rank: string;
+  department: LocalizedString | string;
+  position: LocalizedString | string;
+  rank: LocalizedString | string;
   division: string;
 };
+
+function rankText(rank: LocalizedString | string): string {
+  return typeof rank === "string" ? rank : rank.th.trim() || rank.en.trim();
+}
 
 type EmployeeListFilters = {
   query?: string | null;
@@ -139,13 +303,17 @@ function matchesEmployeeSearch(row: EmployeeListRow, normalizedQuery: string) {
   if (!normalizedQuery) return true;
   return (
     row.employeeId.toLowerCase().includes(normalizedQuery) ||
-    row.name.toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.name).toLowerCase().includes(normalizedQuery) ||
     localizedSearchText(row.department).toLowerCase().includes(normalizedQuery) ||
     localizedSearchText(row.position).toLowerCase().includes(normalizedQuery) ||
-    row.rank.toLowerCase().includes(normalizedQuery) ||
+    rankText(row.rank).toLowerCase().includes(normalizedQuery) ||
     row.division.toLowerCase().includes(normalizedQuery) ||
     (row.email ?? "").toLowerCase().includes(normalizedQuery)
   );
+}
+
+function localizedEn(value: LocalizedString | string): string {
+  return isLocalizedString(value) ? value.en : value;
 }
 
 function matchesEmployeeListFilters(
@@ -166,12 +334,12 @@ function matchesEmployeeListFilters(
   if (
     filters.departments.length > 0 &&
     !filters.departments.some(
-      (slug) => findDepartmentBySlug(slug)?.en === row.department.en,
+      (slug) => findDepartmentBySlug(slug)?.en === localizedEn(row.department),
     )
   ) {
     return false;
   }
-  if (filters.ranks.length > 0 && !filters.ranks.includes(row.rank)) {
+  if (filters.ranks.length > 0 && !filters.ranks.includes(rankText(row.rank))) {
     return false;
   }
   return matchesEmployeeSearch(row, filters.normalizedQuery);
@@ -369,7 +537,7 @@ export const search = authQuery
 
     const adminEmployeeIds = await getAdminEmployeeDocIds(ctx);
 
-    const [byEmployeeId, byName, byEmail] = await Promise.all([
+    const [byEmployeeId, byName, byDepartment, byEmail] = await Promise.all([
       ctx.orm.query.employee.findMany({
         search: { index: "search_employeeId", query: q },
         limit: 10,
@@ -379,13 +547,17 @@ export const search = authQuery
         limit: 10,
       }),
       ctx.orm.query.employee.findMany({
+        search: { index: "search_department", query: q },
+        limit: 10,
+      }),
+      ctx.orm.query.employee.findMany({
         search: { index: "search_email", query: q },
         limit: 10,
       }),
     ]);
 
     const seen = new Set<string>();
-    const results = [...byEmployeeId, ...byName, ...byEmail].filter((e) => {
+    const results = [...byEmployeeId, ...byName, ...byDepartment, ...byEmail].filter((e) => {
       /** `self: true` — ให้ผลค้นหารวมตัวเองได้; default ตัดตัวเองออกสำหรับ picker */
       if (!input.self && e.id === ctx.user.employeeId) return false;
       if (adminEmployeeIds.has(e.id) || isSystemAdminEmployee(e)) return false;
@@ -401,10 +573,10 @@ export const search = authQuery
 const bulkImportRowSchema = z.object({
   rowIndex: z.number().int().positive(),
   employeeId: z.string().trim(),
-  name: z.string().trim(),
+  name: zLocalizedName,
   email: z.string().optional().nullable(),
-  department: z.string().trim(),
-  position: z.string().trim(),
+  department: zLocalizedName,
+  position: zLocalizedName,
   rank: z.string().trim(),
   division: z.string().trim(),
   password: z.string().trim(),
@@ -513,20 +685,67 @@ export const signUpEmployeeInternal = privateAuthAction
     });
   });
 
+/** Hash password outside mutation (bcrypt uses setTimeout). */
+export const setEmployeePasswordInternal = privateAction
+  .input(
+    z.object({
+      accountId: zAccountDocId,
+      userId: zUserDocId,
+      password: z.string().trim().min(1),
+    }),
+  )
+  .action(async ({ ctx, input }) => {
+    const passwordHash = await hashPassword(normalizeText(input.password, 5));
+    await ctx.runMutation(internal.employee.patchEmployeePasswordInternal, {
+      accountId: input.accountId,
+      userId: input.userId,
+      passwordHash,
+    });
+  });
+
+export const patchEmployeePasswordInternal = privateMutation
+  .input(
+    z.object({
+      accountId: zAccountDocId,
+      userId: zUserDocId,
+      passwordHash: z.string().min(1),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const account = await ctx.db.get(input.accountId);
+    if (!account) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "ไม่พบบัญชีเข้าสู่ระบบของพนักงานนี้",
+      });
+    }
+
+    await ctx.db.patch(input.accountId, { password: input.passwordHash });
+
+    for (const session of await ctx.db
+      .query("session")
+      .withIndex("by_userId", (q) => q.eq("userId", input.userId))
+      .collect()) {
+      await ctx.db.delete(session._id);
+    }
+  });
+
 export const create = authMutation
   .input(
     z.object({
       employeeId: z.string().trim(),
-      name: z.string().trim(),
+      name: zLocalizedName,
       email: z.string().optional().nullable(),
-      department: z.string().trim(),
-      position: z.string().trim(),
-      rank: z.string().trim(),
+      department: zLocalizedName,
+      position: zLocalizedName,
+      rank: z.string().trim().min(1),
       division: z.string().trim(),
       password: z.string().trim(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const businessEmployeeId = normalizeText(input.employeeId, 5);
     const email = normalizeOptionalEmail(input.email);
     const existing = await ctx.db
@@ -555,28 +774,86 @@ export const create = authMutation
 export const update = authMutation
   .input(
     z.object({
+      /** Convex document `_id` ของ employee */
       employeeId: zEmployeeDocId,
-      name: z.string().trim(),
-      department: z.string().trim(),
-      position: z.string().trim(),
-      rank: z.string().trim(),
+      /** รหัสพนักงานธุรกิจ (login username) */
+      businessEmployeeId: z.string().trim().min(1),
+      name: zLocalizedName,
+      department: zLocalizedName,
+      position: zLocalizedName,
+      rank: z.string().trim().min(1),
       division: z.string().trim(),
+      /** ว่าง/ไม่ส่ง = ไม่เปลี่ยนรหัสผ่าน */
+      newPassword: z.string().trim().min(5).max(20).optional().nullable(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const employee = await ctx.db.get(input.employeeId);
 
     if (!employee) {
       throw new CRPCError({ code: "NOT_FOUND", message: "Employee not found" });
     }
 
-    await ctx.db.patch(input.employeeId, {
-      name: input.name,
-      department: resolveDepartment(input.department),
-      position: resolvePosition(input.position),
-      rank: input.rank,
+    const name = requireLocalizedName(input.name);
+    const department = requireLocalizedName(input.department);
+    const position = requireLocalizedName(input.position);
+    const rank = input.rank.trim();
+    const nextBusinessId = normalizeText(input.businessEmployeeId, 5);
+
+    await syncBusinessEmployeeId(
+      ctx,
+      input.employeeId,
+      nextBusinessId,
+      employee.employeeId,
+    );
+    await applyEmployeeProfilePatch(ctx, input.employeeId, {
+      name,
+      department,
+      position,
+      rank,
       division: input.division,
     });
+
+    const rawPassword = input.newPassword?.trim() ?? "";
+    if (rawPassword.length > 0) {
+      const password = normalizeText(rawPassword, 5);
+      const userRow = await ctx.db
+        .query("user")
+        .withIndex("by_employeeId", (q) => q.eq("employeeId", input.employeeId))
+        .first();
+
+      if (!userRow) {
+        throw new CRPCError({
+          code: "NOT_FOUND",
+          message: "ไม่พบบัญชีผู้ใช้ของพนักงานนี้",
+        });
+      }
+
+      const account = await ctx.db
+        .query("account")
+        .withIndex("by_userId", (q) => q.eq("userId", userRow._id))
+        .first();
+
+      if (!account) {
+        throw new CRPCError({
+          code: "NOT_FOUND",
+          message: "ไม่พบบัญชีเข้าสู่ระบบของพนักงานนี้",
+        });
+      }
+
+      // bcrypt ใช้ setTimeout — ต้อง hash ใน action แล้วค่อย patch
+      await ctx.scheduler.runAfter(
+        0,
+        internal.employee.setEmployeePasswordInternal,
+        {
+          accountId: account._id,
+          userId: userRow._id,
+          password,
+        },
+      );
+    }
 
     return input.employeeId;
   });
@@ -721,6 +998,8 @@ export const remove = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const eid = input.employeeId;
     const employee = await ctx.db.get(eid);
 
@@ -767,17 +1046,31 @@ export const bulkDelete = authMutation
     return { deleted, skipped };
   });
 
-/** Backfill department/position จาก string (slug หรือชื่อเดิม) → { th, en } */
+/**
+ * Backfill name/department/position → { th, en } + nameSearch/departmentSearch.
+ * If rank was briefly stored as { th, en }, flatten to a plain string.
+ * Empty name strings are skipped and reported (required field).
+ */
 export const migrateEmployeeLocalizedFields = privateMutation.mutation(
   async ({ ctx }) => {
     const employees = await ctx.db.query("employee").collect();
     let updated = 0;
+    const skippedEmptyName: string[] = [];
 
     for (const employee of employees) {
+      const nameNeedsUpdate = !isLocalizedString(employee.name);
       const departmentNeedsUpdate = !isLocalizedString(employee.department);
       const positionNeedsUpdate = !isLocalizedString(employee.position);
+      const rankNeedsFlatten = isLocalizedString(employee.rank);
 
-      if (!departmentNeedsUpdate && !positionNeedsUpdate) continue;
+      const name = nameNeedsUpdate
+        ? toLocalizedString(employee.name as unknown as string)
+        : (employee.name as LocalizedString);
+
+      if (!name) {
+        skippedEmptyName.push(employee._id);
+        continue;
+      }
 
       const department = departmentNeedsUpdate
         ? (findDepartmentBySlug(employee.department as unknown as string) ??
@@ -790,10 +1083,42 @@ export const migrateEmployeeLocalizedFields = privateMutation.mutation(
 
       if (!department || !position) continue;
 
-      await ctx.db.patch(employee._id, { department, position });
+      const rank = rankNeedsFlatten
+        ? rankText(employee.rank)
+        : (employee.rank as string);
+
+      const nextNameSearch = nameSearchFrom(name);
+      const nextDepartmentSearch = departmentSearchFrom(department);
+      const nameSearchNeedsUpdate = employee.nameSearch !== nextNameSearch;
+      const departmentSearchNeedsUpdate =
+        employee.departmentSearch !== nextDepartmentSearch;
+
+      if (
+        !nameNeedsUpdate &&
+        !departmentNeedsUpdate &&
+        !positionNeedsUpdate &&
+        !rankNeedsFlatten &&
+        !nameSearchNeedsUpdate &&
+        !departmentSearchNeedsUpdate
+      ) {
+        continue;
+      }
+
+      await ctx.db.patch(employee._id, {
+        name,
+        nameSearch: nextNameSearch,
+        department,
+        departmentSearch: nextDepartmentSearch,
+        position,
+        rank,
+      });
       updated += 1;
     }
 
-    return { scanned: employees.length, updated };
+    return {
+      scanned: employees.length,
+      updated,
+      skippedEmptyName,
+    };
   },
 );
