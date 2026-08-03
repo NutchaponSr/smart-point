@@ -510,33 +510,44 @@ export type DataModel = {
   };
   employee: {
     document: {
+      citizenId?: null | string;
       department: { en: string; th: string };
+      departmentSearch?: null | string;
       division: string;
       email?: null | string;
       employeeId: string;
-      name: string;
+      name: { en: string; th: string } | string;
+      nameSearch?: null | string;
       position: { en: string; th: string };
-      rank: string;
+      rank: { en: string; th: string } | string;
       _id: Id<"employee">;
       _creationTime: number;
     };
     fieldPaths:
+      | "citizenId"
       | "_creationTime"
       | "department"
       | "department.en"
+      | "departmentSearch"
       | "department.th"
       | "division"
       | "email"
       | "employeeId"
       | "_id"
       | "name"
+      | "name.en"
+      | "nameSearch"
+      | "name.th"
       | "position"
       | "position.en"
       | "position.th"
-      | "rank";
+      | "rank"
+      | "rank.en"
+      | "rank.th";
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
+      by_citizenId: ["citizenId", "_creationTime"];
       by_department: ["department", "_creationTime"];
       by_department_employeeId: ["department", "employeeId", "_creationTime"];
       by_division_department_employeeId: [
@@ -550,6 +561,10 @@ export type DataModel = {
       by_rank_employeeId: ["rank", "employeeId", "_creationTime"];
     };
     searchIndexes: {
+      search_department: {
+        searchField: "departmentSearch";
+        filterFields: never;
+      };
       search_email: {
         searchField: "email";
         filterFields: never;
@@ -559,7 +574,7 @@ export type DataModel = {
         filterFields: never;
       };
       search_name: {
-        searchField: "name";
+        searchField: "nameSearch";
         filterFields: never;
       };
     };

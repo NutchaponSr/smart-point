@@ -1,5 +1,5 @@
 import { CRPCError } from "better-convex/server";
-import type { LocalizedString } from "./localized";
+import { toLocalizedString, type LocalizedString } from "./localized";
 
 type DirectoryEntry = {
   slug: string;
@@ -16,6 +16,13 @@ const departmentDirectory: DirectoryEntry[] = [
 ];
 
 const positionDirectory: DirectoryEntry[] = [
+  { slug: "manager", name: { th: "ผู้จัดการ", en: "Manager" } },
+  { slug: "supervisor", name: { th: "ผู้บังคับการ", en: "Supervisor" } },
+  { slug: "staff", name: { th: "พนักงาน", en: "Staff" } },
+];
+
+const rankDirectory: DirectoryEntry[] = [
+  { slug: "ceo", name: { th: "คุณกรรมการผู้บริหาร", en: "CEO" } },
   { slug: "manager", name: { th: "ผู้จัดการ", en: "Manager" } },
   { slug: "supervisor", name: { th: "ผู้บังคับการ", en: "Supervisor" } },
   { slug: "staff", name: { th: "พนักงาน", en: "Staff" } },
@@ -64,4 +71,78 @@ export function resolveDepartment(value: string): LocalizedString {
 
 export function resolvePosition(value: string): LocalizedString {
   return resolveOrThrow(positionDirectory, value, "ตำแหน่ง");
+}
+
+export function findRankBySlug(slug: string): LocalizedString | null {
+  return findInDirectory(rankDirectory, slug);
+}
+
+export function resolveRank(value: string): LocalizedString {
+  return (
+    findInDirectory(rankDirectory, value) ??
+    toLocalizedString(value) ?? { th: value, en: value }
+  );
+}
+
+/** สำหรับ seed/migrate — รองรับ slug, ชื่อ, หรือค่าพิเศษเช่น Admin */
+export function resolveDepartmentLoose(value: string): LocalizedString {
+  return (
+    findInDirectory(departmentDirectory, value) ??
+    toLocalizedString(value) ?? { th: value, en: value }
+  );
+}
+
+export function resolvePositionLoose(value: string): LocalizedString {
+  return (
+    findInDirectory(positionDirectory, value) ??
+    toLocalizedString(value) ?? { th: value, en: value }
+  );
+}
+
+export function resolveRankLoose(value: string): LocalizedString {
+  return resolveRank(value);
+}
+
+export function findDepartmentSlug(
+  value: LocalizedString | string | null | undefined,
+): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") {
+    const needle = value.trim().toLowerCase();
+    return (
+      departmentDirectory.find(
+        (e) =>
+          e.slug.toLowerCase() === needle ||
+          e.name.th.toLowerCase() === needle ||
+          e.name.en.toLowerCase() === needle,
+      )?.slug ?? null
+    );
+  }
+  return (
+    departmentDirectory.find(
+      (e) => e.name.en === value.en || e.name.th === value.th,
+    )?.slug ?? null
+  );
+}
+
+export function findPositionSlug(
+  value: LocalizedString | string | null | undefined,
+): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") {
+    const needle = value.trim().toLowerCase();
+    return (
+      positionDirectory.find(
+        (e) =>
+          e.slug.toLowerCase() === needle ||
+          e.name.th.toLowerCase() === needle ||
+          e.name.en.toLowerCase() === needle,
+      )?.slug ?? null
+    );
+  }
+  return (
+    positionDirectory.find(
+      (e) => e.name.en === value.en || e.name.th === value.th,
+    )?.slug ?? null
+  );
 }

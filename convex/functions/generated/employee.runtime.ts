@@ -25,8 +25,11 @@ function createProcedureRegistry() {
   "exportAll": ["mutation", typedProcedureResolver(api["employee"]["exportAll"], () => (require("../employee") as Record<string, unknown>)["exportAll"])],
   "getMany": ["query", typedProcedureResolver(api["employee"]["getMany"], () => (require("../employee") as Record<string, unknown>)["getMany"])],
   "getOne": ["query", typedProcedureResolver(api["employee"]["getOne"], () => (require("../employee") as Record<string, unknown>)["getOne"])],
+  "migrateEmployeeLocalizedFields": ["mutation", typedProcedureResolver(internal["employee"]["migrateEmployeeLocalizedFields"], () => (require("../employee") as Record<string, unknown>)["migrateEmployeeLocalizedFields"])],
+  "patchEmployeePasswordInternal": ["mutation", typedProcedureResolver(internal["employee"]["patchEmployeePasswordInternal"], () => (require("../employee") as Record<string, unknown>)["patchEmployeePasswordInternal"])],
   "remove": ["mutation", typedProcedureResolver(api["employee"]["remove"], () => (require("../employee") as Record<string, unknown>)["remove"])],
   "search": ["query", typedProcedureResolver(api["employee"]["search"], () => (require("../employee") as Record<string, unknown>)["search"])],
+  "setEmployeePasswordInternal": ["action", typedProcedureResolver(internal["employee"]["setEmployeePasswordInternal"], () => (require("../employee") as Record<string, unknown>)["setEmployeePasswordInternal"])],
   "signUpEmployeeInternal": ["action", typedProcedureResolver(internal["employee"]["signUpEmployeeInternal"], () => (require("../employee") as Record<string, unknown>)["signUpEmployeeInternal"])],
   "update": ["mutation", typedProcedureResolver(api["employee"]["update"], () => (require("../employee") as Record<string, unknown>)["update"])],
 } as const;

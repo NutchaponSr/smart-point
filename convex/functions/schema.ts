@@ -1,10 +1,40 @@
-import { arrayOf, boolean, convexTable, defineRelations, defineSchema, id, index, integer, objectOf, searchIndex, text, textEnum, timestamp, uniqueIndex } from "better-convex/orm";
+import {
+  arrayOf,
+  boolean,
+  convexTable,
+  custom,
+  defineRelations,
+  defineSchema,
+  id,
+  index,
+  integer,
+  objectOf,
+  searchIndex,
+  text,
+  textEnum,
+  timestamp,
+  uniqueIndex,
+} from "better-convex/orm";
+import { v } from "convex/values";
+
+const localizedObjectValidator = v.object({
+  th: v.string(),
+  en: v.string(),
+});
 
 const localizedStringField = () =>
   objectOf({
     th: text().notNull(),
     en: text().notNull(),
   });
+
+/**
+ * Temporary widen for employee.name migration: accept legacy plain strings
+ * (incl. ""). After migrateEmployeeLocalizedFields + verify, narrow back to
+ * localizedStringField().notNull() only.
+ */
+const legacyLocalizedNameField = () =>
+  custom(v.union(localizedObjectValidator, v.string()));
 
 export const user = convexTable("user", {
   name: text().notNull(),
@@ -78,11 +108,24 @@ export const jwks = convexTable("jwks", {
 
 export const employee = convexTable("employee", {
   employeeId: text().notNull(),
-  name: text().notNull(),
+  name: legacyLocalizedNameField().notNull(),
+  /** Denormalized `${th} ${en}` for searchIndex — filled on write + migrate */
+  nameSearch: text(),
   email: text(),
+  /**
+   * Last 5 digits of national ID — stable identity for monthly import upsert.
+   * Optional for legacy rows; required on new create/import once filled.
+   */
+  citizenId: text(),
   department: localizedStringField().notNull(),
+  /** Denormalized `${th} ${en}` for searchIndex — filled on write + migrate */
+  departmentSearch: text(),
   position: localizedStringField().notNull(),
-  rank: text().notNull(),
+  /**
+   * Prefer plain string. Temporarily accepts legacy `{ th, en }` so
+   * migrateEmployeeLocalizedFields can flatten — then narrow to text().notNull().
+   */
+  rank: legacyLocalizedNameField().notNull(),
   division: text().notNull(),
 }, (t) => [
   index("by_department").on(t.department),
@@ -95,7 +138,9 @@ export const employee = convexTable("employee", {
     t.employeeId,
   ),
   uniqueIndex("by_employeeId").on(t.employeeId),
-  searchIndex("search_name").on(t.name),
+  uniqueIndex("by_citizenId").on(t.citizenId),
+  searchIndex("search_name").on(t.nameSearch),
+  searchIndex("search_department").on(t.departmentSearch),
   searchIndex("search_email").on(t.email),
   searchIndex("search_employeeId").on(t.employeeId),
 ]);

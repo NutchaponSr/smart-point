@@ -45,3 +45,10 @@ export function toLocalizedString(
   if (!text) return null;
   return { th: text, en: text };
 }
+
+/** บังคับให้ได้ LocalizedString — ว่างแล้วคืน { th: "", en: "" } */
+export function coerceLocalized(
+  value: LocalizedString | string | null | undefined,
+): LocalizedString {
+  return toLocalizedString(value) ?? { th: "", en: "" };
+}

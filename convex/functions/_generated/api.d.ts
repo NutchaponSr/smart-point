@@ -232,13 +232,13 @@ export declare const api: {
       "public",
       {
         rows: Array<{
-          department: string;
+          department: { en: string; th: string };
           division: string;
           email?: string | null;
           employeeId: string;
-          name: string;
+          name: { en: string; th: string };
           password: string;
-          position: string;
+          position: { en: string; th: string };
           rank: string;
           rowIndex: number;
         }>;
@@ -249,13 +249,13 @@ export declare const api: {
       "mutation",
       "public",
       {
-        department: string;
+        department: { en: string; th: string };
         division: string;
         email?: string | null;
         employeeId: string;
-        name: string;
+        name: { en: string; th: string };
         password: string;
-        position: string;
+        position: { en: string; th: string };
         rank: string;
       },
       any
@@ -296,11 +296,14 @@ export declare const api: {
       "mutation",
       "public",
       {
-        department: string;
+        businessEmployeeId: string;
+        citizenId?: string | null;
+        department: { en: string; th: string };
         division: string;
         employeeId: any;
-        name: string;
-        position: string;
+        name: { en: string; th: string };
+        newPassword?: string | null;
+        position: { en: string; th: string };
         rank: string;
       },
       any
@@ -613,12 +616,12 @@ export declare const api: {
             _id: any;
             author: {
               _id: any;
-              department: string;
+              department: { en: string; th: string };
               division: string;
               employeeId: string;
               image: string | null;
-              name: string;
-              position: string;
+              name: { en: string; th: string };
+              position: { en: string; th: string };
               rank: string;
             };
             content: string;
@@ -630,12 +633,12 @@ export declare const api: {
           message: string;
           receiver: {
             _id: any;
-            department: string;
+            department: { en: string; th: string };
             division: string;
             employeeId: string;
             image: string | null;
-            name: string;
-            position: string;
+            name: { en: string; th: string };
+            position: { en: string; th: string };
             rank: string;
           };
           receiverId: any;
@@ -644,12 +647,12 @@ export declare const api: {
           reviewedBy: string;
           sender: {
             _id: any;
-            department: string;
+            department: { en: string; th: string };
             division: string;
             employeeId: string;
             image: string | null;
-            name: string;
-            position: string;
+            name: { en: string; th: string };
+            position: { en: string; th: string };
             rank: string;
           };
           senderId: any;
@@ -734,6 +737,24 @@ export declare const internal: {
     migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;
   };
   employee: {
+    migrateEmployeeLocalizedFields: FunctionReference<
+      "mutation",
+      "internal",
+      {},
+      any
+    >;
+    patchEmployeePasswordInternal: FunctionReference<
+      "mutation",
+      "internal",
+      { accountId: any; passwordHash: string; userId: any },
+      any
+    >;
+    setEmployeePasswordInternal: FunctionReference<
+      "action",
+      "internal",
+      { accountId: any; password: string; userId: any },
+      any
+    >;
     signUpEmployeeInternal: FunctionReference<
       "action",
       "internal",
