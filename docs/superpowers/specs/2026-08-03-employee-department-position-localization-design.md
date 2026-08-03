@@ -14,8 +14,56 @@ directly on the `employee` document, the same way `reward.name`,
 `convex/functions/schema.ts`, helpers in `convex/lib/localized.ts` and
 `src/lib/i18n/localized.ts`).
 
-`name` (the employee's own name) and `rank`/`division` are **out of scope** —
-confirmed with the user these stay as plain strings.
+`rank`/`division` are **out of scope** — confirmed with the user these stay
+as plain strings.
+
+## Addendum (scope expansion): `employee.name` also becomes `{th, en}`
+
+Discovered mid-implementation: an uncommitted local edit to `schema.ts`
+already changed `employee.name` to `localizedStringField()` too. Asked the
+user whether this was in-scope — confirmed yes, expand scope now rather than
+defer to a follow-up plan. Unlike `department`/`position`, `name` is
+**free text per employee**, not a lookup from a fixed list — there is no
+"directory" to resolve from. The UI pattern is therefore the same as
+`reward.name`: two side-by-side text inputs (TH/EN) in `employee-form.tsx`,
+matching `reward-form.tsx`'s `name.th`/`name.en` Controllers.
+
+**Search index conflict:** `schema.ts` currently has
+`searchIndex("search_name").on(t.name)`, used by `employee.search`. Convex
+search indexes require a plain string field — they cannot index an object,
+which is exactly why `reward.name`/`activity.name`/`news.title` (already
+localized) never had a search index on those fields. Resolution (confirmed
+with user): add a new denormalized `nameSearch: text().notNull()` field —
+`` `${name.th} ${name.en}` `` — kept in sync on every insert/patch of
+`employee`, and point `search_name` at `nameSearch` instead of `name`.
+
+**Auth `user.name` is unaffected:** the better-auth `user` table has its own
+separate `name: text()` field (login/session display name), populated once
+at signup via `signUpEmployeeInternal`'s `name: z.string()` arg. This stays
+a single string — `insertEmployeeWalletAndScheduleSignup` now passes
+`row.name.th` (not the whole object) into that scheduled call. This is a
+judgment call (not explicitly asked of the user): Thai is the primary
+language of the admin UI and matches the existing `pickLocalized`/
+`localizedLabel` fallback convention of trying `th` first.
+
+**Excel import genuinely changes shape for `name`:** unlike
+department/position (which keep single-column import, resolved server-side
+against the fixed directory), there is no directory to resolve a bare
+"Name" cell against for a person's name. Import must supply both languages
+explicitly: two columns, "Name (TH)" and "Name (EN)" — both
+`employeeHeaderMapping`/`employeeHeaderMapping`-driven import AND
+`employeeHeaders`-driven export change shape for this field (export already
+was changing to two columns for department/position; name now follows the
+same shape for symmetry, from the start, on both import and export).
+
+**Blast radius:** the same set of consumer files touched for
+department/position (transaction.ts, redemption.ts, activity.ts,
+leaderboard.ts, feeds.tsx, transaction-review-dialog.tsx,
+redemption-shipping-columns.tsx, participant-columns.tsx,
+use-participant-excel.ts) also render `employee.name` as plain text, and
+need the same `pickLocalized`/`.th` treatment. `employee-form.tsx` and
+`employee-preview.tsx`, which needed **no** change for department/position,
+now need real changes for `name`.
 
 ## Why store the object instead of keeping the slug
 
