@@ -79,6 +79,7 @@ function normalizeOptionalEmail(email: string | null | undefined): string | unde
 
 type NewEmployeePayload = {
   businessEmployeeId: string;
+  citizenId: string;
   name: LocalizedString | string;
   email: string | undefined;
   department: LocalizedString | string;
@@ -203,12 +204,15 @@ async function insertEmployeeWalletAndScheduleSignup(
   row: NewEmployeePayload,
 ): Promise<Id<"employee">> {
   const businessEmployeeId = normalizeText(row.businessEmployeeId, 5);
+  const citizenId = normalizeText(row.citizenId, 5);
+  await assertCitizenIdAvailable(ctx, citizenId);
 
   const name = requireLocalizedName(row.name);
   const department = coerceDepartment(row.department);
 
   const employeeDocId = await ctx.db.insert("employee", {
     employeeId: businessEmployeeId,
+    citizenId,
     name,
     nameSearch: nameSearchFrom(name),
     email: row.email,
@@ -635,6 +639,7 @@ export const bulkImport = authMutation
           position: row.position,
           rank: row.rank,
           division: row.division,
+          citizenId: normalizeText(row.password, 5),
           password: normalizeText(row.password, 5),
         });
 
@@ -747,6 +752,7 @@ export const create = authMutation
     requireAdmin(ctx.user);
 
     const businessEmployeeId = normalizeText(input.employeeId, 5);
+    const citizenId = normalizeText(input.password, 5);
     const email = normalizeOptionalEmail(input.email);
     const existing = await ctx.db
       .query("employee")
@@ -765,7 +771,8 @@ export const create = authMutation
       position: input.position,
       rank: input.rank,
       division: input.division,
-      password: input.password,
+      citizenId,
+      password: citizenId,
     });
 
     return employeeDocId;
