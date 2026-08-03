@@ -454,6 +454,8 @@ export const getMany = authQuery
     }),
   )
   .query(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const baseQuery = buildEmployeeListQuery(ctx, input);
 
     const pageResult = await baseQuery.paginate({
@@ -483,6 +485,8 @@ const EXPORT_PAGE_SIZE = 100;
 export const exportAll = authMutation
   .input(z.object(employeeListFilterInput))
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const baseQuery = buildEmployeeListQuery(ctx, input);
 
     const rows: Awaited<ReturnType<(typeof baseQuery)["paginate"]>>["page"] =
@@ -519,6 +523,8 @@ export const getOne = authQuery
     }),
   )
   .query(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const employee = await ctx.db.get(input.employeeId);
 
     if (!employee) {
@@ -571,8 +577,14 @@ export const search = authQuery
       return true;
     });
 
-    return results.slice(0, 10);
+    /** citizenId ใช้เป็นรหัสผ่านเริ่มต้น — ห้ามหลุดไปยังผู้ใช้ทั่วไปผ่านการค้นหา */
+    return results.slice(0, 10).map(({ citizenId: _citizenId, ...rest }) => rest);
   });
+
+/** 5 หลักท้ายบัตรประชาชน — ใช้เป็นรหัสผ่านเริ่มต้น ห้ามว่างหรือมีอักขระอื่นนอกจากตัวเลข */
+function isValidCitizenId(value: string): boolean {
+  return /^\d{5}$/.test(value);
+}
 
 const bulkImportRowSchema = z.object({
   rowIndex: z.number().int().positive(),
@@ -593,6 +605,8 @@ export const bulkImport = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     let inserted = 0;
     let updated = 0;
     let skipped = 0;
@@ -607,6 +621,15 @@ export const bulkImport = authMutation
     for (const row of input.rows) {
       const businessEmployeeId = normalizeText(row.employeeId, 5);
       const citizenId = normalizeText(row.password, 5);
+
+      if (!isValidCitizenId(citizenId)) {
+        errors.push({
+          rowIndex: row.rowIndex,
+          employeeId: row.employeeId,
+          message: "เลขบัตรประชาชน (5 หลักท้าย) ไม่ถูกต้อง ต้องเป็นตัวเลข 5 หลัก",
+        });
+        continue;
+      }
 
       if (
         seenEmployeeIds.has(businessEmployeeId) ||
@@ -1078,6 +1101,8 @@ export const bulkDelete = authMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const me = ctx.user.employeeId;
     const unique = [...new Set(input.employeeIds)];
     let deleted = 0;

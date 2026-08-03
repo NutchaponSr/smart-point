@@ -73,7 +73,18 @@ export const employeeExportSchema = z.object({
     .min(1, { message: "Please enter position (English)" }),
   rank: z.string().trim().min(1, { message: "กรุณากรอกระดับ" }),
   division: z.string().trim().min(1, { message: "กรุณากรอกหน่วยงาน" }),
-  citizenId: z.coerce.number(),
+  /**
+   * ห้าม coerce เป็นตัวเลขแล้ว pad เพราะช่องว่าง/null จาก Excel จะกลายเป็น 0 → "00000"
+   * ซึ่งจะถูกใช้เป็นรหัสผ่านเริ่มต้นที่ผิดและอาจชนกันข้ามแถว
+   */
+  citizenId: z.preprocess(
+    (value) => (value == null ? "" : String(value).trim()),
+    z
+      .string()
+      .min(1, { message: "กรุณากรอกเลขบัตรประชาชน" })
+      .max(5, { message: "กรุณากรอกเลขบัตรประชาชน 5 หลัก" })
+      .regex(/^\d+$/, { message: "เลขบัตรประชาชนต้องเป็นตัวเลข" }),
+  ),
 });
 
 export type EmployeeSchema = z.infer<typeof employeeSchema>;
