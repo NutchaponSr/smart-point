@@ -80,8 +80,8 @@ export const employee = convexTable("employee", {
   employeeId: text().notNull(),
   name: text().notNull(),
   email: text(),
-  department: text().notNull(),
-  position: text().notNull(),
+  department: localizedStringField().notNull(),
+  position: localizedStringField().notNull(),
   rank: text().notNull(),
   division: text().notNull(),
 }, (t) => [

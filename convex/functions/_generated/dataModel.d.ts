@@ -510,12 +510,12 @@ export type DataModel = {
   };
   employee: {
     document: {
-      department: string;
+      department: { en: string; th: string };
       division: string;
       email?: null | string;
       employeeId: string;
       name: string;
-      position: string;
+      position: { en: string; th: string };
       rank: string;
       _id: Id<"employee">;
       _creationTime: number;
@@ -523,12 +523,16 @@ export type DataModel = {
     fieldPaths:
       | "_creationTime"
       | "department"
+      | "department.en"
+      | "department.th"
       | "division"
       | "email"
       | "employeeId"
       | "_id"
       | "name"
       | "position"
+      | "position.en"
+      | "position.th"
       | "rank";
     indexes: {
       by_id: ["_id"];
