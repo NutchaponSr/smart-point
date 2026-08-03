@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 
+import { isLocalizedString } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 
@@ -41,6 +42,12 @@ function chunkArray<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+function toLocalizedPair(value: unknown): { th: string; en: string } {
+  if (isLocalizedString(value)) return value;
+  const text = value == null ? "" : String(value);
+  return { th: text, en: text };
+}
+
 export function useEmployeeExcel({
   searchQuery,
   division = [],
@@ -70,10 +77,10 @@ export function useEmployeeExcel({
       const rows = result.data.map((row, index) => ({
         rowIndex: index + 1,
         employeeId: String(row.employeeId),
-        name: row.name,
+        name: { th: row.nameTh, en: row.nameEn },
         email: row.email ?? undefined,
-        department: row.department,
-        position: row.position,
+        department: { th: row.departmentTh, en: row.departmentEn },
+        position: { th: row.positionTh, en: row.positionEn },
         rank: row.rank,
         division: row.division,
         password: String(row.citizenId),
@@ -81,6 +88,7 @@ export function useEmployeeExcel({
 
       const chunks = chunkArray(rows, BULK_IMPORT_CHUNK_SIZE);
       let inserted = 0;
+      let updated = 0;
       let skipped = 0;
       const importErrors: ValidationError[] = [];
 
@@ -94,6 +102,7 @@ export function useEmployeeExcel({
 
         const chunkResult = await bulkImport.mutateAsync({ rows: chunk });
         inserted += chunkResult.inserted;
+        updated += chunkResult.updated;
         skipped += chunkResult.skipped;
         importErrors.push(
           ...chunkResult.errors.map((err) => ({
@@ -105,7 +114,7 @@ export function useEmployeeExcel({
         );
       }
 
-      const summary = `นำเข้า ${inserted} รายการ, ข้าม ${skipped} รายการ${
+      const summary = `นำเข้า ${inserted} รายการ, อัปเดต ${updated} รายการ, ข้าม ${skipped} รายการ${
         importErrors.length > 0 ? `, ล้มเหลว ${importErrors.length} รายการ` : ""
       }`;
 
@@ -146,15 +155,28 @@ export function useEmployeeExcel({
       });
 
       exportToExcel(
-        data.map((e) => ({
-          employeeId: e.employeeId,
-          name: e.name,
-          email: e.email,
-          department: e.department,
-          position: e.position,
-          rank: e.rank,
-          division: e.division,
-        })),
+        data.map((e) => {
+          const name = toLocalizedPair(e.name);
+          const dept = toLocalizedPair(e.department);
+          const pos = toLocalizedPair(e.position);
+          const rankValue = isLocalizedString(e.rank)
+            ? e.rank.th || e.rank.en
+            : String(e.rank ?? "");
+
+          return {
+            employeeId: e.employeeId,
+            nameTh: name.th,
+            nameEn: name.en,
+            email: e.email,
+            departmentTh: dept.th,
+            departmentEn: dept.en,
+            positionTh: pos.th,
+            positionEn: pos.en,
+            rank: rankValue,
+            division: e.division,
+            citizenId: e.citizenId ?? "",
+          };
+        }),
         {
           filename: "employee-export",
           sheetName: "Employee Export",

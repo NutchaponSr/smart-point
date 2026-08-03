@@ -3,25 +3,31 @@ export const BULK_IMPORT_CHUNK_SIZE = 200;
 
 export const employeeHeaderMapping: Record<string, string> = {
   "Employee Id": "employeeId",
-  "Name": "name",
+  "Name (TH)": "nameTh",
+  "Name (EN)": "nameEn",
   "Email": "email",
-  "Department": "department",
-  "Position": "position",
+  "Department (TH)": "departmentTh",
+  "Department (EN)": "departmentEn",
+  "Position (TH)": "positionTh",
+  "Position (EN)": "positionEn",
   "Rank": "rank",
   "Division": "division",
   "Citizen Id": "citizenId",
 };
 
 export const employeeHeaders: Record<string, string> = {
-  "employeeId": "Employee Id",
-  "name": "Name",
-  "email": "Email",
-  "department": "Department",
-  "position": "Position",
-  "rank": "Rank",
-  "division": "Division",
-  "citizenId": "Citizen Id",
-}
+  employeeId: "Employee Id",
+  nameTh: "Name (TH)",
+  nameEn: "Name (EN)",
+  email: "Email",
+  departmentTh: "Department (TH)",
+  departmentEn: "Department (EN)",
+  positionTh: "Position (TH)",
+  positionEn: "Position (EN)",
+  rank: "Rank",
+  division: "Division",
+  citizenId: "Citizen Id",
+};
 
 export const departments = [
   {
