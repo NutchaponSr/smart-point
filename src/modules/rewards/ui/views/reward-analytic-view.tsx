@@ -23,6 +23,7 @@ import { RewardFilters } from "@/modules/rewards/ui/components/reward-filters";
 import { links } from "@/modules/dashboard/constants";
 import { useRewardExcel } from "@/modules/rewards/hooks/use-reward-excel";
 import { useRewardFilters } from "@/modules/rewards/stores/use-reward-filters";
+import { ExcelImportErrorsDialog } from "@/modules/rewards/ui/components/excel-import-errors-dialog";
 
 export const RewardAnalyticView = () => {
   const crpc = useCRPC();
@@ -56,7 +57,7 @@ export const RewardAnalyticView = () => {
     star: filters.star,
   }));
 
-  const { onImport, onExport } = useRewardExcel({
+  const { onImport, onExport, errors, clearErrors } = useRewardExcel({
     searchQuery: debouncedQuery,
     minCost: filters.minCost,
     maxCost: filters.maxCost,
@@ -82,52 +83,55 @@ export const RewardAnalyticView = () => {
   };
 
   return (
-    <Main 
-      title="รางวัล"
-      onImport={onImport}
-      onExport={onExport}
-      searchValue={filters.q}
-      onSearchChange={(q) => setFilters({ ...filters, q })}
-      newLink="/meta/rewards/new"
-      filter={<RewardFilters variant="popover" />}
-      menu={<Navigations links={links} />}
-    >
-      <ConfirmationDialog />
-      <section className="p-4 md:p-8">
-        <div className="grid gap-12">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <Pagination
-                canGoBack={canGoBack}
-                canGoForward={canGoForward}
-                onBack={goBack}
-                onForward={() => {
-                  const c = rewards.continueCursor;
-                  if (c != null) goForward(c);
-                }}
+    <>
+      <ExcelImportErrorsDialog errors={errors} onClose={clearErrors} />
+      <Main
+        title="รางวัล"
+        onImport={onImport}
+        onExport={onExport}
+        searchValue={filters.q}
+        onSearchChange={(q) => setFilters({ ...filters, q })}
+        newLink="/meta/rewards/new"
+        filter={<RewardFilters variant="popover" />}
+        menu={<Navigations links={links} />}
+      >
+        <ConfirmationDialog />
+        <section className="p-4 md:p-8">
+          <div className="grid gap-12">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Pagination
+                  canGoBack={canGoBack}
+                  canGoForward={canGoForward}
+                  onBack={goBack}
+                  onForward={() => {
+                    const c = rewards.continueCursor;
+                    if (c != null) goForward(c);
+                  }}
+                />
+                {selectedIds.length > 0 && (
+                  <Button
+                    variant="danger"
+                    onClick={onRemove}
+                  >
+                    ลบ
+                  </Button>
+                )}
+              </div>
+
+              <DataTable
+                data={rewards.page}
+                columns={tableColumnDefs}
+                enableRowSelection
+                getRowId={(row) => row._id}
+                rowSelection={rowSelection}
+                onRowSelectionChange={setRowSelection}
               />
-              {selectedIds.length > 0 && (
-                <Button 
-                  variant="danger"
-                  onClick={onRemove}
-                >
-                  ลบ
-                </Button>
-              )}
             </div>
-            
-            <DataTable
-              data={rewards.page}
-              columns={tableColumnDefs}
-              enableRowSelection
-              getRowId={(row) => row._id}
-              rowSelection={rowSelection}
-              onRowSelectionChange={setRowSelection}
-            />
           </div>
-        </div>
-      </section>
-    </Main>
-  )
+        </section>
+      </Main>
+    </>
+  );
 }
 

@@ -259,16 +259,25 @@ export async function importExcelWithValidation<T extends ZodRawShape>(
 
   const mappedData = headerMapping
     ? rawData.map((row) => {
+      // trim header keys — Excel มักมีช่องว่าง/BOM ทำให้แมปพลาด → schema ได้ undefined
+      const normalizedRow: ExcelRow = {};
+      for (const [key, value] of Object.entries(row)) {
+        normalizedRow[key.trim()] = value;
+      }
+
       const mappedRow: ExcelRow = {};
+      const mappedExcelHeaders = new Set<string>();
 
       for (const [excelHeader, schemaKey] of Object.entries(headerMapping)) {
-        if (excelHeader in row) {
-          mappedRow[schemaKey] = row[excelHeader];
+        const normalizedHeader = excelHeader.trim();
+        if (normalizedHeader in normalizedRow) {
+          mappedRow[schemaKey] = normalizedRow[normalizedHeader];
+          mappedExcelHeaders.add(normalizedHeader);
         }
       }
 
-      for (const [key, value] of Object.entries(row)) {
-        if (!Object.keys(headerMapping).includes(key)) {
+      for (const [key, value] of Object.entries(normalizedRow)) {
+        if (!mappedExcelHeaders.has(key)) {
           mappedRow[key] = value;
         }
       }
@@ -277,13 +286,18 @@ export async function importExcelWithValidation<T extends ZodRawShape>(
     })
     : rawData;
 
-  const { success, data, errors } = validateData(mappedData, schema);
+  // ข้ามแถวว่างทั้งหมด (แถวท้ายไฟล์ที่ sheet_to_json ดึงมา)
+  const nonEmptyData = mappedData.filter((row) =>
+    Object.values(row).some((value) => value != null && String(value).trim() !== ""),
+  );
+
+  const { success, data, errors } = validateData(nonEmptyData, schema);
 
   return {
     success,
     data,
     errors,
-    rawData: mappedData,
+    rawData: nonEmptyData,
   }
 }
 
