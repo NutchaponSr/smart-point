@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import type { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
+import { useLocale } from "next-intl";
 
 import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
@@ -74,25 +75,7 @@ export const redemptionShippingColumns = ({
   {
     accessorKey: "employee",
     header: "พนักงาน",
-    cell: ({ row }) => (
-      <div className="flex min-w-0 items-center gap-3">
-        <UserAvatar
-          name={row.original.employee.name}
-          className={{
-            container: "size-10 shrink-0",
-            fallback: "text-sm font-bold",
-          }}
-        />
-        <div className="min-w-0">
-          <p className="truncate text-base font-medium">
-            {row.original.employee.name}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {row.original.employee.employeeId} · {row.original.employee.department}
-          </p>
-        </div>
-      </div>
-    ),
+    cell: ({ row }) => <EmployeeCell row={row.original} />,
   },
   {
     accessorKey: "reward",
@@ -166,3 +149,27 @@ export const redemptionShippingColumns = ({
     ),
   },
 ];
+
+function EmployeeCell({ row }: { row: RedemptionAdminRow }) {
+  const locale = useLocale();
+  const name = pickLocalized(row.employee.name, locale);
+  const department = pickLocalized(row.employee.department, locale);
+
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <UserAvatar
+        name={name}
+        className={{
+          container: "size-10 shrink-0",
+          fallback: "text-sm font-bold",
+        }}
+      />
+      <div className="min-w-0">
+        <p className="truncate text-base font-medium">{name}</p>
+        <p className="text-sm text-muted-foreground">
+          {row.employee.employeeId} · {department}
+        </p>
+      </div>
+    </div>
+  );
+}

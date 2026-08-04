@@ -2,6 +2,7 @@ import z from "zod/v4";
 
 import { authQuery } from "../lib/crpc";
 import {
+  coerceLocalized,
   isLocalizedString,
   toLocalizedString,
   type LocalizedString,
@@ -123,14 +124,14 @@ async function enrichActivityLog(
     actor: actor
       ? {
           _id: actor._id as Id<"employee">,
-          name: actor.name,
+          name: coerceLocalized(actor.name),
           employeeId: actor.employeeId,
         }
       : null,
     subject: subject
       ? {
           _id: subject._id as Id<"employee">,
-          name: subject.name,
+          name: coerceLocalized(subject.name),
           employeeId: subject.employeeId,
         }
       : null,

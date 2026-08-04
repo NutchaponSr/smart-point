@@ -123,6 +123,21 @@
       "placeholder": "เขียนความคิดเห็น..."
     }
   },
+  "leaderboard": {
+    "title": "ตารางคะแนน",
+    "alt": "ตารางคะแนน",
+    "filters": {
+      "aria-label": "ตัวกรองตารางคะแนน",
+      "title": "ตัวกรอง",
+      "reset": "รีเซ็ต",
+      "search-placeholder": "ค้นหาพนักงาน",
+      "period": "ช่วงเวลา",
+      "period-30d": "30 วัน",
+      "period-fullTime": "ทั้งหมด",
+      "division": "BU / สังกัด",
+      "limit": "จำนวนรายการ"
+    }
+  },
   "overview": {
     "events-for-you": "กิจกรรมสำหรับคุณ",
     "events-for-bu": "กิจกรรมสำหรับ BU ของคุณ",

@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -85,7 +84,7 @@ export const UpdateShippingDialog = ({ row, open, onOpenChange }: Props) => {
                 {pickLocalized(row.reward.name, "th")}
               </p>
               <p className="text-xs text-muted-foreground">
-                {row.employee.name} ({row.employee.employeeId})
+                {pickLocalized(row.employee.name, "th")} ({row.employee.employeeId})
               </p>
             </div>
 

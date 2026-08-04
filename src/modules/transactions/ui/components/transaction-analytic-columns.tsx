@@ -7,6 +7,7 @@ import { th } from "date-fns/locale";
 import { BsCalendar2Fill } from "react-icons/bs";
 import type { ApiOutputs } from "@convex/api";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
@@ -57,8 +58,12 @@ export function TransactionAnalyticCard({
   selected,
   onSelectedChange,
 }: TransactionAnalyticCardProps) {
-  const senderName = transaction.sender?.name ?? "ไม่พบข้อมูลผู้ส่ง";
-  const receiverName = transaction.receiver?.name ?? "ไม่พบข้อมูลผู้รับ";
+  const senderName = transaction.sender?.name
+    ? pickLocalized(transaction.sender.name, "th") || "ไม่พบข้อมูลผู้ส่ง"
+    : "ไม่พบข้อมูลผู้ส่ง";
+  const receiverName = transaction.receiver?.name
+    ? pickLocalized(transaction.receiver.name, "th") || "ไม่พบข้อมูลผู้รับ"
+    : "ไม่พบข้อมูลผู้รับ";
   const tagLabel = tags[transaction.tags] ?? transaction.tags;
   const createdAt = format(
     new Date(transaction._creationTime),

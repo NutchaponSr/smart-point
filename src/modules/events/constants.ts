@@ -63,10 +63,10 @@ export const statuses = {
 } as const;
 
 export const eventHeaderMapping: Record<string, string> = {
-  "Name Th": "nameTh",
-  "Name En": "nameEn",
-  "Description Th": "descriptionTh",
-  "Description En": "descriptionEn",
+  "Name (TH)": "nameTh",
+  "Name (EN)": "nameEn",
+  "Description (TH)": "descriptionTh",
+  "Description (EN)": "descriptionEn",
   Point: "point",
   Category: "category",
   "Start Date": "startDate",
@@ -76,10 +76,10 @@ export const eventHeaderMapping: Record<string, string> = {
 };
 
 export const eventHeaders: Record<string, string> = {
-  nameTh: "Name Th",
-  nameEn: "Name En",
-  descriptionTh: "Description Th",
-  descriptionEn: "Description En",
+  nameTh: "Name (TH)",
+  nameEn: "Name (EN)",
+  descriptionTh: "Description (TH)",
+  descriptionEn: "Description (EN)",
   point: "Point",
   category: "Category",
   startDate: "Start Date",
@@ -90,16 +90,22 @@ export const eventHeaders: Record<string, string> = {
 
 export const participantHeaderMapping: Record<string, string> = {
   "Employee Id": "employeeId",
-  "Status": "status",
-  "Name": "name",
-  "Department": "department",
-  "Position": "position",
-}
+  "Name (TH)": "nameTh",
+  "Name (EN)": "nameEn",
+  "Department (TH)": "departmentTh",
+  "Department (EN)": "departmentEn",
+  "Position (TH)": "positionTh",
+  "Position (EN)": "positionEn",
+  Status: "status",
+};
 
 export const participantHeaders: Record<string, string> = {
-  "employeeId": "Employee Id",
-  "name": "Name",
-  "department": "Department",
-  "position": "Position",
-  "status": "Status",
-}
+  employeeId: "Employee Id",
+  nameTh: "Name (TH)",
+  nameEn: "Name (EN)",
+  departmentTh: "Department (TH)",
+  departmentEn: "Department (EN)",
+  positionTh: "Position (TH)",
+  positionEn: "Position (EN)",
+  status: "Status",
+};

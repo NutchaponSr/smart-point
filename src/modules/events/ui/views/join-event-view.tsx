@@ -209,7 +209,7 @@ export const JoinEventView = ({ eventId }: Props) => {
           <DialogHidden />
           <div className="grid gap-3">
             <h3 className="text-base font-semibold">
-              หลักฐาน: {selectedEvidence?.name}
+              หลักฐาน: {pickLocalized(selectedEvidence?.name, locale)}
             </h3>
             {selectedEvidence?.evidenceFileName ? (
               <p className="text-sm text-muted-foreground">
@@ -370,10 +370,10 @@ export const JoinEventView = ({ eventId }: Props) => {
                       selectedLabel={field.value.name || undefined}
                       onClear={() => form.resetField("employee")}
                       options={employees?.map((employee) => ({
-                        label: employee.name,
+                        label: pickLocalized(employee.name, locale),
                         value: employee.id,
                         email: employee.email,
-                        department: employee.department,
+                        department: pickLocalized(employee.department, locale),
                       })) || []}
                       onSearch={async (value) => {
                         setQuery(value);
@@ -387,7 +387,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                           id: option.value,
                           name: option.label,
                           email: employee.email,
-                          department: employee.department,
+                          department: pickLocalized(employee.department, locale),
                         });
                       }}
                     />

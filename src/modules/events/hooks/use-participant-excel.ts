@@ -2,17 +2,23 @@
 
 import { toast } from "sonner";
 import { useState } from "react";
-import { format } from "date-fns";
 import { ApiOutputs } from "@convex/api";
 import { useMutation } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
+import { isLocalizedString } from "@/lib/i18n/localized";
 import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
 
 import type { ValidationError } from "@/types/excel";
 
 import { participantSchema } from "@/modules/events/schema";
 import { participantHeaderMapping, participantHeaders } from "@/modules/events/constants";
+
+function toLocalizedPair(value: unknown): { th: string; en: string } {
+  if (isLocalizedString(value)) return value;
+  const text = value == null ? "" : String(value);
+  return { th: text, en: text };
+}
 
 interface Props {
   activityId: string;
@@ -74,13 +80,22 @@ export function useParticipantExcel({ activityId, data }: Props) {
 
     try {
       exportToExcel(
-        data.map((e) => ({
-          employeeId: e.employeeCode,
-          name: e.name,
-          department: e.department,
-          position: e.position,
-          status: e.status,
-        })),
+        data.map((e) => {
+          const name = toLocalizedPair(e.name);
+          const department = toLocalizedPair(e.department);
+          const position = toLocalizedPair(e.position);
+
+          return {
+            employeeId: e.employeeCode,
+            nameTh: name.th,
+            nameEn: name.en,
+            departmentTh: department.th,
+            departmentEn: department.en,
+            positionTh: position.th,
+            positionEn: position.en,
+            status: e.status,
+          };
+        }),
         {
           filename: "participant-export",
           sheetName: "Participant Export",

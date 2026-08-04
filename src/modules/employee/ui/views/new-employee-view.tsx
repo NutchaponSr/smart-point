@@ -22,10 +22,10 @@ export const NewEmployeeView = () => {
     resolver: zodResolver(employeeSchema),
     defaultValues: {
       employeeId: "",
-      name: "",
+      name: { th: "", en: "" },
       email: "",
-      department: "",
-      position: "",
+      department: { th: "", en: "" },
+      position: { th: "", en: "" },
       rank: "",
       division: "",
       citizenId: "",

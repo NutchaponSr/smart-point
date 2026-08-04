@@ -3,12 +3,13 @@ import z from "zod/v4";
 
 import { ENABLE_BU_RECOMMENDED } from "../lib/activity-features";
 import { appendActivityLog } from "../lib/activity-log";
-import { authMutation, authQuery, privateMutation, publicQuery } from "../lib/crpc";
+import { authMutation, authQuery, privateMutation } from "../lib/crpc";
 import {
   isBuRestrictedCategory,
   VALID_DIVISION_SLUGS,
 } from "../lib/divisions";
 import {
+  coerceLocalized,
   isLocalizedString,
   localizedLabel,
   localizedSearchText,
@@ -93,7 +94,7 @@ function isEmployeeEligibleForActivity(
     allowedDivisions?: (string | null)[] | null;
     allowedDepartments?: (string | null)[] | null;
   },
-  employee: { division: string; department: string },
+  employee: { division: string; department: unknown },
 ): boolean {
   if (
     activity.category !== "internal_bu" &&
@@ -167,7 +168,7 @@ async function getActiveParticipantsMeta(
   type ParticipantPreview = {
     participantId: Id<"activityParticipant">;
     employeeId: Id<"employee">;
-    name: string;
+    name: LocalizedString;
     image: string | null;
   };
 
@@ -190,7 +191,7 @@ async function getActiveParticipantsMeta(
         return {
           participantId: participant._id,
           employeeId: employee._id,
-          name: employee.name,
+          name: coerceLocalized(employee.name),
           image: user?.image ?? null,
         } satisfies ParticipantPreview;
       }),
@@ -243,9 +244,9 @@ async function listJoinedEmployeeDetails(
         participantId: p._id,
         employeeId: employee._id,
         employeeCode: employee.employeeId,
-        name: employee.name,
-        department: employee.department,
-        position: employee.position,
+        name: coerceLocalized(employee.name),
+        department: coerceLocalized(employee.department),
+        position: coerceLocalized(employee.position),
         status: p.status,
         evidenceStorageId: p.evidenceStorageId ?? null,
         evidenceType: p.evidenceType ?? null,
@@ -967,7 +968,7 @@ export const getMany = authQuery
         participantsPreview: Array<{
           participantId: Id<"activityParticipant">;
           employeeId: Id<"employee">;
-          name: string;
+          name: LocalizedString;
           image: string | null;
         }>;
         myStatus: "registered" | "attended" | "rewarded" | null;
@@ -1105,7 +1106,7 @@ export const exportAll = authMutation
       participantsPreview: Array<{
         participantId: Id<"activityParticipant">;
         employeeId: Id<"employee">;
-        name: string;
+        name: LocalizedString;
         image: string | null;
       }>;
     };

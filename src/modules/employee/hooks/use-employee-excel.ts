@@ -15,7 +15,10 @@ import {
   employeeHeaderMapping,
   employeeHeaders,
 } from "@/modules/employee/constants";
-import { employeeExportSchema } from "@/modules/employee/schema";
+import {
+  employeeExportSchema,
+  withLocalizedEnFallback,
+} from "@/modules/employee/schema";
 
 export type ExcelOperationState =
   | { status: "idle" }
@@ -74,17 +77,26 @@ export function useEmployeeExcel({
         return;
       }
 
-      const rows = result.data.map((row, index) => ({
-        rowIndex: index + 1,
-        employeeId: String(row.employeeId),
-        name: { th: row.nameTh, en: row.nameEn },
-        email: row.email ?? undefined,
-        department: { th: row.departmentTh, en: row.departmentEn },
-        position: { th: row.positionTh, en: row.positionEn },
-        rank: row.rank,
-        division: row.division,
-        password: String(row.citizenId),
-      }));
+      const rows = result.data.map((row, index) => {
+        const localized = withLocalizedEnFallback(row);
+        return {
+          rowIndex: index + 1,
+          employeeId: String(row.employeeId),
+          name: { th: localized.nameTh, en: localized.nameEn },
+          email: row.email ?? undefined,
+          department: {
+            th: localized.departmentTh,
+            en: localized.departmentEn,
+          },
+          position: {
+            th: localized.positionTh,
+            en: localized.positionEn,
+          },
+          rank: row.rank,
+          division: row.division,
+          password: String(row.citizenId),
+        };
+      });
 
       const chunks = chunkArray(rows, BULK_IMPORT_CHUNK_SIZE);
       let inserted = 0;

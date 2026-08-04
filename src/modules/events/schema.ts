@@ -103,9 +103,12 @@ export const joinEventSchema = z.object({
 
 export const participantSchema = z.object({
   employeeId: z.coerce.number().min(1, "กรุณาเลือกพนักงาน"),
-  name: z.string(),
-  department: z.string(),
-  position: z.string(),
+  nameTh: z.string().optional().nullable(),
+  nameEn: z.string().optional().nullable(),
+  departmentTh: z.string().optional().nullable(),
+  departmentEn: z.string().optional().nullable(),
+  positionTh: z.string().optional().nullable(),
+  positionEn: z.string().optional().nullable(),
   status: z.enum(["registered", "attended", "rewarded", "cancelled"]),
 });
 

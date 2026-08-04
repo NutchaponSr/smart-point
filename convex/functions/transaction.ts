@@ -10,9 +10,26 @@ import {
 } from "../lib/monthly-transfer";
 import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
 import { awardSpecialPoints } from "../lib/points";
+import {
+  coerceLocalized,
+  isLocalizedString,
+  localizedLabel,
+  localizedSearchText,
+} from "../lib/localized";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+
+const zLocalizedString = z.object({
+  th: z.string(),
+  en: z.string(),
+});
+
+function rankAsString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (isLocalizedString(value)) return value.th.trim() || value.en.trim();
+  return "";
+}
 
 const MONTHLY_QUEST_GOAL = 20;
 const MONTHLY_QUEST_REWARD_PER_GIVE = 1;
@@ -46,7 +63,9 @@ async function getPartyNamesByTransaction(
   const employees = await Promise.all(
     Array.from(employeeIds).map(async (employeeId) => {
       const employee = await ctx.db.get(employeeId);
-      return employee ? ([employeeId, employee.name] as const) : null;
+      return employee
+        ? ([employeeId, localizedSearchText(employee.name)] as const)
+        : null;
     }),
   );
   const employeeNameMap = new Map(
@@ -139,8 +158,8 @@ async function enrichTransaction(ctx: QueryCtx, t: Doc<"transaction">) {
     employee
       ? {
           id: employee.employeeId,
-          name: employee.name,
-          department: employee.department,
+          name: coerceLocalized(employee.name),
+          department: coerceLocalized(employee.department),
           image: user?.image ?? null,
         }
       : null;
@@ -1326,7 +1345,7 @@ export const send = authMutation
       balanceType: "giving",
       sourceType: "transaction",
       sourceId: String(transactionId),
-      note: `Sent to ${receiver.name}`,
+      note: `Sent to ${localizedLabel(receiver.name, "th")}`,
       createdAt: Date.now(),
     });
 
@@ -1335,13 +1354,13 @@ export const send = authMutation
       subjectEmployeeId: receiver._id,
       type: "point_transfer_sent",
       sourceId: String(transactionId),
-      summary: `โอน ${input.amount} พอยต์ให้ ${receiver.name}`,
+      summary: `โอน ${input.amount} พอยต์ให้ ${localizedLabel(receiver.name, "th")}`,
       meta: {
         transactionId: String(transactionId),
         senderId: String(sender._id),
         receiverId: String(receiver._id),
         amount: input.amount,
-        receiverName: receiver.name,
+        receiverName: localizedLabel(receiver.name, "th"),
         ...(unlimitedSend ? { adminBypass: true } : {}),
       },
     });
@@ -1452,9 +1471,9 @@ export const feeds = authQuery
       sender: z.object({
         _id: z.custom<Id<"employee">>(),
         employeeId: z.string(),
-        name: z.string(),
-        department: z.string(),
-        position: z.string(),
+        name: zLocalizedString,
+        department: zLocalizedString,
+        position: zLocalizedString,
         rank: z.string(),
         division: z.string(),
         image: z.string().nullable(),
@@ -1462,9 +1481,9 @@ export const feeds = authQuery
       receiver: z.object({
         _id: z.custom<Id<"employee">>(),
         employeeId: z.string(),
-        name: z.string(),
-        department: z.string(),
-        position: z.string(),
+        name: zLocalizedString,
+        department: zLocalizedString,
+        position: zLocalizedString,
         rank: z.string(),
         division: z.string(),
         image: z.string().nullable(),
@@ -1482,9 +1501,9 @@ export const feeds = authQuery
           author: z.object({
             _id: z.custom<Id<"employee">>(),
             employeeId: z.string(),
-            name: z.string(),
-            department: z.string(),
-            position: z.string(),
+            name: zLocalizedString,
+            department: zLocalizedString,
+            position: zLocalizedString,
             rank: z.string(),
             division: z.string(),
             image: z.string().nullable(),
@@ -1593,20 +1612,20 @@ export const feeds = authQuery
               sender: {
                 _id: sender._id,
                 employeeId: sender.employeeId,
-                name: sender.name,
-                department: sender.department,
-                position: sender.position,
-                rank: sender.rank,
+                name: coerceLocalized(sender.name),
+                department: coerceLocalized(sender.department),
+                position: coerceLocalized(sender.position),
+                rank: rankAsString(sender.rank),
                 division: sender.division,
                 image: userImageByEmployeeId.get(sender._id) ?? null,
               },
               receiver: {
                 _id: receiver._id,
                 employeeId: receiver.employeeId,
-                name: receiver.name,
-                department: receiver.department,
-                position: receiver.position,
-                rank: receiver.rank,
+                name: coerceLocalized(receiver.name),
+                department: coerceLocalized(receiver.department),
+                position: coerceLocalized(receiver.position),
+                rank: rankAsString(receiver.rank),
                 division: receiver.division,
                 image: userImageByEmployeeId.get(receiver._id) ?? null,
               },
@@ -1627,10 +1646,10 @@ export const feeds = authQuery
                     author: {
                       _id: author._id,
                       employeeId: author.employeeId,
-                      name: author.name,
-                      department: author.department,
-                      position: author.position,
-                      rank: author.rank,
+                      name: coerceLocalized(author.name),
+                      department: coerceLocalized(author.department),
+                      position: coerceLocalized(author.position),
+                      rank: rankAsString(author.rank),
                       division: author.division,
                       image: userImageByEmployeeId.get(author._id) ?? null,
                     },
@@ -1772,10 +1791,10 @@ export const comment = authMutation
       author: {
         _id: String(employee._id),
         employeeId: employee.employeeId,
-        name: employee.name,
-        department: employee.department,
-        position: employee.position,
-        rank: employee.rank,
+        name: coerceLocalized(employee.name),
+        department: coerceLocalized(employee.department),
+        position: coerceLocalized(employee.position),
+        rank: rankAsString(employee.rank),
         division: employee.division,
         image: user?.image ?? null,
       },

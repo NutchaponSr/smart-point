@@ -1,6 +1,10 @@
+"use client";
+
 import { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
+import { useLocale } from "next-intl";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
@@ -55,23 +59,7 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
     {
       accessorKey: "name",
       header: "พนักงาน",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2.5">
-          <UserAvatar
-            name={row.original.name}
-            className={{
-              container: "size-8 after:border-[1.5px]",
-              fallback: "text-sm font-medium",
-            }}
-          />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{row.original.name}</span>
-            <span className="text-xs text-muted-foreground">
-              {row.original.department}
-            </span>
-          </div>
-        </div>
-      ),
+      cell: ({ row }) => <ParticipantNameCell participant={row.original} />,
     },
     {
       accessorKey: "status",
@@ -79,7 +67,9 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
       cell: ({ row }) => {
         const status = row.original.status;
         const label =
-          status in statuses ? statuses[status as keyof typeof statuses].th : status;
+          status in statuses
+            ? statuses[status as keyof typeof statuses].th
+            : status;
         return (
           <span
             className={`text-sm font-semibold ${statusBadgeClassName[status] ?? ""}`}
@@ -110,7 +100,8 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
       header: "ตรวจสอบ",
       cell: ({ row }) => {
         const canReview =
-          row.original.status === "attended" && !!row.original.evidenceStorageId;
+          row.original.status === "attended" &&
+          !!row.original.evidenceStorageId;
         const participantId = row.original.participantId;
 
         return (
@@ -120,9 +111,7 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
               size="sm"
               variant="secondary"
               title="บวกคะแนนพิเศษให้พนักงาน"
-              disabled={
-                !canReview || options.approvingIds.has(participantId)
-              }
+              disabled={!canReview || options.approvingIds.has(participantId)}
               onClick={() => options.onApprove(participantId)}
             >
               อนุมัติ
@@ -132,9 +121,7 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
               size="sm"
               variant="danger"
               title="ปฏิเสธหลักฐาน — พนักงานสามารถแนบใหม่ได้"
-              disabled={
-                !canReview || options.rejectingIds.has(participantId)
-              }
+              disabled={!canReview || options.rejectingIds.has(participantId)}
               onClick={() => options.onReject(participantId)}
             >
               ปฏิเสธ
@@ -145,3 +132,25 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
     },
   ];
 };
+
+function ParticipantNameCell({ participant }: { participant: Participant }) {
+  const locale = useLocale();
+  const name = pickLocalized(participant.name, locale);
+  const department = pickLocalized(participant.department, locale);
+
+  return (
+    <div className="flex items-center gap-2.5">
+      <UserAvatar
+        name={name}
+        className={{
+          container: "size-8 after:border-[1.5px]",
+          fallback: "text-sm font-medium",
+        }}
+      />
+      <div className="flex flex-col">
+        <span className="text-sm font-medium">{name}</span>
+        <span className="text-xs text-muted-foreground">{department}</span>
+      </div>
+    </div>
+  );
+}

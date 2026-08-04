@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 
 import { statuses } from "@/modules/transactions/constants";
@@ -12,14 +13,25 @@ interface Props {
   view: "sent" | "received";
 }
 
+function partyName(
+  party: Transaction["sender"] | Transaction["receiver"],
+  fallback: string,
+) {
+  if (!party?.name) return fallback;
+  return pickLocalized(party.name, "th") || fallback;
+}
+
 export const columns = ({ view }: Props): ColumnDef<Transaction>[] => {
   return [
     {
       id: "employeeName",
       header: "พนักงาน",
       cell: ({ row }) => {
-        const senderName = row.original.sender?.name ?? "ไม่พบข้อมูลผู้ส่ง";
-        const receiverName = row.original.receiver?.name ?? "ไม่พบข้อมูลผู้รับ";
+        const senderName = partyName(row.original.sender, "ไม่พบข้อมูลผู้ส่ง");
+        const receiverName = partyName(
+          row.original.receiver,
+          "ไม่พบข้อมูลผู้รับ",
+        );
 
         if (view === "sent") {
           return (

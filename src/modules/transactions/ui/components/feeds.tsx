@@ -17,6 +17,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useLocale, useTranslations } from "next-intl";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -504,7 +505,9 @@ const FeedItem = ({
   const isReceived = feed.receiverId === currentEmployeeId;
   const timeAgo = formatDistanceLocalized(feed.createdAt, locale);
 
-  const avatarName = isReceived ? feed.sender.name : feed.receiver.name;
+  const senderName = pickLocalized(feed.sender.name, locale);
+  const receiverName = pickLocalized(feed.receiver.name, locale);
+  const avatarName = isReceived ? senderName : receiverName;
   const avatarImage = isReceived ? feed.sender.image : feed.receiver.image;
 
   return (
@@ -530,8 +533,8 @@ const FeedItem = ({
               <div className="flex w-full min-w-0 flex-col gap-2 text-left">
                 <FeedHeadline
                   isReceived={isReceived}
-                  senderName={feed.sender.name}
-                  receiverName={feed.receiver.name}
+                  senderName={senderName}
+                  receiverName={receiverName}
                 />
 
                 {isReceived ? (
@@ -596,9 +599,9 @@ const FeedItem = ({
         onOpenChange={setIsCommentOpen}
         isReceived={isReceived}
         amount={feed.amount}
-        senderName={feed.sender.name}
+        senderName={senderName}
         senderImage={feed.sender.image}
-        receiverName={feed.receiver.name}
+        receiverName={receiverName}
         receiverImage={feed.receiver.image}
         message={feed.message}
         likes={feed.likes.count}
@@ -648,16 +651,16 @@ function FeedDetailDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <PartyCard
               label={t("detail.sender")}
-              name={feed.sender.name}
+              name={pickLocalized(feed.sender.name, locale)}
               id={feed.sender.employeeId}
-              department={feed.sender.department}
+              department={pickLocalized(feed.sender.department, locale)}
               image={feed.sender.image}
             />
             <PartyCard
               label={t("detail.receiver")}
-              name={feed.receiver.name}
+              name={pickLocalized(feed.receiver.name, locale)}
               id={feed.receiver.employeeId}
-              department={feed.receiver.department}
+              department={pickLocalized(feed.receiver.department, locale)}
               image={feed.receiver.image}
               accent
             />
@@ -850,7 +853,7 @@ export const FeedDialog = ({
               {comments.map((item) => (
                 <li key={item._id} className="flex min-w-0 items-start gap-3">
                   <UserAvatar
-                    name={item.author.name}
+                    name={pickLocalized(item.author.name, locale)}
                     src={item.author.image || undefined}
                     className={{
                       container: "size-8 shrink-0",
@@ -858,7 +861,7 @@ export const FeedDialog = ({
                   />
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <FeedCommentBubble
-                      authorName={item.author.name}
+                      authorName={pickLocalized(item.author.name, locale)}
                       content={item.content}
                     />
                     <p className="mt-2 text-xs font-bold text-[#afafaf]">

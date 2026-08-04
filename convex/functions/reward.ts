@@ -8,6 +8,7 @@ import {
   publicMutation,
 } from "../lib/crpc";
 import {
+  coerceLocalized,
   isLocalizedString,
   localizedSearchText,
   toLocalizedString,
@@ -600,7 +601,7 @@ export const getOne = authQuery
         reviewer: {
           userId: review.userId,
           employeeId: user?.employeeId ?? null,
-          name: employee?.name ?? null,
+          name: employee ? coerceLocalized(employee.name) : null,
           image: user?.image ?? null,
         },
       };

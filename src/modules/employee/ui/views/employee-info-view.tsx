@@ -64,7 +64,6 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
           ? employee.rank
           : employee.rank.th || employee.rank.en,
       division: employee.division,
-      citizenId: employee.citizenId ?? "",
       newPassword: "",
     },
   });
@@ -74,7 +73,6 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
 
   const onSubmit = (data: EmployeeEditSchema) => {
     const newPassword = data.newPassword.trim();
-    const citizenId = data.citizenId.trim();
     update.mutate(
       {
         employeeId: employeeId as Id<"employee">,
@@ -84,14 +82,12 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
         position: data.position,
         rank: data.rank,
         division: data.division,
-        ...(citizenId.length > 0 ? { citizenId } : {}),
         ...(newPassword.length > 0 ? { newPassword } : {}),
       },
       {
         onSuccess: () => {
           form.reset({
             ...data,
-            citizenId: citizenId || employee.citizenId || "",
             newPassword: "",
           });
           toast.success("บันทึกข้อมูลพนักงานสำเร็จ");

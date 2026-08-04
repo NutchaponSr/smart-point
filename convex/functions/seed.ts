@@ -2,10 +2,14 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { optionalAuthAction, privateMutation } from "../lib/crpc";
+import {
+  resolveDepartmentLoose,
+  resolvePositionLoose,
+} from "../lib/employee-directory";
 import { normalizeText } from "../lib/employee-id";
+import { localizedLabel, localizedSearchText, toLocalizedString } from "../lib/localized";
 
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
 
 function defaultSignupEmail(): string {
   return `example@somboon.co.th`;
@@ -34,12 +38,24 @@ export const insertEmployee = privateMutation
 
     if (existing) return null;
 
+    const name = toLocalizedString(input.name);
+    if (!name) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: `Employee name is required: ${employeeId}`,
+      });
+    }
+
+    const department = resolveDepartmentLoose(input.department);
+
     const employeeDocId = await ctx.db.insert("employee", {
       employeeId,
-      name: input.name,
+      name,
+      nameSearch: localizedSearchText(name).trim(),
       email: input.email,
-      department: input.department,
-      position: input.position,
+      department,
+      departmentSearch: localizedSearchText(department).trim(),
+      position: resolvePositionLoose(input.position),
       rank: input.rank,
       division: input.division,
     });
@@ -145,7 +161,6 @@ export const seedEmployee = optionalAuthAction
 
     for (const emp of input.employees) {
       const employeeId = normalizeText(emp.employeeId, 5);
-      const password = normalizeText(emp.password, 12);
 
       const empId = await ctx.runMutation(internal.seed.insertEmployee, {
         employeeId,
@@ -166,7 +181,7 @@ export const seedEmployee = optionalAuthAction
       try {
         await ctx.auth.api.signUpEmail({
           body: {
-            name: emp.name,
+            name: localizedLabel(emp.name, "th"),
             email: emp.email ?? defaultSignupEmail(),
             password: normalizeText(emp.password, 5),
             username: employeeId,

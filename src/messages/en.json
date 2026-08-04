@@ -123,6 +123,21 @@
       "placeholder": "Write a comment..."
     }
   },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "alt": "Leaderboard",
+    "filters": {
+      "aria-label": "Leaderboard filters",
+      "title": "Filters",
+      "reset": "Reset",
+      "search-placeholder": "Search employees",
+      "period": "Period",
+      "period-30d": "30 days",
+      "period-fullTime": "All time",
+      "division": "BU / Division",
+      "limit": "Items per page"
+    }
+  },
   "overview": {
     "events-for-you": "Events for you",
     "events-for-bu": "Events for your BU",

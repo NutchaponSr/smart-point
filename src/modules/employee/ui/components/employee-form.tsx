@@ -198,28 +198,6 @@ export const EmployeeForm = ({ isEdit = false }: { isEdit?: boolean }) => {
             )}
           />
         )}
-        {isEdit && (
-          <Controller
-            control={control}
-            name="citizenId"
-            render={({ field, fieldState }) => (
-              <FieldSet
-                label="เลขบัตรประชาชน"
-                errorMessage={fieldState.error?.message}
-              >
-                <Input
-                  {...field}
-                  value={field.value ?? ""}
-                  inputMode="numeric"
-                  maxLength={5}
-                />
-                <small className="text-sm font-medium text-[#777]">
-                  5 หลักท้ายบัตรประชาชน — เว้นว่างถ้าไม่ต้องการเปลี่ยน
-                </small>
-              </FieldSet>
-            )}
-          />
-        )}
       </FormSection>
 
       <FormSection

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 import LeaderboardIcon from "../../../../../public/leaderboard.svg";
 
@@ -8,6 +9,8 @@ import { LeaderboardScreen } from "@/modules/transactions/ui/screens/leaderboard
 import { LeaderboardFilters } from "@/modules/transactions/ui/components/leaderboard-filters";
 
 export const LeaderboardView = () => {
+  const t = useTranslations("leaderboard");
+
   return (
     <div className="flex flex-col gap-6 px-6">
       <div className="flex flex-col gap-6 lg:flex-row-reverse lg:gap-12">
@@ -20,16 +23,13 @@ export const LeaderboardView = () => {
             <header className="flex flex-col items-center gap-2 text-center">
               <Image
                 src={LeaderboardIcon}
-                alt="Leaderboard"
+                alt={t("alt")}
                 width={100}
                 height={100}
                 className="size-16 sm:size-[100px]"
               />
-              <h1 className="text-xl font-bold sm:text-2xl">
-                ตารางคะแนน
-              </h1>
-              <p className="text-sm text-muted-foreground sm:text-base">
-              </p>
+              <h1 className="text-xl font-bold sm:text-2xl">{t("title")}</h1>
+              <p className="text-sm text-muted-foreground sm:text-base"></p>
             </header>
 
             <LeaderboardScreen />

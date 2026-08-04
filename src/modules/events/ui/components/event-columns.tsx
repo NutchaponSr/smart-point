@@ -102,14 +102,9 @@ export const columns = (): ColumnDef<Event>[] => {
       cell: ({ row }) => (
         <AvatarGroup>
           {row.original.participantsPreview.slice(0, 3).map((participant) => (
-            <UserAvatar
+            <ParticipantAvatar
               key={participant.employeeId}
-              name={participant.name}
-              src={participant.image ?? undefined}
-              className={{
-                container: "size-8 after:border-[1.5px]",
-                fallback: "text-sm font-medium",
-              }}
+              participant={participant}
             />
           ))}
           <AvatarGroupCount className="border-[1.5px] border-border!">
@@ -126,3 +121,22 @@ export const columns = (): ColumnDef<Event>[] => {
     },
   ];
 };
+
+function ParticipantAvatar({
+  participant,
+}: {
+  participant: Event["participantsPreview"][number];
+}) {
+  const locale = useLocale();
+  const name = pickLocalized(participant.name, locale);
+  return (
+    <UserAvatar
+      name={name}
+      src={participant.image ?? undefined}
+      className={{
+        container: "size-8 after:border-[1.5px]",
+        fallback: "text-sm font-medium",
+      }}
+    />
+  );
+}

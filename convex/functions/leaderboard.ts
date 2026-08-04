@@ -1,5 +1,10 @@
 import z from "zod/v4";
 import { authQuery } from "../lib/crpc";
+import {
+  coerceLocalized,
+  localizedSearchText,
+  type LocalizedString,
+} from "../lib/localized";
 import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
 
@@ -8,13 +13,17 @@ const periodSchema = z.enum(["30d", "fullTime"]);
 
 type EmployeeListRow = {
   employeeId: string;
-  name: string;
+  name: LocalizedString | string;
   email: string | null;
-  department: string;
-  position: string;
-  rank: string;
+  department: LocalizedString | string;
+  position: LocalizedString | string;
+  rank: LocalizedString | string;
   division: string;
 };
+
+function rankText(rank: LocalizedString | string): string {
+  return typeof rank === "string" ? rank : rank.th.trim() || rank.en.trim();
+}
 
 type LeaderboardEmployeeFilters = {
   query?: string | null;
@@ -42,10 +51,12 @@ function matchesEmployeeSearch(
   if (!normalizedQuery) return true;
   return (
     row.employeeId.toLowerCase().includes(normalizedQuery) ||
-    row.name.toLowerCase().includes(normalizedQuery) ||
-    row.department.toLowerCase().includes(normalizedQuery) ||
-    row.position.toLowerCase().includes(normalizedQuery) ||
-    row.rank.toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.name).toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.department)
+      .toLowerCase()
+      .includes(normalizedQuery) ||
+    localizedSearchText(row.position).toLowerCase().includes(normalizedQuery) ||
+    rankText(row.rank).toLowerCase().includes(normalizedQuery) ||
     row.division.toLowerCase().includes(normalizedQuery) ||
     (row.email ?? "").toLowerCase().includes(normalizedQuery)
   );
@@ -65,7 +76,7 @@ function matchesLeaderboardEmployeeFilters(
     return false;
   }
   return (
-    row.rank !== "Admin" &&
+    rankText(row.rank) !== "Admin" &&
     matchesEmployeeSearch(row, filters.normalizedQuery)
   );
 }
@@ -108,16 +119,16 @@ async function collectFilteredEmployees(
   Array<{
     _id: Id<"employee">;
     employeeCode: string;
-    employeeName: string;
-    department: string | null;
+    employeeName: LocalizedString | string;
+    department: LocalizedString | string | null;
   }>
 > {
   const baseQuery = leaderboardEmployeeBaseQuery(ctx, filters);
   const out: Array<{
     _id: Id<"employee">;
     employeeCode: string;
-    employeeName: string;
-    department: string | null;
+    employeeName: LocalizedString | string;
+    department: LocalizedString | string | null;
   }> = [];
 
   let cursor: string | null = null;
@@ -132,8 +143,10 @@ async function collectFilteredEmployees(
       out.push({
         _id: row.id as Id<"employee">,
         employeeCode: row.employeeId,
-        employeeName: row.name,
-        department: row.department ?? null,
+        employeeName: coerceLocalized(row.name),
+        department: row.department
+          ? coerceLocalized(row.department)
+          : null,
       });
     }
 
@@ -149,8 +162,8 @@ async function collectFilteredEmployees(
 type RankedRow = {
   employeeId: Id<"employee">;
   employeeCode: string;
-  employeeName: string;
-  department: string | null;
+  employeeName: LocalizedString | string;
+  department: LocalizedString | string | null;
   points: number;
   receivingBudget: number;
   specialBudget: number;

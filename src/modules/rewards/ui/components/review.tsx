@@ -1,6 +1,8 @@
 import { ApiOutputs } from "@convex/api";
+import { useLocale } from "next-intl";
 
 import { StarRating } from "@/components/star-rating";
+import { pickLocalized } from "@/lib/i18n/localized";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 
 interface Props {
@@ -8,6 +10,9 @@ interface Props {
 }
 
 export const Review = ({ reviewer }: Props) => {
+  const locale = useLocale();
+  const name = pickLocalized(reviewer.reviewer.name, locale);
+
   return (
     <section className="grid gap-2">
       <span className="flex shrink-0 items-center">
@@ -16,16 +21,16 @@ export const Review = ({ reviewer }: Props) => {
       <p className="text-base m-0">{reviewer.comment}</p>
       <section className="flex flex-wrap items-center gap-1">
         <div className="flex items-center gap-2">
-          {reviewer.reviewer.name && (
-            <UserAvatar 
-              name={reviewer.reviewer.name || ""}
+          {name ? (
+            <UserAvatar
+              name={name}
               className={{
                 container: "size-5 after:border-[1.5px]",
                 fallback: "text-xs font-normal",
               }}
             />
-          )}
-          <h5 className="text-sm font-normal leading-[1.3]">{reviewer.reviewer.name}</h5>
+          ) : null}
+          <h5 className="text-sm font-normal leading-[1.3]">{name}</h5>
         </div>
       </section>
     </section>

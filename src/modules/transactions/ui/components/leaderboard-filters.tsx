@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   DropdownMenu,
@@ -14,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/accordion";
 import { SearchInput } from "@/components/search-input";
 
+import { pickLocalized } from "@/lib/i18n/localized";
+
 import { divisions } from "@/modules/employee/constants";
 import {
   periodValues,
@@ -21,11 +24,6 @@ import {
 } from "@/modules/transactions/stores/use-leaderboard-filters";
 
 const LIMIT_OPTIONS = ["10", "25", "50", "100"] as const;
-
-const PERIOD_LABELS: Record<(typeof periodValues)[number], string> = {
-  "30d": "30 วัน",
-  fullTime: "ทั้งหมด",
-};
 
 const checkboxClassName =
   "appearance-none size-[calc(1lh+0.125rem)] border-[1.5px] border-border bg-background text-base leading-snug shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 checked:bg-[#58cc02] rounded-xs peer";
@@ -59,7 +57,12 @@ const FilterOptionCheckbox = ({
 );
 
 export const LeaderboardFilters = () => {
+  const t = useTranslations("leaderboard.filters");
+  const locale = useLocale();
   const [filters, setFilters] = useLeaderboardFilters();
+
+  const periodLabel = (period: (typeof periodValues)[number]) =>
+    t(`period-${period}`);
 
   const toggleDivision = (value: string, checked: boolean) => {
     const current = filters.division ?? [];
@@ -86,11 +89,11 @@ export const LeaderboardFilters = () => {
 
   return (
     <section
-      aria-label="ตัวกรอง"
+      aria-label={t("aria-label")}
       className="grid divide-y-2 divide-solid divide-border overflow-y-auto rounded-md border-2 bg-background"
     >
       <header className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <h2 className="text-base font-bold leading-snug">ตัวกรอง</h2>
+        <h2 className="text-base font-bold leading-snug">{t("title")}</h2>
         {hasActiveFilters && (
           <div className="grow text-right">
             <button
@@ -98,7 +101,7 @@ export const LeaderboardFilters = () => {
               className="cursor-pointer underline"
               onClick={onClear}
             >
-              รีเซ็ต
+              {t("reset")}
             </button>
           </div>
         )}
@@ -107,16 +110,16 @@ export const LeaderboardFilters = () => {
       <div className="p-4">
         <SearchInput
           value={filters.q}
-          placeholder="ค้นหาพนักงาน"
+          placeholder={t("search-placeholder")}
           onChange={(q) => setFilters({ ...filters, q })}
         />
       </div>
 
-      <Accordion title="ช่วงเวลา">
+      <Accordion title={t("period")}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="lg" className="w-full justify-between">
-              {PERIOD_LABELS[filters.period]}
+              {periodLabel(filters.period)}
               <ChevronDownIcon className="size-4.5" />
             </Button>
           </DropdownMenuTrigger>
@@ -136,7 +139,7 @@ export const LeaderboardFilters = () => {
               >
                 {periodValues.map((period) => (
                   <DropdownMenuRadioItem key={period} value={period}>
-                    {PERIOD_LABELS[period]}
+                    {periodLabel(period)}
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
@@ -145,11 +148,11 @@ export const LeaderboardFilters = () => {
         </DropdownMenu>
       </Accordion>
 
-      <Accordion title="BU / สังกัด">
+      <Accordion title={t("division")}>
         {divisions.map((division) => (
           <FilterOptionCheckbox
             key={division.slug}
-            label={division.name.th}
+            label={pickLocalized(division.name, locale)}
             checked={filters.division.includes(division.slug)}
             onCheckedChange={(checked) =>
               toggleDivision(division.slug, checked)
@@ -158,7 +161,7 @@ export const LeaderboardFilters = () => {
         ))}
       </Accordion>
 
-      <Accordion title="จำนวนรายการ">
+      <Accordion title={t("limit")}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="lg" className="w-full justify-between">

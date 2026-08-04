@@ -3,15 +3,20 @@ export const BULK_IMPORT_CHUNK_SIZE = 200;
 
 export const employeeHeaderMapping: Record<string, string> = {
   "Employee Id": "employeeId",
+  // Template ใหม่ (TH/EN แยก)
   "Name (TH)": "nameTh",
   "Name (EN)": "nameEn",
-  "Email": "email",
+  // Template เก่า — ค่าเดียว → map เป็น TH แล้ว schema fallback EN = TH
+  Name: "nameTh",
+  Email: "email",
   "Department (TH)": "departmentTh",
   "Department (EN)": "departmentEn",
+  Department: "departmentTh",
   "Position (TH)": "positionTh",
   "Position (EN)": "positionEn",
-  "Rank": "rank",
-  "Division": "division",
+  Position: "positionTh",
+  Rank: "rank",
+  Division: "division",
   "Citizen Id": "citizenId",
 };
 

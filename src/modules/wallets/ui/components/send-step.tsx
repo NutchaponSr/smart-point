@@ -2,11 +2,12 @@ import Image from "next/image";
 
 import { ApiOutputs } from "@convex/api";
 import { useEffect, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useController, useFormContext } from "react-hook-form";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -46,6 +47,7 @@ export const SendStep = ({
   canSendUnlimitedPoints = false,
 }: Props) => {
   const crpc = useCRPC();
+  const locale = useLocale();
   const t = useTranslations("wallet");
   
   const { query, setQuery } = useSearchEmployee();
@@ -162,10 +164,10 @@ export const SendStep = ({
             }}
             options={
               employees?.map((employee) => ({
-                label: employee.name,
+                label: pickLocalized(employee.name, locale),
                 value: employee.employeeId,
                 email: employee.email,
-                department: employee.department,
+                department: pickLocalized(employee.department, locale),
               })) || []
             }
             onSearch={async (value) => {
@@ -182,7 +184,7 @@ export const SendStep = ({
                 id: option.value,
                 name: option.label,
                 email: employee.email,
-                department: employee.department,
+                department: pickLocalized(employee.department, locale),
               });
             }}
           />
@@ -200,8 +202,8 @@ export const SendStep = ({
             )}
           >
             {monthlyQuota.remaining === 0
-              ? `เดือนนี้โอนให้ ${monthlyQuota.receiverName ?? "พนักงานคนนี้"} ครบ ${monthlyQuota.cap} พอยต์แล้ว`
-              : `เดือนนี้โอนให้ ${monthlyQuota.receiverName ?? "พนักงานคนนี้"} ไปแล้ว ${monthlyQuota.used}/${monthlyQuota.cap} เหลือ ${monthlyQuota.remaining}`}
+              ? `เดือนนี้โอนให้ ${pickLocalized(monthlyQuota.receiverName, locale) || "พนักงานคนนี้"} ครบ ${monthlyQuota.cap} พอยต์แล้ว`
+              : `เดือนนี้โอนให้ ${pickLocalized(monthlyQuota.receiverName, locale) || "พนักงานคนนี้"} ไปแล้ว ${monthlyQuota.used}/${monthlyQuota.cap} เหลือ ${monthlyQuota.remaining}`}
           </p>
         ) : null}
       </section>

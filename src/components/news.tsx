@@ -200,8 +200,8 @@ function formatActivityLogMessage(
     summary: string;
     amount: number | null;
     activityName: { th: string; en: string } | string | null;
-    actor: { name: string } | null;
-    subject: { name: string } | null;
+    actor: { name: { th: string; en: string } | string } | null;
+    subject: { name: { th: string; en: string } | string } | null;
     meta: Record<string, unknown> | null;
   },
   locale: string,
@@ -214,7 +214,10 @@ function formatActivityLogMessage(
     typeof item.meta?.receiverName === "string"
       ? item.meta.receiverName
       : null;
-  const name = item.subject?.name ?? nameFromMeta ?? item.actor?.name ?? "";
+  const name = pickLocalized(
+    item.subject?.name ?? nameFromMeta ?? item.actor?.name ?? "",
+    locale,
+  );
   const activityName = pickLocalized(item.activityName, locale);
   const amount = item.amount ?? "";
 

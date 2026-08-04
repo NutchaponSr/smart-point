@@ -1,9 +1,9 @@
-import bcrypt from "bcryptjs";
 import authConfig from "./auth.config";
 
 import { convex } from "better-convex/auth";
 import { username } from "better-auth/plugins";
 
+import { hashPassword, verifyPassword } from "../lib/password";
 import { isAllowedAvatarPath } from "../shared/avatars";
 import { defineAuth } from "./generated/auth";
 
@@ -20,7 +20,7 @@ const assertAllowedAvatar = (image: string | null | undefined) => {
   }
 };
 
-export default defineAuth((ctx) => {
+export default defineAuth((_ctx) => {
   return {
     baseURL: process.env.SITE_URL!,
     trustedOrigins: [process.env.SITE_URL || "http://localhost:3000"],
@@ -35,14 +35,8 @@ export default defineAuth((ctx) => {
       minPasswordLength: 5,
       maxPasswordLength: 20,
       password: {
-        hash: async (password) => {
-          const salt = await bcrypt.genSalt(12);
-
-          return await bcrypt.hash(password, salt);
-        },
-        verify: async ({ password, hash }) => {
-          return await bcrypt.compare(password, hash);
-        },
+        hash: async (password) => hashPassword(password),
+        verify: async ({ password, hash }) => verifyPassword(password, hash),
       },
     },
     databaseHooks: {

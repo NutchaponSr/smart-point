@@ -4,6 +4,7 @@ import z from "zod/v4";
 import { requireAdmin } from "../lib/auth-helper";
 import { authMutation, authQuery } from "../lib/crpc";
 import {
+  coerceLocalized,
   localizedSearchText,
   type LocalizedString,
 } from "../lib/localized";
@@ -231,8 +232,8 @@ type RedemptionAdminPageRow = {
   employee: {
     _id: Id<"employee">;
     employeeId: string;
-    name: string;
-    department: string;
+    name: LocalizedString;
+    department: LocalizedString;
     division: string;
   };
 };
@@ -253,7 +254,9 @@ function redemptionAdminMatchesQuery(
     localizedSearchText(reward.description)
       .toLowerCase()
       .includes(normalizedQuery) ||
-    employee.name.toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(employee.name)
+      .toLowerCase()
+      .includes(normalizedQuery) ||
     employee.employeeId.toLowerCase().includes(normalizedQuery) ||
     (redemption.trackingNumber?.toLowerCase().includes(normalizedQuery) ??
       false)
@@ -424,8 +427,8 @@ function enqueueRedemptionAdminPageRows(params: {
       employee: {
         _id: employee._id,
         employeeId: employee.employeeId,
-        name: employee.name,
-        department: employee.department,
+        name: coerceLocalized(employee.name),
+        department: coerceLocalized(employee.department),
         division: employee.division,
       },
     });

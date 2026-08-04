@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import type { ApiOutputs } from "@convex/api";
 import { useMutation } from "@tanstack/react-query";
 
+import { pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
 import { useConfirm } from "@/hooks/use-confirm";
 
@@ -90,8 +91,18 @@ export function TransactionReviewDialog({
     title: "ปฏิเสธธุรกรรม",
   });
 
-  const senderName = transaction.sender?.name ?? "ไม่พบข้อมูลผู้ส่ง";
-  const receiverName = transaction.receiver?.name ?? "ไม่พบข้อมูลผู้รับ";
+  const senderName = transaction.sender?.name
+    ? pickLocalized(transaction.sender.name, "th") || "ไม่พบข้อมูลผู้ส่ง"
+    : "ไม่พบข้อมูลผู้ส่ง";
+  const receiverName = transaction.receiver?.name
+    ? pickLocalized(transaction.receiver.name, "th") || "ไม่พบข้อมูลผู้รับ"
+    : "ไม่พบข้อมูลผู้รับ";
+  const senderDepartment = transaction.sender?.department
+    ? pickLocalized(transaction.sender.department, "th") || undefined
+    : undefined;
+  const receiverDepartment = transaction.receiver?.department
+    ? pickLocalized(transaction.receiver.department, "th") || undefined
+    : undefined;
   const tagLabel = tags[transaction.tags] ?? transaction.tags;
   const createdAt = format(
     new Date(transaction._creationTime),
@@ -155,14 +166,14 @@ export function TransactionReviewDialog({
                 label="ผู้ส่ง"
                 name={senderName}
                 id={transaction.sender?.id}
-                department={transaction.sender?.department}
+                department={senderDepartment}
                 image={transaction.sender?.image}
               />
               <PartyCard
                 label="ผู้รับ"
                 name={receiverName}
                 id={transaction.receiver?.id}
-                department={transaction.receiver?.department}
+                department={receiverDepartment}
                 image={transaction.receiver?.image}
                 accent
               />

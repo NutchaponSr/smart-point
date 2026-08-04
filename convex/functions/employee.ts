@@ -101,6 +101,16 @@ function coercePosition(value: LocalizedString | string): LocalizedString {
     : resolvePosition(value);
 }
 
+/** 5 หลักท้ายบัตรประชาชน — ใช้เป็นรหัสผ่านเริ่มต้น; ห้ามว่างและห้าม 00000 (จาก Excel ว่างที่ถูก pad) */
+function isValidCitizenId(value: string): boolean {
+  return /^\d{5}$/.test(value) && value !== "00000";
+}
+
+/** รหัสพนักงานธุรกิจหลัง normalize — ห้ามว่าง */
+function isValidBusinessEmployeeId(value: string): boolean {
+  return value.trim().length > 0;
+}
+
 async function findEmployeeByBusinessId(
   ctx: QueryCtx | MutationCtx,
   businessEmployeeId: string,
@@ -204,7 +214,19 @@ async function insertEmployeeWalletAndScheduleSignup(
   row: NewEmployeePayload,
 ): Promise<Id<"employee">> {
   const businessEmployeeId = normalizeText(row.businessEmployeeId, 5);
+  if (!isValidBusinessEmployeeId(businessEmployeeId)) {
+    throw new CRPCError({
+      code: "BAD_REQUEST",
+      message: "รหัสพนักงานไม่ถูกต้อง",
+    });
+  }
   const citizenId = normalizeText(row.citizenId, 5);
+  if (!isValidCitizenId(citizenId)) {
+    throw new CRPCError({
+      code: "BAD_REQUEST",
+      message: "เลขบัตรประชาชน (5 หลักท้าย) ไม่ถูกต้อง ต้องเป็นตัวเลข 5 หลัก",
+    });
+  }
   await assertCitizenIdAvailable(ctx, citizenId);
 
   const name = requireLocalizedName(row.name);
@@ -581,11 +603,6 @@ export const search = authQuery
     return results.slice(0, 10).map(({ citizenId: _citizenId, ...rest }) => rest);
   });
 
-/** 5 หลักท้ายบัตรประชาชน — ใช้เป็นรหัสผ่านเริ่มต้น ห้ามว่างหรือมีอักขระอื่นนอกจากตัวเลข */
-function isValidCitizenId(value: string): boolean {
-  return /^\d{5}$/.test(value);
-}
-
 const bulkImportRowSchema = z.object({
   rowIndex: z.number().int().positive(),
   employeeId: z.string().trim(),
@@ -621,6 +638,15 @@ export const bulkImport = authMutation
     for (const row of input.rows) {
       const businessEmployeeId = normalizeText(row.employeeId, 5);
       const citizenId = normalizeText(row.password, 5);
+
+      if (!isValidBusinessEmployeeId(businessEmployeeId)) {
+        errors.push({
+          rowIndex: row.rowIndex,
+          employeeId: row.employeeId,
+          message: "รหัสพนักงานไม่ถูกต้อง",
+        });
+        continue;
+      }
 
       if (!isValidCitizenId(citizenId)) {
         errors.push({
@@ -815,6 +841,18 @@ export const create = authMutation
 
     const businessEmployeeId = normalizeText(input.employeeId, 5);
     const citizenId = normalizeText(input.password, 5);
+    if (!isValidBusinessEmployeeId(businessEmployeeId)) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "รหัสพนักงานไม่ถูกต้อง",
+      });
+    }
+    if (!isValidCitizenId(citizenId)) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "เลขบัตรประชาชน (5 หลักท้าย) ไม่ถูกต้อง ต้องเป็นตัวเลข 5 หลัก",
+      });
+    }
     const email = normalizeOptionalEmail(input.email);
     const existing = await ctx.db
       .query("employee")
@@ -872,8 +910,20 @@ export const update = authMutation
     const position = requireLocalizedName(input.position);
     const rank = input.rank.trim();
     const nextBusinessId = normalizeText(input.businessEmployeeId, 5);
+    if (!isValidBusinessEmployeeId(nextBusinessId)) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "รหัสพนักงานไม่ถูกต้อง",
+      });
+    }
     const citizenId =
       input.citizenId == null ? undefined : normalizeText(input.citizenId, 5);
+    if (citizenId !== undefined && !isValidCitizenId(citizenId)) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "เลขบัตรประชาชน (5 หลักท้าย) ไม่ถูกต้อง ต้องเป็นตัวเลข 5 หลัก",
+      });
+    }
 
     await syncBusinessEmployeeId(
       ctx,
