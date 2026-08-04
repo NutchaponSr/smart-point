@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 
 import Logo from "../../../../../public/logo.svg";
 
@@ -7,12 +8,14 @@ interface Props {
   children: React.ReactNode;
 }
 
-export const AuthScreen = ({ title, children }: Props) => {
+export const AuthScreen = async ({ title, children }: Props) => {
+  const t = await getTranslations("auth");
+
   return (
     <div className="relative mt-0 flex w-full max-w-full flex-col items-center px-1 text-center sm:px-0">
       <Image
         src={Logo}
-        alt="Logo"
+        alt={t("logo-alt")}
         width={100}
         height={100}
         className="size-20 sm:size-[100px]"

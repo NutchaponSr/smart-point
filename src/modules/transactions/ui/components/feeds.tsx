@@ -889,7 +889,7 @@ export const FeedDialog = ({
         <footer className="overflow-hidden border-t-2 border-[#e5e5e5] bg-white p-3">
           <div className="flex min-w-0 items-center gap-2">
             <UserAvatar
-              name={currentUser.name ?? ""}
+              name={pickLocalized(currentUser.name, locale)}
               className={{
                 container: "size-9 shrink-0",
               }}

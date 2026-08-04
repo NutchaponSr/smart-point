@@ -2,12 +2,16 @@
 
 import Image from "next/image";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { enUS, th } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PencilIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/convex/auth-client";
+import { useCRPC } from "@/lib/convex/crpc";
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import {
   AVATAR_IDS,
@@ -27,16 +31,33 @@ import {
 
 const PLACEHOLDER_BG = "/placeholder.png";
 
-function formatJoinedAt(createdAt: Date | string | number | undefined) {
+function formatJoinedAt(
+  createdAt: Date | string | number | undefined,
+  locale: string,
+  label: string,
+) {
   if (createdAt == null) return null;
   const date = new Date(createdAt);
   if (Number.isNaN(date.getTime())) return null;
-  return `เข้าร่วมเมื่อ ${format(date, "LLLL yyyy", { locale: th })}`;
+  const dateLocale = locale === "en" ? enUS : th;
+  return `${label} ${format(date, "LLLL yyyy", { locale: dateLocale })}`;
 }
 
 export function AvatarProfileHeader() {
+  const locale = useLocale();
+  const t = useTranslations("auth");
+  const crpc = useCRPC();
+
   const { data: session } = authClient.useSession();
+  const { data: currentUser } = useQuery(
+    crpc.user.getCurrentUser.queryOptions(),
+  );
+
   const user = session?.user;
+  const displayName = pickLocalized(
+    currentUser?.name ?? user?.name,
+    locale,
+  );
 
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,7 +66,11 @@ export function AvatarProfileHeader() {
   const sessionImage = isAllowedAvatarPath(user?.image) ? user.image : null;
   const currentSrc = optimisticImage ?? sessionImage;
   const hasAvatar = Boolean(currentSrc);
-  const joinedLabel = formatJoinedAt(user?.createdAt);
+  const joinedLabel = formatJoinedAt(
+    user?.createdAt,
+    locale,
+    t("profile.joined"),
+  );
 
   useEffect(() => {
     if (optimisticImage != null && sessionImage === optimisticImage) {
@@ -71,14 +96,14 @@ export function AvatarProfileHeader() {
     try {
       const result = await authClient.updateUser({ image });
       if (result.error) {
-        toast.error("เปลี่ยนรูปโปรไฟล์ไม่สำเร็จ");
+        toast.error(t("profile.avatar-error"));
         return;
       }
       setOptimisticImage(image);
-      toast.success("เปลี่ยนรูปโปรไฟล์สำเร็จ");
+      toast.success(t("profile.avatar-success"));
       setOpen(false);
     } catch {
-      toast.error("เปลี่ยนรูปโปรไฟล์ไม่สำเร็จ");
+      toast.error(t("profile.avatar-error"));
     } finally {
       setIsSaving(false);
     }
@@ -107,14 +132,14 @@ export function AvatarProfileHeader() {
 
           <button
             type="button"
-            aria-label="เปลี่ยนรูปโปรไฟล์"
+            aria-label={t("profile.change-avatar")}
             onClick={() => setOpen(true)}
             className="relative flex h-[100px] w-full cursor-pointer items-end justify-center sm:h-[120px]"
           >
             {currentSrc ? (
               <Image
                 src={currentSrc}
-                alt={user?.name ?? "avatar"}
+                alt={displayName || t("profile.avatar-alt")}
                 width={200}
                 height={200}
                 priority
@@ -127,7 +152,7 @@ export function AvatarProfileHeader() {
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="เปลี่ยนรูปโปรไฟล์"
+            aria-label={t("profile.change-avatar")}
             onClick={() => setOpen(true)}
             className="absolute top-3 right-3 z-10 size-10 rounded-full border-2 border-[#e5e5e5] bg-white text-[#3c3c3c] shadow-none hover:bg-[#f7f7f7]"
           >
@@ -137,7 +162,7 @@ export function AvatarProfileHeader() {
 
         <div className="grid gap-0.5">
           <h2 className="text-2xl font-bold text-[#3c3c3c] sm:text-3xl">
-            {user?.name ?? "—"}
+            {displayName || "—"}
           </h2>
           {user?.username ? (
             <p className="text-base font-medium text-[#777]">#{user.username}</p>
@@ -152,10 +177,10 @@ export function AvatarProfileHeader() {
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-[#3c3c3c]">
-              เลือกรูปโปรไฟล์
+              {t("profile.pick-avatar-title")}
             </DialogTitle>
             <DialogDescription className="text-[#777]">
-              เลือกตัวละครสัตว์ที่คุณชอบ — เปลี่ยนได้ทุกเมื่อ ไม่จำกัดครั้ง
+              {t("profile.pick-avatar-description")}
             </DialogDescription>
           </DialogHeader>
 

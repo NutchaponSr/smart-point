@@ -267,5 +267,31 @@
       "event_completed": "ขอบคุณสำหรับการร่วมกิจกรรม: {activityName}",
       "event_rejected": "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม"
     }
+  },
+  "auth": {
+    "logo-alt": "โลโก้ Smart Point",
+    "language": {
+      "label": "เลือกภาษา"
+    },
+    "logout": "ออกจากระบบ",
+    "settings": "ตั้งค่า",
+    "sign-in": {
+      "title": "เข้าสู่ระบบ",
+      "employee-id": "รหัสพนักงาน",
+      "employee-id-placeholder": "รหัสพนักงาน",
+      "password": "5 ตัวท้ายของหมายเลขประจำตัวประชาชน",
+      "password-placeholder": "รหัสผ่าน",
+      "password-hint": "5 ตัวท้ายของหมายเลขประจำตัวประชาชน",
+      "submit": "เข้าสู่ระบบ"
+    },
+    "profile": {
+      "joined": "เข้าร่วมเมื่อ",
+      "change-avatar": "เปลี่ยนรูปโปรไฟล์",
+      "avatar-alt": "รูปโปรไฟล์",
+      "avatar-success": "เปลี่ยนรูปโปรไฟล์สำเร็จ",
+      "avatar-error": "เปลี่ยนรูปโปรไฟล์ไม่สำเร็จ",
+      "pick-avatar-title": "เลือกรูปโปรไฟล์",
+      "pick-avatar-description": "เลือกตัวละครสัตว์ที่คุณชอบ — เปลี่ยนได้ทุกเมื่อ ไม่จำกัดครั้ง"
+    }
   }
 }

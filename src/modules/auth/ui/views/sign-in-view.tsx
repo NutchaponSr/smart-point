@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/convex/auth-client";
 
@@ -8,10 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-import { useRouter } from "next/navigation";
-
 export const SignInView = () => {
   const router = useRouter();
+  const t = useTranslations("auth.sign-in");
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -44,7 +45,7 @@ export const SignInView = () => {
               htmlFor="username"
               className="sr-only inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
             >
-              Employee ID
+              {t("employee-id")}
             </Label>
           </legend>
           <Input
@@ -54,7 +55,7 @@ export const SignInView = () => {
             inputMode="numeric"
             autoComplete="username"
             value={username}
-            placeholder="รหัสพนักงาน"
+            placeholder={t("employee-id-placeholder")}
             onChange={(e) => setUsername(e.target.value)}
             className="flex h-11 min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-base text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf] sm:h-12"
           />
@@ -66,7 +67,7 @@ export const SignInView = () => {
               htmlFor="password"
               className="sr-only inline-flex cursor-pointer gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
             >
-              Last 5 digits of your citizenship number
+              {t("password")}
             </Label>
           </legend>
           <Input
@@ -76,12 +77,12 @@ export const SignInView = () => {
             inputMode="numeric"
             autoComplete="current-password"
             value={password}
-            placeholder="รหัสผ่าน"
+            placeholder={t("password-placeholder")}
             onChange={(e) => setPassword(e.target.value)}
             className="flex h-11 min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-base text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf] sm:h-12"
           />
           <span className="text-xs leading-relaxed text-[#777] sm:text-sm">
-            5 ตัวท้ายของหมายเลขประจำตัวประชาชน
+            {t("password-hint")}
           </span>
         </fieldset>
 
@@ -91,7 +92,7 @@ export const SignInView = () => {
           className="mt-1 w-full sm:mt-2"
           size="lg"
         >
-          เข้าสู่ระบบ
+          {t("submit")}
         </Button>
       </div>
     </form>

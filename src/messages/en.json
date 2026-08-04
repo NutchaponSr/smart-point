@@ -267,5 +267,31 @@
       "event_completed": "Thanks for joining: {activityName}",
       "event_rejected": "Please attach evidence as required by the event"
     }
+  },
+  "auth": {
+    "logo-alt": "Smart Point logo",
+    "language": {
+      "label": "Select language"
+    },
+    "logout": "Log out",
+    "settings": "Settings",
+    "sign-in": {
+      "title": "Sign in",
+      "employee-id": "Employee ID",
+      "employee-id-placeholder": "Employee ID",
+      "password": "Last 5 digits of your citizenship number",
+      "password-placeholder": "Password",
+      "password-hint": "Last 5 digits of your citizenship number",
+      "submit": "Sign in"
+    },
+    "profile": {
+      "joined": "Joined",
+      "change-avatar": "Change profile picture",
+      "avatar-alt": "Profile picture",
+      "avatar-success": "Profile picture updated",
+      "avatar-error": "Could not update profile picture",
+      "pick-avatar-title": "Choose a profile picture",
+      "pick-avatar-description": "Pick an animal character you like — change anytime, unlimited"
+    }
   }
 }

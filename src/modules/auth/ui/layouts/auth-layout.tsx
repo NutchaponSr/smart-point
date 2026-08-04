@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { Logo } from "@/components/logo";
 import { LanguageSelector } from "@/modules/auth/ui/components/language-selector";
 
@@ -5,7 +7,9 @@ interface Props {
   children: React.ReactNode;
 }
 
-export const AuthLayout = ({ children }: Props) => {
+export const AuthLayout = async ({ children }: Props) => {
+  const t = await getTranslations("auth");
+
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-[#f0fbff]">
       <div className="pointer-events-none absolute inset-0 motion-reduce:[&_*]:!animate-none" aria-hidden>
@@ -28,7 +32,10 @@ export const AuthLayout = ({ children }: Props) => {
         </div>
       </main>
 
-      <footer className="relative z-1 flex min-h-16 shrink-0 items-center justify-center border-t-2 bg-white/70 px-4 py-3 backdrop-blur-sm sm:h-20 sm:px-10">
+      <footer
+        className="relative z-1 flex min-h-16 shrink-0 items-center justify-center border-t-2 bg-white/70 px-4 py-3 backdrop-blur-sm sm:h-20 sm:px-10"
+        aria-label={t("language.label")}
+      >
         <div className="w-full overflow-hidden text-center text-sm sm:text-base">
           <LanguageSelector />
         </div>
