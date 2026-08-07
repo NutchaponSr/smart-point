@@ -2,15 +2,17 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { requireAdmin } from "../lib/auth-helper";
-import { authMutation, authQuery } from "../lib/crpc";
+import { authMutation, authQuery, privateMutation } from "../lib/crpc";
 import {
   coerceLocalized,
   localizedSearchText,
   type LocalizedString,
 } from "../lib/localized";
+import { previousFortnightRange } from "../lib/program-rules";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
+import { internal } from "./_generated/api";
 
 const SORT_VALUES = ["recently-updated", "purchase-date"] as const;
 type PurchaseSort = (typeof SORT_VALUES)[number];
@@ -916,4 +918,106 @@ export const updateShippingStatus = authMutation
     }
 
     await ctx.db.patch(redemptionId, patch);
+  });
+
+const SUMMARY_BATCH = 100;
+
+/**
+ * สรุปการแลกรางวัลปักษ์ก่อนหน้า (เรียกจาก cron วันที่ 1 และ 16 ICT)
+ * นับยอดแล้ว upsert ลง redemptionSummary
+ */
+export const summarizeFortnight = privateMutation
+  .input(
+    z.object({
+      cursor: z.string().nullable(),
+      periodKey: z.string().nullable(),
+      periodStart: z.number().nullable(),
+      periodEnd: z.number().nullable(),
+      totalRedemptions: z.number().optional(),
+      totalPointsSpent: z.number().optional(),
+      byStatusPending: z.number().optional(),
+      byStatusFulfilled: z.number().optional(),
+      byStatusCancelled: z.number().optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const range =
+      input.periodKey != null &&
+      input.periodStart != null &&
+      input.periodEnd != null
+        ? {
+            periodKey: input.periodKey,
+            start: input.periodStart,
+            end: input.periodEnd,
+          }
+        : (() => {
+            const r = previousFortnightRange();
+            return {
+              periodKey: r.periodKey,
+              start: r.start,
+              end: r.end,
+            };
+          })();
+
+    // มีสรุปปักษ์นี้แล้ว — ไม่ทับข้อมูลเก่า และไม่นับซ้ำ
+    if (input.cursor == null) {
+      const existing = await ctx.db
+        .query("redemptionSummary")
+        .withIndex("by_periodKey", (q) => q.eq("periodKey", range.periodKey))
+        .unique();
+      if (existing) {
+        return;
+      }
+    }
+
+    let totalRedemptions = input.totalRedemptions ?? 0;
+    let totalPointsSpent = input.totalPointsSpent ?? 0;
+    let byStatusPending = input.byStatusPending ?? 0;
+    let byStatusFulfilled = input.byStatusFulfilled ?? 0;
+    let byStatusCancelled = input.byStatusCancelled ?? 0;
+
+    const page = await ctx.db
+      .query("redemption")
+      .withIndex("by_creation_time", (q) =>
+        q.gte("_creationTime", range.start).lt("_creationTime", range.end),
+      )
+      .paginate({
+        cursor: input.cursor ?? null,
+        numItems: SUMMARY_BATCH,
+      });
+
+    for (const row of page.page) {
+      totalRedemptions += 1;
+      totalPointsSpent += row.pointSpent;
+      if (row.status === "pending") byStatusPending += 1;
+      else if (row.status === "fulfilled") byStatusFulfilled += 1;
+      else if (row.status === "cancelled") byStatusCancelled += 1;
+    }
+
+    if (!page.isDone) {
+      await ctx.scheduler.runAfter(0, internal.redemption.summarizeFortnight, {
+        cursor: page.continueCursor,
+        periodKey: range.periodKey,
+        periodStart: range.start,
+        periodEnd: range.end,
+        totalRedemptions,
+        totalPointsSpent,
+        byStatusPending,
+        byStatusFulfilled,
+        byStatusCancelled,
+      });
+      return;
+    }
+
+    await ctx.db.insert("redemptionSummary", {
+      periodKey: range.periodKey,
+      periodStart: range.start,
+      periodEnd: range.end,
+      totalRedemptions,
+      totalPointsSpent,
+      byStatusPending,
+      byStatusFulfilled,
+      byStatusCancelled,
+      createdAt: Date.now(),
+    });
   });

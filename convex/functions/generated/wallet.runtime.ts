@@ -21,9 +21,11 @@ function createProcedureRegistry() {
   const procedureRegistry = {
   "dailyBonusHistory": ["query", typedProcedureResolver(api["wallet"]["dailyBonusHistory"], () => (require("../wallet") as Record<string, unknown>)["dailyBonusHistory"])],
   "dailyLogin": ["mutation", typedProcedureResolver(api["wallet"]["dailyLogin"], () => (require("../wallet") as Record<string, unknown>)["dailyLogin"])],
+  "dailyProgramMaintenance": ["mutation", typedProcedureResolver(internal["wallet"]["dailyProgramMaintenance"], () => (require("../wallet") as Record<string, unknown>)["dailyProgramMaintenance"])],
   "getOne": ["query", typedProcedureResolver(api["wallet"]["getOne"], () => (require("../wallet") as Record<string, unknown>)["getOne"])],
   "initial": ["mutation", typedProcedureResolver(internal["wallet"]["initial"], () => (require("../wallet") as Record<string, unknown>)["initial"])],
   "monthlyReset": ["mutation", typedProcedureResolver(internal["wallet"]["monthlyReset"], () => (require("../wallet") as Record<string, unknown>)["monthlyReset"])],
+  "resetAll": ["mutation", typedProcedureResolver(internal["wallet"]["resetAll"], () => (require("../wallet") as Record<string, unknown>)["resetAll"])],
   "resetGivingBudget": ["mutation", typedProcedureResolver(internal["wallet"]["resetGivingBudget"], () => (require("../wallet") as Record<string, unknown>)["resetGivingBudget"])],
 } as const;
 

@@ -5,6 +5,7 @@ import { CRPCError } from "better-convex/server";
 import { authMutation, authQuery } from "../lib/crpc";
 import { localizedSearchText } from "../lib/localized";
 import { splitRedeemCost } from "../lib/points";
+import { assertRedemptionOpen } from "../lib/program-rules";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
@@ -222,6 +223,8 @@ export const updateCartItemQuantity = authMutation
 
 /** แลกของในตะกร้า: หัก receiving ก่อนแล้ว special, สร้าง redemption, ลดสต็อก, ปิดตะกร้า */
 export const redeemCart = authMutation.mutation(async ({ ctx }) => {
+  assertRedemptionOpen();
+
   const cart = await ctx.db
     .query("cart")
     .withIndex("by_employeeId_status", (q) =>

@@ -7,10 +7,8 @@ import CompletedQuestIcon from "../../../../../public/quest-completed.svg";
 import SpecialCoin from "../../../../../public/ruby.svg";
 import BrickCorner from "../../../../../public/brick_high_slope_inverted_left_yellow_2.svg";
 
-import { useMemo } from "react";
-import { startOfMonth } from "date-fns";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
@@ -53,10 +51,9 @@ function QuestProgressBar({ value, max, className }: QuestProgressBarProps) {
 export const MonthlyQuest = () => {
   const t = useTranslations("overview.monthly-quest");
   const crpc = useCRPC();
-  const monthStart = useMemo(() => startOfMonth(new Date()).getTime(), []);
 
   const { data } = useSuspenseQuery(
-    crpc.transaction.getMonthlyQuestProgress.queryOptions({ monthStart }),
+    crpc.transaction.getMonthlyQuestProgress.queryOptions({}),
   );
 
   const isCompleted = data.count >= data.goal;

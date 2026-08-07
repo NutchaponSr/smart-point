@@ -862,6 +862,41 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  redemptionSummary: {
+    document: {
+      byStatusCancelled: number;
+      byStatusFulfilled: number;
+      byStatusPending: number;
+      createdAt?: number;
+      periodEnd: number;
+      periodKey: string;
+      periodStart: number;
+      totalPointsSpent: number;
+      totalRedemptions: number;
+      _id: Id<"redemptionSummary">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "byStatusCancelled"
+      | "byStatusFulfilled"
+      | "byStatusPending"
+      | "createdAt"
+      | "_creationTime"
+      | "_id"
+      | "periodEnd"
+      | "periodKey"
+      | "periodStart"
+      | "totalPointsSpent"
+      | "totalRedemptions";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_periodKey: ["periodKey", "_creationTime"];
+      by_periodStart: ["periodStart", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   review: {
     document: {
       comment?: null | string;

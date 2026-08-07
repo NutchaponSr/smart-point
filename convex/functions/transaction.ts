@@ -7,6 +7,7 @@ import {
   getMonthlyTransferUsed,
   MONTHLY_TRANSFER_CAP_PER_RECEIVER,
   MONTHLY_TRANSFER_LIMIT_ENABLED,
+  thaiMonthRange,
 } from "../lib/monthly-transfer";
 import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
 import { awardSpecialPoints } from "../lib/points";
@@ -36,13 +37,6 @@ const MONTHLY_QUEST_REWARD_PER_GIVE = 1;
 
 function transactionTimestamp(t: Doc<"transaction">) {
   return t.createdAt ?? t._creationTime;
-}
-
-function startOfMonthTimestamp(timestamp: number): number {
-  const date = new Date(timestamp);
-  date.setDate(1);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime();
 }
 
 type TransactionPartyNames = {
@@ -957,16 +951,17 @@ async function approveTransactionById(
       updatedAt: now,
     });
 
-    const monthStart = startOfMonthTimestamp(now);
+    const { start: monthStart, end: monthEnd } = thaiMonthRange(now);
     const completedThisMonth = await ctx.db
       .query("transaction")
       .withIndex("by_senderId_status", (q) =>
         q.eq("senderId", transaction.senderId).eq("status", "completed"),
       )
       .collect();
-    const completedCount = completedThisMonth.filter(
-      (row) => transactionTimestamp(row) >= monthStart,
-    ).length;
+    const completedCount = completedThisMonth.filter((row) => {
+      const ts = transactionTimestamp(row);
+      return ts >= monthStart && ts < monthEnd;
+    }).length;
 
     if (completedCount <= MONTHLY_QUEST_GOAL) {
       await awardSpecialPoints(ctx, {
@@ -1864,10 +1859,12 @@ export const getMonthlyTransferQuota = authQuery
 export const getMonthlyQuestProgress = authQuery
   .input(
     z.object({
-      monthStart: z.number(),
+      /** @deprecated ใช้ขอบเดือนไทยฝั่งเซิร์ฟเวอร์ — คงไว้เพื่อไม่พัง client เก่า */
+      monthStart: z.number().optional(),
     }),
   )
-  .query(async ({ ctx, input }) => {
+  .query(async ({ ctx }) => {
+    const { start, end } = thaiMonthRange();
     const sentTransactions = await ctx.db
       .query("transaction")
       .withIndex("by_senderId", (q) =>
@@ -1876,10 +1873,9 @@ export const getMonthlyQuestProgress = authQuery
       .collect();
 
     const count = sentTransactions.filter((transaction) => {
-      return (
-        transaction.status === "completed" &&
-        transactionTimestamp(transaction) >= input.monthStart
-      );
+      if (transaction.status !== "completed") return false;
+      const ts = transactionTimestamp(transaction);
+      return ts >= start && ts < end;
     }).length;
 
     return {

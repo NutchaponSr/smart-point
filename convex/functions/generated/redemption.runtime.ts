@@ -23,6 +23,7 @@ function createProcedureRegistry() {
   "getManyAdmin": ["query", typedProcedureResolver(api["redemption"]["getManyAdmin"], () => (require("../redemption") as Record<string, unknown>)["getManyAdmin"])],
   "getMany": ["query", typedProcedureResolver(api["redemption"]["getMany"], () => (require("../redemption") as Record<string, unknown>)["getMany"])],
   "reviewRedemption": ["mutation", typedProcedureResolver(api["redemption"]["reviewRedemption"], () => (require("../redemption") as Record<string, unknown>)["reviewRedemption"])],
+  "summarizeFortnight": ["mutation", typedProcedureResolver(internal["redemption"]["summarizeFortnight"], () => (require("../redemption") as Record<string, unknown>)["summarizeFortnight"])],
   "updateShippingStatus": ["mutation", typedProcedureResolver(api["redemption"]["updateShippingStatus"], () => (require("../redemption") as Record<string, unknown>)["updateShippingStatus"])],
 } as const;
 

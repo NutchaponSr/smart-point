@@ -683,7 +683,7 @@ export declare const api: {
     getMonthlyQuestProgress: FunctionReference<
       "query",
       "public",
-      { monthStart: number },
+      { monthStart?: number },
       any
     >;
     getMonthlyTransferQuota: FunctionReference<
@@ -936,6 +936,24 @@ export declare const internal: {
   news: {
     migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;
   };
+  redemption: {
+    summarizeFortnight: FunctionReference<
+      "mutation",
+      "internal",
+      {
+        byStatusCancelled?: number;
+        byStatusFulfilled?: number;
+        byStatusPending?: number;
+        cursor: string | null;
+        periodEnd: number | null;
+        periodKey: string | null;
+        periodStart: number | null;
+        totalPointsSpent?: number;
+        totalRedemptions?: number;
+      },
+      any
+    >;
+  };
   reward: {
     migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;
   };
@@ -988,6 +1006,7 @@ export declare const internal: {
     >;
   };
   wallet: {
+    dailyProgramMaintenance: FunctionReference<"mutation", "internal", {}, any>;
     initial: FunctionReference<
       "mutation",
       "internal",
@@ -995,6 +1014,12 @@ export declare const internal: {
       any
     >;
     monthlyReset: FunctionReference<"mutation", "internal", {}, any>;
+    resetAll: FunctionReference<
+      "mutation",
+      "internal",
+      { cursor: string | null },
+      any
+    >;
     resetGivingBudget: FunctionReference<
       "mutation",
       "internal",

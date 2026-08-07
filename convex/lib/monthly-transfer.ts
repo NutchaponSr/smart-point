@@ -1,31 +1,19 @@
 import type { Id } from "../functions/_generated/dataModel";
 import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import type { DataModel } from "../functions/_generated/dataModel";
+import { thaiMonthRange } from "./program-rules";
 
 /** ปิดชั่วคราวได้ — ตั้ง true เพื่อเปิดลิมิต 20 พอยต์/คน/เดือนอีกครั้ง */
-export const MONTHLY_TRANSFER_LIMIT_ENABLED = false;
+export const MONTHLY_TRANSFER_LIMIT_ENABLED = true;
 
 export const MONTHLY_TRANSFER_CAP_PER_RECEIVER = 20;
-
-const THAI_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 type DbCtx = Pick<
   GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>,
   "db"
 >;
 
-/** ขอบเดือนตามปฏิทิน Asia/Bangkok — end เป็น exclusive */
-export function thaiMonthRange(nowMs = Date.now()): {
-  start: number;
-  end: number;
-} {
-  const thai = new Date(nowMs + THAI_OFFSET_MS);
-  const y = thai.getUTCFullYear();
-  const m = thai.getUTCMonth();
-  const start = Date.UTC(y, m, 1) - THAI_OFFSET_MS;
-  const end = Date.UTC(y, m + 1, 1) - THAI_OFFSET_MS;
-  return { start, end };
-}
+export { thaiMonthRange };
 
 export async function getMonthlyTransferUsed(input: {
   ctx: DbCtx;

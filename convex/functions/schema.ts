@@ -372,6 +372,22 @@ export const pointLedger = convexTable("pointLedger", {
   index("by_employeeId_sourceType").on(t.employeeId, t.sourceType),
 ]);
 
+/** สรุปการแลกรางวัลทุกวันที่ 1 และ 16 (ปักษ์ก่อนหน้า) */
+export const redemptionSummary = convexTable("redemptionSummary", {
+  periodKey: text().notNull(),
+  periodStart: timestamp().notNull(),
+  periodEnd: timestamp().notNull(),
+  totalRedemptions: integer().notNull(),
+  totalPointsSpent: integer().notNull(),
+  byStatusPending: integer().notNull(),
+  byStatusFulfilled: integer().notNull(),
+  byStatusCancelled: integer().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("by_periodKey").on(t.periodKey),
+  index("by_periodStart").on(t.periodStart),
+]);
+
 export const tables = {
   user,
   session,
@@ -387,6 +403,7 @@ export const tables = {
   activityParticipant,
   activityLog,
   pointLedger,
+  redemptionSummary,
   cart,
   cartItem,
   review,
