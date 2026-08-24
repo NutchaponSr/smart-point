@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 
 import { SendStep } from "@/modules/wallets/ui/components/send-step";
 import { CompleteStep } from "@/modules/wallets/ui/components/complete-step";
-import { SendPointHelpPopover } from "@/modules/wallets/ui/components/send-point-help-popover";
 
 import {
   sendTransactionSchema,
@@ -80,7 +79,7 @@ export const TransactionContent = ({
         email: "",
         department: "",
       },
-      amount: 5,
+      amount: 1,
       message: "",
       tags: "",
     },

@@ -1,0 +1,86 @@
+import z from "zod/v4";
+
+import { authQuery, privateMutation } from "../lib/crpc";
+import { normalizeText } from "../lib/employee-id";
+import { listVisibleSubjectBusinessCodes } from "../lib/k2-visibility";
+import type { Id } from "./_generated/dataModel";
+
+const rowSchema = z.object({
+  employeeId: z.string().trim().min(1),
+  employees: z.array(z.string().trim().min(1)),
+});
+
+/**
+ * Bulk upsert K2 visibility rows by business employee code.
+ * Does not require matching rows in the `employee` table.
+ */
+export const bulkUpsert = privateMutation
+  .input(
+    z.object({
+      rows: z.array(rowSchema).min(1).max(500),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    let inserted = 0;
+    let updated = 0;
+
+    for (const row of input.rows) {
+      const employeeId = normalizeText(row.employeeId, 5);
+      const employees = [
+        ...new Set(row.employees.map((code) => normalizeText(code, 5))),
+      ];
+
+      const existing = await ctx.db
+        .query("k2Workflow")
+        .withIndex("by_employeeId", (q) => q.eq("employeeId", employeeId))
+        .unique();
+
+      if (existing) {
+        await ctx.db.patch(existing._id, { employees });
+        updated += 1;
+      } else {
+        await ctx.db.insert("k2Workflow", { employeeId, employees });
+        inserted += 1;
+      }
+    }
+
+    return { inserted, updated };
+  });
+
+export const getByEmployeeId = authQuery
+  .input(
+    z.object({
+      employeeId: z.string().trim().min(1),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    const employeeId = normalizeText(input.employeeId, 5);
+
+    return await ctx.db
+      .query("k2Workflow")
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", employeeId))
+      .unique();
+  });
+
+/** รายการรหัสพนักงานที่ผู้ใช้ปัจจุบันมีสิทธิ์ดูธุรกรรม (k2) */
+export const listVisibleSubjects = authQuery.query(async ({ ctx }) => {
+  const viewerCode = normalizeText(ctx.user.employee.employeeId, 5);
+  const businessCodes = await listVisibleSubjectBusinessCodes(ctx, viewerCode);
+  const employeeDocIds: Id<"employee">[] = [];
+
+  for (const code of businessCodes) {
+    const employee = await ctx.db
+      .query("employee")
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", code))
+      .first();
+    if (employee) {
+      employeeDocIds.push(employee._id);
+    }
+  }
+
+  return {
+    businessCodes,
+    employeeDocIds,
+    count: businessCodes.length,
+  };
+});

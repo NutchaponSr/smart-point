@@ -388,6 +388,17 @@ export const redemptionSummary = convexTable("redemptionSummary", {
   index("by_periodStart").on(t.periodStart),
 ]);
 
+export const k2Workflow = convexTable("k2Workflow", {
+  /** รหัสพนักงานธุรกิจ (5 หลัก) จาก CSV คอลัมน์ รหัส — ไม่ใช่ Convex document Id */
+  employeeId: text().notNull(),
+  /** รหัสผู้มีสิทธิ์ดูธุรกรรม: Manager1, GM-AGM1, VP1, President1 */
+  employees: arrayOf(text()),
+}, (t) => [
+  uniqueIndex("by_employeeId").on(t.employeeId),
+  /** reverse lookup: ใครที่ viewer มีสิทธิ์ดูธุรกรรม */
+  index("by_employees").on(t.employees),
+]);
+
 export const tables = {
   user,
   session,
@@ -410,6 +421,7 @@ export const tables = {
   like,
   comment,
   news,
+  k2Workflow,
 }
 
 /** ต้องรัน `defineSchema` ก่อน `defineRelations` เพื่อให้ `tables` มี `OrmSchemaDefinition` (จำเป็นต่อ ORM select().filter()…​.paginate() ฯลฯ) */

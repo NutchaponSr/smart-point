@@ -52,15 +52,47 @@
     "commendation-message": "Praise Message",
     "praise-message": "Describe your appreciation...",
     "points-to-give": "Points",
+    "note-label": "Note",
+    "note": "To keep commendations meaningful and aligned with organizational criteria, the team reserves the right to screen them according to the activity conditions.",
     "points-help": {
-      "aria-label": "View point-giving guidelines",
-      "title": "Point-giving guidelines",
-      "subtitle": "Choose 5, 10, or 20 points based on the behavior level"
-    },
-    "points": {
-      "5-points": "Everyday small actions that create a positive working atmosphere, demonstrate kindness, or reflect standard adherence to company culture.",
-      "10-points": "Actions that go above and beyond regular duties, such as dedicating time to assist colleagues or helping resolve immediate issues to ensure smooth teamwork.",
-      "20-points": "Actions that make a significant positive impact on individuals, teams, or the organization, demonstrating outstanding potential, creativity, or exceptional crisis resolution."
+      "aria-label": "View example behaviors you can commend",
+      "title": "Example behaviors",
+      "subtitle": "Behaviors you can use to commend a colleague",
+      "close": "Close",
+      "categories": {
+        "helpfulness": {
+          "title": "Helpfulness & Support",
+          "items": [
+            "Helping lift items, assist with work, or join activities that are outside your own job responsibilities",
+            "Switching shifts with a colleague when needed",
+            "Teaching or introducing new tools, or taking time to explain systems so colleagues understand",
+            "Solving a problem in time that would otherwise cause serious harm to a customer or project"
+          ]
+        },
+        "teamwork": {
+          "title": "Teamwork & Positivity",
+          "items": [
+            "Listening attentively to colleagues in meetings and respecting others' ideas",
+            "Guiding and helping new employees adapt to the team quickly",
+            "Praising colleagues in person and giving them a strong boost of positive energy",
+            "Brainstorming urgent solutions for colleagues even when it is not your own work",
+            "Leading or driving a project to a smooth, successful finish",
+            "Encouraging colleagues until they unlock their potential and complete difficult work"
+          ]
+        },
+        "care": {
+          "title": "Care & Reliability",
+          "items": [
+            "Arriving at meetings on time so colleagues do not have to wait",
+            "Submitting work before or on the deadline consistently",
+            "Reminding colleagues when they neglect safety equipment (PPE)",
+            "Helping organize equipment or obstacles in shared spaces to prevent accidents",
+            "Reporting or alerting the right people when you find a hazard or unsafe spot on company premises",
+            "Updating your team on the progress of your own work without being asked",
+            "Inventing new ways of working that save time for teammates or the next department in the workflow"
+          ]
+        }
+      }
     },
     "sending": "Sending...",
     "send-again": "Send Again",
@@ -87,6 +119,10 @@
       "sent": "Sent",
       "received": "Received"
     },
+    "scope": {
+      "mine": "Mine",
+      "team": "Team"
+    },
     "filters": {
       "aria-label": "Filter point activities",
       "title": "Filters",
@@ -98,11 +134,14 @@
     },
     "empty": {
       "title": "No activity in the feed yet",
-      "description": "When points are given, items will appear here"
+      "description": "When points are given, items will appear here",
+      "team-title": "No team activity yet",
+      "team-description": "When your reports give or receive points, items will appear here"
     },
     "headline": {
       "received": "sent you points",
-      "sent": "You gave points to"
+      "sent": "You gave points to",
+      "gave": "gave points to"
     },
     "detail": {
       "title": "Transaction details",

@@ -30,7 +30,7 @@ export const OverviewsView = () => {
             <Currencies />
           </div>
           <News />
-          <MonthlyQuest />
+          {/* <MonthlyQuest /> */}
           <div className="flex flex-col gap-4">
             <div className="flex flex-row items-center justify-between">
               <h2 className="text-base font-bold">

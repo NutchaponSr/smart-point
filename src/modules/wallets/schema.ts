@@ -12,8 +12,8 @@ export const sendTransactionSchema = z
       email: z.string().optional(),
       department: z.string(),
     }),
-    amount: z.union([z.literal(5), z.literal(10), z.literal(20)], {
-      error: "กรุณาเลือก 5, 10 หรือ 20 แต้ม",
+    amount: z.literal(1, {
+      error: "ส่งได้ทีละ 1 แต้ม",
     }),
     message: z.string().min(1, "กรุณาระบุข้อความ"),
     tags: z

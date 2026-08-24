@@ -3,6 +3,7 @@ import z from "zod/v4";
 
 import { appendActivityLog } from "../lib/activity-log";
 import { authMutation, authQuery } from "../lib/crpc";
+import { listVisibleSubjectEmployeeDocIds } from "../lib/k2-visibility";
 import {
   getMonthlyTransferUsed,
   MONTHLY_TRANSFER_CAP_PER_RECEIVER,
@@ -10,13 +11,14 @@ import {
   thaiMonthRange,
 } from "../lib/monthly-transfer";
 import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
-import { awardSpecialPoints } from "../lib/points";
+// import { awardSpecialPoints } from "../lib/points";
 import {
   coerceLocalized,
   isLocalizedString,
   localizedLabel,
   localizedSearchText,
 } from "../lib/localized";
+import { normalizeText } from "../lib/employee-id";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -828,6 +830,150 @@ async function collectMyCompletedFeedPage(
   };
 }
 
+type TeamFeedsCursor = {
+  creationTime: number;
+  id: Id<"transaction">;
+} | null;
+
+function decodeTeamFeedsCursor(
+  raw: string | null | undefined,
+): TeamFeedsCursor {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<TeamFeedsCursor>;
+    if (
+      parsed &&
+      typeof parsed.creationTime === "number" &&
+      typeof parsed.id === "string"
+    ) {
+      return {
+        creationTime: parsed.creationTime,
+        id: parsed.id as Id<"transaction">,
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function encodeTeamFeedsCursor(cursor: TeamFeedsCursor): string | null {
+  if (!cursor) return null;
+  return JSON.stringify(cursor);
+}
+
+async function collectTeamCompletedFeedPage(
+  ctx: QueryCtx,
+  viewerBusinessCode: string,
+  limit: number,
+  initialCursor: TeamFeedsCursor,
+  view: "all" | "sent" | "received" = "all",
+  bounds: FeedFilterBounds = {
+    query: "",
+    min: null,
+    max: null,
+    from: null,
+    to: null,
+  },
+): Promise<{
+  page: Doc<"transaction">[];
+  nextCursor: TeamFeedsCursor;
+  exhausted: boolean;
+}> {
+  const subjectIds = await listVisibleSubjectEmployeeDocIds(
+    ctx,
+    viewerBusinessCode,
+  );
+
+  if (subjectIds.length === 0) {
+    return { page: [], nextCursor: null, exhausted: true };
+  }
+
+  const subjectSet = new Set(subjectIds);
+  const streamCursor: StreamCursor = initialCursor
+    ? { creationTime: initialCursor.creationTime, id: initialCursor.id }
+    : null;
+
+  // Overfetch per stream so filters + multi-subject merge still fill a page.
+  const perStreamTake = Math.max(limit * 3, 30);
+  const candidates: Doc<"transaction">[] = [];
+  const seen = new Set<Id<"transaction">>();
+  let anyStreamHasMore = false;
+
+  for (const employeeId of subjectIds) {
+    if (view === "all" || view === "sent") {
+      const senderResult = await fetchCompletedStreamBatch(
+        buildCompletedFeedStreamQuery(
+          ctx,
+          employeeId,
+          "sender",
+          bounds.from,
+          bounds.to,
+        ),
+        streamCursor,
+        perStreamTake,
+      );
+      if (!senderResult.exhausted) {
+        anyStreamHasMore = true;
+      }
+      for (const tx of senderResult.batch) {
+        if (!seen.has(tx._id)) {
+          seen.add(tx._id);
+          candidates.push(tx);
+        }
+      }
+    }
+
+    if (view === "all" || view === "received") {
+      const receiverResult = await fetchCompletedStreamBatch(
+        buildCompletedFeedStreamQuery(
+          ctx,
+          employeeId,
+          "receiver",
+          bounds.from,
+          bounds.to,
+        ),
+        streamCursor,
+        perStreamTake,
+      );
+      if (!receiverResult.exhausted) {
+        anyStreamHasMore = true;
+      }
+      for (const tx of receiverResult.batch) {
+        if (!seen.has(tx._id)) {
+          seen.add(tx._id);
+          candidates.push(tx);
+        }
+      }
+    }
+  }
+
+  // เฉพาะธุรกรรมที่คู่สัญญาอย่างน้อยฝ่ายหนึ่งอยู่ในชุด subject ตาม k2
+  const scoped = candidates.filter(
+    (tx) => subjectSet.has(tx.senderId) || subjectSet.has(tx.receiverId),
+  );
+
+  const filtered = await filterFeedCandidates(ctx, scoped, bounds);
+  filtered.sort((a, b) => {
+    if (a._creationTime !== b._creationTime) {
+      return b._creationTime - a._creationTime;
+    }
+    return a._id < b._id ? 1 : a._id > b._id ? -1 : 0;
+  });
+
+  const page = filtered.slice(0, limit);
+  const last = page[page.length - 1];
+  const exhausted = page.length < limit && !anyStreamHasMore;
+
+  return {
+    page,
+    nextCursor: last
+      ? { creationTime: last._creationTime, id: last._id }
+      : null,
+    exhausted,
+  };
+}
+
 type ApproveTransactionResult =
   | {
       transactionId: Id<"transaction">;
@@ -951,27 +1097,28 @@ async function approveTransactionById(
       updatedAt: now,
     });
 
-    const { start: monthStart, end: monthEnd } = thaiMonthRange(now);
-    const completedThisMonth = await ctx.db
-      .query("transaction")
-      .withIndex("by_senderId_status", (q) =>
-        q.eq("senderId", transaction.senderId).eq("status", "completed"),
-      )
-      .collect();
-    const completedCount = completedThisMonth.filter((row) => {
-      const ts = transactionTimestamp(row);
-      return ts >= monthStart && ts < monthEnd;
-    }).length;
-
-    if (completedCount <= MONTHLY_QUEST_GOAL) {
-      await awardSpecialPoints(ctx, {
-        employeeId: transaction.senderId,
-        delta: MONTHLY_QUEST_REWARD_PER_GIVE,
-        sourceType: "monthly_quest",
-        sourceId: transactionSourceId,
-        note: "ภารกิจประจำเดือน: มอบคะแนนให้เพื่อน",
-      });
-    }
+    // ปิดชั่วคราว: ไม่ให้ special point แก่ผู้ส่งตอนอนุมัติโอน point
+    // const { start: monthStart, end: monthEnd } = thaiMonthRange(now);
+    // const completedThisMonth = await ctx.db
+    //   .query("transaction")
+    //   .withIndex("by_senderId_status", (q) =>
+    //     q.eq("senderId", transaction.senderId).eq("status", "completed"),
+    //   )
+    //   .collect();
+    // const completedCount = completedThisMonth.filter((row) => {
+    //   const ts = transactionTimestamp(row);
+    //   return ts >= monthStart && ts < monthEnd;
+    // }).length;
+    //
+    // if (completedCount <= MONTHLY_QUEST_GOAL) {
+    //   await awardSpecialPoints(ctx, {
+    //     employeeId: transaction.senderId,
+    //     delta: MONTHLY_QUEST_REWARD_PER_GIVE,
+    //     sourceType: "monthly_quest",
+    //     sourceId: transactionSourceId,
+    //     note: "ภารกิจประจำเดือน: มอบคะแนนให้เพื่อน",
+    //   });
+    // }
 
     await appendActivityLog(ctx, {
       actorEmployeeId: reviewedBy,
@@ -1232,7 +1379,7 @@ export const exportAll = authMutation
     return aggregated;
   });
 
-const STANDARD_SEND_AMOUNTS = [5, 10, 20] as const;
+const STANDARD_SEND_AMOUNTS = [1] as const;
 
 export const send = authMutation
   .input(
@@ -1271,15 +1418,28 @@ export const send = authMutation
       });
     }
 
-    const wallet = await ctx.db
-      .query("wallet")
-      .withIndex("by_employeeId", (q) => q.eq("employeeId", sender._id))
-      .first();
+    const [wallet, receiverWallet] = await Promise.all([
+      ctx.db
+        .query("wallet")
+        .withIndex("by_employeeId", (q) => q.eq("employeeId", sender._id))
+        .first(),
+      ctx.db
+        .query("wallet")
+        .withIndex("by_employeeId", (q) => q.eq("employeeId", receiver._id))
+        .first(),
+    ]);
 
     if (!wallet) {
       throw new CRPCError({
         code: "NOT_FOUND",
         message: "Wallet not found",
+      });
+    }
+
+    if (!receiverWallet) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Receiver wallet not found",
       });
     }
 
@@ -1291,7 +1451,7 @@ export const send = authMutation
       ) {
         throw new CRPCError({
           code: "BAD_REQUEST",
-          message: "จำนวนแต้มต้องเป็น 5, 10 หรือ 20 เท่านั้น",
+          message: "จำนวนแต้มต้องเป็น 1 เท่านั้น",
         });
       }
 
@@ -1318,8 +1478,16 @@ export const send = authMutation
       }
     }
 
+    const now = Date.now();
+    const newGivingBudget = wallet.givingBudget - input.amount;
+    const newReceivingBudget = receiverWallet.receivingBudget + input.amount;
+
     await ctx.db.patch(wallet._id, {
-      givingBudget: wallet.givingBudget - input.amount,
+      givingBudget: newGivingBudget,
+    });
+
+    await ctx.db.patch(receiverWallet._id, {
+      receivingBudget: newReceivingBudget,
     });
 
     const transactionId = await ctx.db.insert("transaction", {
@@ -1328,20 +1496,33 @@ export const send = authMutation
       amount: input.amount,
       message: input.message,
       tags: input.tags,
-      status: "pending",
+      status: "completed",
       reviewedBy: ctx.user.employeeId,
-      reviewedAt: Date.now(),
+      reviewedAt: now,
     });
+
+    const transactionSourceId = String(transactionId);
 
     await ctx.db.insert("pointLedger", {
       employeeId: sender._id,
       delta: -input.amount,
-      balanceAfter: wallet.givingBudget - input.amount,
+      balanceAfter: newGivingBudget,
       balanceType: "giving",
       sourceType: "transaction",
-      sourceId: String(transactionId),
+      sourceId: transactionSourceId,
       note: `Sent to ${localizedLabel(receiver.name, "th")}`,
-      createdAt: Date.now(),
+      createdAt: now,
+    });
+
+    await ctx.db.insert("pointLedger", {
+      employeeId: receiver._id,
+      delta: input.amount,
+      balanceAfter: newReceivingBudget,
+      balanceType: "receiving",
+      sourceType: "transaction",
+      sourceId: transactionSourceId,
+      note: `Received from ${sender._id}`,
+      createdAt: now,
     });
 
     await appendActivityLog(ctx, {
@@ -1439,6 +1620,7 @@ export const bulkApprove = authMutation
 export const feeds = authQuery
   .input(
     z.object({
+      scope: z.enum(["mine", "team"]).optional().default("mine"),
       view: z.enum(["all", "sent", "received"]).optional().default("all"),
       q: z.string().optional().nullable(),
       min: z.number().optional().nullable(),
@@ -1518,15 +1700,30 @@ export const feeds = authQuery
 
     assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
 
+    const scope = input.scope ?? "mine";
+    const viewerBusinessCode = normalizeText(
+      ctx.user.employee.employeeId,
+      5,
+    );
+
     const { page: transactions, nextCursor, exhausted } =
-      await collectMyCompletedFeedPage(
-        ctx,
-        ctx.user.employeeId,
-        input.limit,
-        decodeFeedsCursor(input.cursor),
-        input.view,
-        bounds,
-      );
+      scope === "team"
+        ? await collectTeamCompletedFeedPage(
+            ctx,
+            viewerBusinessCode,
+            input.limit,
+            decodeTeamFeedsCursor(input.cursor),
+            input.view,
+            bounds,
+          )
+        : await collectMyCompletedFeedPage(
+            ctx,
+            ctx.user.employeeId,
+            input.limit,
+            decodeFeedsCursor(input.cursor),
+            input.view,
+            bounds,
+          );
 
     const txMeta = await Promise.all(
       transactions.map(async (tx) => {
@@ -1656,7 +1853,12 @@ export const feeds = authQuery
         },
       ),
       isDone: exhausted,
-      continueCursor: exhausted ? null : encodeFeedsCursor(nextCursor),
+      continueCursor:
+        exhausted || nextCursor == null
+          ? null
+          : scope === "team"
+            ? encodeTeamFeedsCursor(nextCursor as TeamFeedsCursor)
+            : encodeFeedsCursor(nextCursor as FeedsCursor),
     };
   });
 

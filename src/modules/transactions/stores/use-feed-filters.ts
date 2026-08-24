@@ -6,10 +6,10 @@ import {
   useQueryStates,
 } from "nuqs";
 
-const feedViewValues = ["all", "sent", "received"] as const;
+const feedScopeValues = ["mine", "team"] as const;
 
 const params = {
-  feedView: parseAsStringLiteral(feedViewValues).withDefault("all"),
+  feedScope: parseAsStringLiteral(feedScopeValues).withDefault("mine"),
   feedQ: parseAsString.withDefault(""),
   feedMin: parseAsFloat.withDefault(0),
   feedMax: parseAsFloat.withDefault(0),

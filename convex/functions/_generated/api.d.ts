@@ -309,6 +309,15 @@ export declare const api: {
       any
     >;
   };
+  k2Workflow: {
+    getByEmployeeId: FunctionReference<
+      "query",
+      "public",
+      { employeeId: string },
+      any
+    >;
+    listVisibleSubjects: FunctionReference<"query", "public", {}, any>;
+  };
   leaderboard: {
     getMany: FunctionReference<
       "query",
@@ -602,6 +611,7 @@ export declare const api: {
         max?: number | null;
         min?: number | null;
         q?: string | null;
+        scope?: "mine" | "team";
         to?: number | null;
         view?: "all" | "sent" | "received";
       },
@@ -932,6 +942,14 @@ export declare const internal: {
         any
       >;
     };
+  };
+  k2Workflow: {
+    bulkUpsert: FunctionReference<
+      "mutation",
+      "internal",
+      { rows: Array<{ employeeId: string; employees: Array<string> }> },
+      any
+    >;
   };
   news: {
     migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;

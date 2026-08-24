@@ -12,6 +12,7 @@ import { internal } from "./_generated/api";
 import { CRPCError } from "better-convex/server";
 
 const BATCH_SIZE = 100;
+const GIVING_BUDGET = 50;
 
 /**
  * รันทุกวันเวลา 00:00 ICT (cron hourUTC: 17 ของวันก่อน)
@@ -69,14 +70,14 @@ export const resetGivingBudget = privateMutation
     for (const wallet of wallets.page) {
       const previousGiving = wallet.givingBudget;
       await ctx.db.patch(wallet._id, {
-        givingBudget: 100,
+        givingBudget: GIVING_BUDGET,
         lastBudgetUpdate: now,
       });
 
       await ctx.db.insert("pointLedger", {
         employeeId: wallet.employeeId,
-        delta: 100 - previousGiving,
-        balanceAfter: 100,
+        delta: GIVING_BUDGET - previousGiving,
+        balanceAfter: GIVING_BUDGET,
         balanceType: "giving",
         sourceType: "monthly_reset",
         sourceId: `${wallet.employeeId}:${periodKey}`,
@@ -113,7 +114,7 @@ export const resetAll = privateMutation
       const previousGiving = wallet.givingBudget;
 
       await ctx.db.patch(wallet._id, {
-        givingBudget: 100,
+        givingBudget: GIVING_BUDGET,
         receivingBudget: 0,
         specialBudget: 0,
         lastBudgetUpdate: now,
@@ -121,8 +122,8 @@ export const resetAll = privateMutation
 
       await ctx.db.insert("pointLedger", {
         employeeId: wallet.employeeId,
-        delta: 100 - previousGiving,
-        balanceAfter: 100,
+        delta: GIVING_BUDGET - previousGiving,
+        balanceAfter: GIVING_BUDGET,
         balanceType: "giving",
         sourceType: "monthly_reset",
         sourceId: `${wallet.employeeId}:${periodKey}:giving`,
@@ -182,7 +183,7 @@ export const initial = privateMutation
 
     await ctx.db.insert("wallet", {
       employeeId: input.employeeId as Id<"employee">,
-      givingBudget: 100,
+      givingBudget: GIVING_BUDGET,
       receivingBudget: 0,
       specialBudget: 0,
       lastBudgetUpdate: Date.now(),

@@ -9,7 +9,7 @@ import { useState, type ReactNode } from "react";
 import { ApiOutputs } from "@convex/api";
 import { format, formatDistanceToNow, startOfDay } from "date-fns";
 import { enUS, th } from "date-fns/locale";
-import { CheckIcon, ListFilterIcon } from "lucide-react";
+import { ListFilterIcon } from "lucide-react";
 import { BsArrowUpCircleFill } from "react-icons/bs";
 import { useInfiniteQuery } from "better-convex/react";
 import { GoComment, GoHeart, GoHeartFill } from "react-icons/go";
@@ -37,6 +37,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 import { tags } from "@/modules/transactions/constants";
@@ -47,9 +48,9 @@ import { TransactionStatusBadge } from "@/modules/transactions/ui/components/tra
 import { Id } from "../../../../../convex/functions/_generated/dataModel";
 
 type Feed = ApiOutputs["transaction"]["feeds"]["page"][number];
-type FeedView = "all" | "sent" | "received";
+type FeedScope = "mine" | "team";
 
-const FEED_VIEW_OPTIONS: FeedView[] = ["all", "sent", "received"];
+const FEED_SCOPE_OPTIONS: FeedScope[] = ["mine", "team"];
 
 const DATE_LABEL_PATTERN = "dd/MM/yyyy";
 
@@ -161,17 +162,17 @@ function PartyCard({
 }
 
 function FeedHeadline({
-  isReceived,
+  mode,
   senderName,
   receiverName,
 }: {
-  isReceived: boolean;
+  mode: "sent" | "received" | "team";
   senderName: string;
   receiverName: string;
 }) {
   const t = useTranslations("feed");
 
-  if (isReceived) {
+  if (mode === "received") {
     return (
       <p className="flex min-w-0 items-baseline gap-1 text-sm leading-snug">
         <span className="min-w-0 truncate font-bold text-[#1cb0f6]">
@@ -179,6 +180,22 @@ function FeedHeadline({
         </span>
         <span className="shrink-0 font-medium text-[#4b4b4b]">
           {t("headline.received")}
+        </span>
+      </p>
+    );
+  }
+
+  if (mode === "team") {
+    return (
+      <p className="flex min-w-0 items-baseline gap-1 text-sm leading-snug">
+        <span className="min-w-0 truncate font-bold text-[#1cb0f6]">
+          {senderName}
+        </span>
+        <span className="shrink-0 font-medium text-[#4b4b4b]">
+          {t("headline.gave")}
+        </span>
+        <span className="min-w-0 truncate font-bold text-[#f1c40f]">
+          {receiverName}
         </span>
       </p>
     );
@@ -225,11 +242,29 @@ function PointBadge({
   isReceived,
   amount,
   size = "md",
+  neutral = false,
 }: {
   isReceived: boolean;
   amount: number;
   size?: "sm" | "md";
+  /** โหมดทีม — แสดงจำนวนอย่างเดียว ไม่ใช้ +/- ของผู้ชม */
+  neutral?: boolean;
 }) {
+  if (neutral) {
+    return (
+      <div className="flex shrink-0 items-center gap-1 font-bold tabular-nums text-[#4b4b4b]">
+        <Image
+          src={CoinGiveIcon}
+          alt=""
+          width={size === "sm" ? 16 : 20}
+          height={size === "sm" ? 20 : 24}
+          aria-hidden
+        />
+        <span>{amount}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex shrink-0 items-center gap-1 font-bold tabular-nums">
       <Image
@@ -280,7 +315,6 @@ function FeedFiltersPopover() {
   const [filters, setFilters] = useFeedFilters();
 
   const hasActiveFilters =
-    filters.feedView !== "all" ||
     filters.feedQ.length > 0 ||
     filters.feedMin > 0 ||
     filters.feedMax > 0 ||
@@ -295,7 +329,6 @@ function FeedFiltersPopover() {
 
   const onClear = () => {
     void setFilters({
-      feedView: "all",
       feedQ: "",
       feedMin: 0,
       feedMax: 0,
@@ -344,29 +377,6 @@ function FeedFiltersPopover() {
           />
         </div>
 
-        <Accordion title={t("filters.type")}>
-          {FEED_VIEW_OPTIONS.map((option) => (
-            <label
-              key={option}
-              className="inline-flex cursor-pointer items-center gap-2 font-normal has-disabled:cursor-not-allowed has-disabled:opacity-30"
-            >
-              <span className="relative inline-flex shrink-0 items-center justify-center">
-                <input
-                  type="radio"
-                  name="feed-view"
-                  checked={filters.feedView === option}
-                  onChange={() =>
-                    void setFilters({ ...filters, feedView: option })
-                  }
-                  className="peer size-[calc(1lh+0.125rem)] shrink-0 cursor-pointer appearance-none rounded-xs border-[1.5px] border-border bg-background text-base leading-snug checked:bg-pink disabled:cursor-not-allowed disabled:opacity-30"
-                />
-                <CheckIcon className="pointer-events-none absolute hidden size-4.5 text-accent-foreground peer-checked:block" />
-              </span>
-              {t(`view.${option}`)}
-            </label>
-          ))}
-        </Accordion>
-
         <Accordion title={t("filters.points")}>
           <CostFilter
             decimalScale={0}
@@ -402,9 +412,12 @@ function FeedFiltersPopover() {
   );
 }
 
+const feedTabTriggerClassName =
+  "min-h-11 flex-none rounded-md border-2 border-transparent bg-transparent px-4 py-2 text-sm font-bold text-primary after:hidden hover:bg-[#f7f7f7] hover:text-primary data-active:border-[#84d8ff] data-active:bg-[#ddf4ff] data-active:text-[#1cb0f6] hover:data-active:text-[#1cb0f6]";
+
 export const Feeds = () => {
   const crpc = useCRPC();
-  const [filters] = useFeedFilters();
+  const [filters, setFilters] = useFeedFilters();
   const debouncedQuery = useDebounce(filters.feedQ, 400);
   const t = useTranslations("feed");
 
@@ -416,7 +429,8 @@ export const Feeds = () => {
     hasNextPage,
   } = useInfiniteQuery(
     crpc.transaction.feeds.infiniteQueryOptions({
-      view: filters.feedView,
+      scope: filters.feedScope,
+      view: "all",
       q: debouncedQuery || null,
       min: filters.feedMin > 0 ? filters.feedMin : null,
       max: filters.feedMax > 0 ? filters.feedMax : null,
@@ -427,12 +441,43 @@ export const Feeds = () => {
 
   const like = useMutation(crpc.transaction.like.mutationOptions());
 
+  const emptyTitle =
+    filters.feedScope === "team" ? t("empty.team-title") : t("empty.title");
+  const emptyDescription =
+    filters.feedScope === "team"
+      ? t("empty.team-description")
+      : t("empty.description");
+
   return (
-    <section>
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <section className="grid gap-3">
+      <div className="flex items-center justify-between gap-2">
         <h2 className="text-base font-bold text-[#4b4b4b]">{t("title")}</h2>
         <FeedFiltersPopover />
       </div>
+
+      <Tabs
+        value={filters.feedScope}
+        onValueChange={(value) => {
+          if (value === "mine" || value === "team") {
+            void setFilters({ feedScope: value });
+          }
+        }}
+      >
+        <TabsList
+          variant="line"
+          className="h-full w-full justify-start gap-2 overflow-x-auto"
+        >
+          {FEED_SCOPE_OPTIONS.map((option) => (
+            <TabsTrigger
+              key={option}
+              value={option}
+              className={feedTabTriggerClassName}
+            >
+              {t(`scope.${option}`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <ul className="divide-y-2 divide-[#e5e5e5] overflow-hidden rounded-md border-2 bg-white">
         {feeds.length > 0 ? (
@@ -441,6 +486,7 @@ export const Feeds = () => {
               key={feed._id}
               feed={feed}
               currentEmployeeId={wallet.employeeId}
+              scope={filters.feedScope}
               onLike={() => like.mutate({ transactionId: feed._id })}
             />
           ))
@@ -465,9 +511,9 @@ export const Feeds = () => {
               </div>
               <div className="grid gap-1">
                 <h3 className="text-lg font-bold text-[#4b4b4b]">
-                  {t("empty.title")}
+                  {emptyTitle}
                 </h3>
-                <p className="text-sm text-[#777]">{t("empty.description")}</p>
+                <p className="text-sm text-[#777]">{emptyDescription}</p>
               </div>
             </div>
           </li>
@@ -492,10 +538,12 @@ export const Feeds = () => {
 const FeedItem = ({
   feed,
   currentEmployeeId,
+  scope,
   onLike,
 }: {
   feed: Feed;
   currentEmployeeId: Id<"employee">;
+  scope: FeedScope;
   onLike: () => void;
 }) => {
   const t = useTranslations("feed");
@@ -503,12 +551,29 @@ const FeedItem = ({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const isReceived = feed.receiverId === currentEmployeeId;
+  // แท็บทีม: แสดงเสมอว่าใครส่งให้ใคร (ตาม k2) ไม่ใช้มุมมอง +/- ของผู้ชม
+  const headlineMode =
+    scope === "team" ? "team" : isReceived ? "received" : "sent";
   const timeAgo = formatDistanceLocalized(feed.createdAt, locale);
 
   const senderName = pickLocalized(feed.sender.name, locale);
   const receiverName = pickLocalized(feed.receiver.name, locale);
-  const avatarName = isReceived ? senderName : receiverName;
-  const avatarImage = isReceived ? feed.sender.image : feed.receiver.image;
+  const avatarName =
+    headlineMode === "received"
+      ? senderName
+      : headlineMode === "team"
+        ? senderName
+        : receiverName;
+  const avatarImage =
+    headlineMode === "received"
+      ? feed.sender.image
+      : headlineMode === "team"
+        ? feed.sender.image
+        : feed.receiver.image;
+  const avatarRole =
+    headlineMode === "received" || headlineMode === "team"
+      ? "sender"
+      : "receiver";
 
   return (
     <>
@@ -523,7 +588,7 @@ const FeedItem = ({
               name={avatarName}
               src={avatarImage || undefined}
               className={getFeedAvatarClassName(
-                isReceived ? "sender" : "receiver",
+                avatarRole,
                 "size-11",
                 Boolean(avatarImage),
               )}
@@ -532,12 +597,12 @@ const FeedItem = ({
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <div className="flex w-full min-w-0 flex-col gap-2 text-left">
                 <FeedHeadline
-                  isReceived={isReceived}
+                  mode={headlineMode}
                   senderName={senderName}
                   receiverName={receiverName}
                 />
 
-                {isReceived ? (
+                {headlineMode === "received" ? (
                   <>
                     {feed.message ? (
                       <FeedMessageBubble message={feed.message} />
@@ -559,7 +624,12 @@ const FeedItem = ({
               </div>
             </div>
 
-            <PointBadge isReceived={isReceived} amount={feed.amount} size="sm" />
+            <PointBadge
+              isReceived={headlineMode === "received"}
+              amount={feed.amount}
+              size="sm"
+              neutral={headlineMode === "team"}
+            />
           </button>
         </div>
 
@@ -597,7 +667,7 @@ const FeedItem = ({
       <FeedDialog
         isOpen={isCommentOpen}
         onOpenChange={setIsCommentOpen}
-        isReceived={isReceived}
+        headlineMode={headlineMode}
         amount={feed.amount}
         senderName={senderName}
         senderImage={feed.sender.image}
@@ -741,7 +811,7 @@ function FeedDetailDialog({
 export const FeedDialog = ({
   isOpen,
   onOpenChange,
-  isReceived,
+  headlineMode,
   amount,
   senderName,
   senderImage,
@@ -756,7 +826,7 @@ export const FeedDialog = ({
   likedByCurrentUser,
 }: {
   isOpen: boolean;
-  isReceived: boolean;
+  headlineMode: "sent" | "received" | "team";
   amount: number;
   senderName: string;
   senderImage: string | null;
@@ -784,8 +854,13 @@ export const FeedDialog = ({
 
   const addComment = useMutation(crpc.transaction.comment.mutationOptions());
 
-  const avatarName = isReceived ? senderName : receiverName;
-  const avatarImage = isReceived ? senderImage : receiverImage;
+  const avatarName =
+    headlineMode === "received" ? senderName : receiverName;
+  const avatarImage =
+    headlineMode === "received" ? senderImage : receiverImage;
+  const avatarRole =
+    headlineMode === "received" ? "sender" : "receiver";
+  const isReceived = headlineMode === "received";
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -797,7 +872,7 @@ export const FeedDialog = ({
             name={avatarName}
             src={avatarImage || undefined}
             className={getFeedAvatarClassName(
-              isReceived ? "sender" : "receiver",
+              avatarRole,
               "size-11",
               Boolean(avatarImage),
             )}
@@ -806,12 +881,17 @@ export const FeedDialog = ({
             <div className="flex min-w-0 items-center gap-2">
               <div className="min-w-0 flex-1">
                 <FeedHeadline
-                  isReceived={isReceived}
+                  mode={headlineMode}
                   senderName={senderName}
                   receiverName={receiverName}
                 />
               </div>
-              <PointBadge isReceived={isReceived} amount={amount} size="sm" />
+              <PointBadge
+                isReceived={isReceived}
+                amount={amount}
+                size="sm"
+                neutral={headlineMode === "team"}
+              />
             </div>
 
             {isReceived ? (

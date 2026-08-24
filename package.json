@@ -9,6 +9,7 @@
     "lint": "biome check",
     "format": "biome format --write",
     "seed": "tsx scripts/seed.ts",
+    "import-k2": "tsx scripts/import-k2.ts",
     "clear-data": "tsx scripts/clear-data.ts"
   },
   "dependencies": {

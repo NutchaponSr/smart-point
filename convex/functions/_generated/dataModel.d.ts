@@ -601,6 +601,23 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  k2Workflow: {
+    document: {
+      employeeId: string;
+      employees?: null | Array<null | string>;
+      _id: Id<"k2Workflow">;
+      _creationTime: number;
+    };
+    fieldPaths: "_creationTime" | "employeeId" | "employees" | "_id";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_employees: ["employees", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   like: {
     document: {
       createdAt?: number;

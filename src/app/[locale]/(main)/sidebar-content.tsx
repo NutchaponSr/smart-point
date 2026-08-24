@@ -1,14 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 
 import FolderIcon from "../../../../public/folder.svg";
 import ComputerIcon from "../../../../public/computer.svg";
-
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
@@ -56,8 +53,7 @@ export const SidebarContent = ({
     canShowByRole(item, isAdmin),
   );
 
-  const pathWithoutLocale =
-    pathname.replace(/^\/(th|en)(?=\/|$)/, "") || "/";
+  const pathWithoutLocale = pathname || "/";
   const isActive = (href: string) =>
     pathWithoutLocale === href ||
     (href !== "/" && pathWithoutLocale.startsWith(`${href}/`));

@@ -14,7 +14,7 @@ export const links = [
     },
   },
   {
-    slug: "transactions?status=pending",
+    slug: "transactions",
     name: {
       th: "ธุรกรรม",
       en: "Transaction",

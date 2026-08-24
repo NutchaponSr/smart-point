@@ -67,7 +67,7 @@ export const metadata: MetadataItem[] = [
   },
   {
     label: "transaction",
-    href: "/meta/transactions?status=pending",
+    href: "/meta/transactions",
     isAdmin: true,
   },
   {

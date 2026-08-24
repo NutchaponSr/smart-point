@@ -4,7 +4,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useLocale } from "next-intl";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 
 import TH from "../../../../../public/TH.svg";
 import EN from "../../../../../public/US.svg";
@@ -36,13 +36,6 @@ const LOCALE_OPTIONS = [
     image: EN,
   },
 ];
-
-function getPathWithLocale(pathname: string, locale: string) {
-  const pathWithoutLocale =
-    pathname.replace(/^\/(th|en)(?=\/|$)/, "") || "/";
-
-  return `/${locale}${pathWithoutLocale === "/" ? "" : pathWithoutLocale}`;
-}
 
 function SettingsCard({
   title,
@@ -97,11 +90,9 @@ export const SettingsView = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const onLocaleChange = (newLocale: string) => {
-    if (!routing.locales.includes(newLocale as (typeof routing.locales)[number])) {
-      return;
-    }
-    router.replace(getPathWithLocale(pathname, newLocale));
+  const onLocaleChange = (newLocale: (typeof routing.locales)[number]) => {
+    if (newLocale === locale) return;
+    router.replace(pathname, { locale: newLocale });
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

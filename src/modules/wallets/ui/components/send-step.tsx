@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import { ApiOutputs } from "@convex/api";
 import { useEffect, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,7 +12,7 @@ import { useCRPC } from "@/lib/convex/crpc";
 import { Selection } from "@/components/selection";
 import ElementEditable from "@/components/element-editable";
 
-import { SendPointHelpPopover } from "@/modules/wallets/ui/components/send-point-help-popover";
+import { SendPointHelpDialog } from "@/modules/wallets/ui/components/send-point-help-dialog";
 
 import {
   isSmartCultureTagId,
@@ -24,8 +22,7 @@ import {
 import { SendTransactionSchema } from "@/modules/wallets/schema";
 import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
 
-import CoinGivingIcon from "../../../../../public/coin-give.svg";
-const sendAmountOptions = [5, 10, 20] as const;
+const FIXED_SEND_AMOUNT = 1;
 
 interface Props {
   points: number;
@@ -43,7 +40,7 @@ function splitTagId(
 }
 
 export const SendStep = ({
-  points,
+  points: _points,
   canSendUnlimitedPoints = false,
 }: Props) => {
   const crpc = useCRPC();
@@ -89,21 +86,27 @@ export const SendStep = ({
   });
 
   const limitEnabled = !canSendUnlimitedPoints && monthlyQuota?.enabled === true;
-  const remainingToReceiver = limitEnabled
-    ? (monthlyQuota?.remaining ?? null)
-    : null;
+  // const remainingToReceiver = limitEnabled
+  //   ? (monthlyQuota?.remaining ?? null)
+  //   : null;
 
   useEffect(() => {
-    if (canSendUnlimitedPoints || remainingToReceiver == null) return;
-    if (amountField.value > remainingToReceiver) {
-      const next = sendAmountOptions
-        .filter((value) => value <= remainingToReceiver && value <= points)
-        .at(-1);
-      if (next != null) {
-        amountField.onChange(next);
-      }
+    if (amountField.value !== FIXED_SEND_AMOUNT) {
+      amountField.onChange(FIXED_SEND_AMOUNT);
     }
-  }, [canSendUnlimitedPoints, remainingToReceiver, amountField, points]);
+  }, [amountField]);
+
+  // useEffect(() => {
+  //   if (canSendUnlimitedPoints || remainingToReceiver == null) return;
+  //   if (amountField.value > remainingToReceiver) {
+  //     const next = sendAmountOptions
+  //       .filter((value) => value <= remainingToReceiver && value <= points)
+  //       .at(-1);
+  //     if (next != null) {
+  //       amountField.onChange(next);
+  //     }
+  //   }
+  // }, [canSendUnlimitedPoints, remainingToReceiver, amountField, points]);
 
   const tagId = tagsField.value ?? "";
 
@@ -209,9 +212,12 @@ export const SendStep = ({
       </section>
 
       <section className="grid gap-1.5">
-        <h3 className="text-sm font-bold text-[#4b4b4b]">
-          {t("commendation-message")}
-        </h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-[#4b4b4b]">
+            {t("commendation-message")}
+          </h3>
+          <SendPointHelpDialog />
+        </div>
         <ElementEditable
           value={messageField.value ?? ""}
           placeholder={t("praise-message")}
@@ -238,12 +244,13 @@ export const SendStep = ({
       <div className="grid gap-1.5" key={formBlockKey}>
         <section className="grid gap-1.5">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-bold text-[#4b4b4b]">
-              {t("points-to-give")}
-            </h3>
-            <SendPointHelpPopover />
+            <p className="text-xs leading-relaxed text-[#777]">
+              <span className="font-bold text-[#4b4b4b]">{t("note-label")}</span>{" "}
+              {t("note")}
+            </p>
           </div>
 
+          {/* sendAmount — ปิดชั่วคราว ส่งทีละ 1
           <div className="grid grid-cols-3 gap-2">
             {sendAmountOptions.map((value) => {
               const isSelected = amountField.value === value;
@@ -280,6 +287,7 @@ export const SendStep = ({
               );
             })}
           </div>
+          */}
 
           {amountState.error?.message && (
             <p className="text-xs font-medium text-[#ea2b2b]">

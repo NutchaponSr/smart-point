@@ -53,6 +53,10 @@ export const api = {
     search: createApiLeaf<"query", typeof import("../functions/employee").search>(convexApi["employee"]["search"], { auth: "required", type: "query" }),
     update: createApiLeaf<"mutation", typeof import("../functions/employee").update>(convexApi["employee"]["update"], { auth: "required", type: "mutation" }),
   },
+  k2Workflow: {
+    getByEmployeeId: createApiLeaf<"query", typeof import("../functions/k2Workflow").getByEmployeeId>(convexApi["k2Workflow"]["getByEmployeeId"], { auth: "required", type: "query" }),
+    listVisibleSubjects: createApiLeaf<"query", typeof import("../functions/k2Workflow").listVisibleSubjects>(convexApi["k2Workflow"]["listVisibleSubjects"], { auth: "required", type: "query" }),
+  },
   leaderboard: {
     getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", type: "query" }),
     getMyEntry: createApiLeaf<"query", typeof import("../functions/leaderboard").getMyEntry>(convexApi["leaderboard"]["getMyEntry"], { auth: "required", type: "query" }),

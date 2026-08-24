@@ -16,8 +16,11 @@ function matchPrefix(pathname: string, prefixes: string[]) {
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
+  const locale =
+    pathname.match(/^\/(en|th)(?=\/|$)/)?.[1] ?? routing.defaultLocale;
   const pathnameWithoutLocale = pathname.replace(/^\/(en|th)/, "") || "/";
+  const withLocale = (path: string) =>
+    `/${locale}${path === "/" ? "" : path}`;
 
   const isProtected = matchPrefix(pathnameWithoutLocale, PROTECTED_PREFIX);
   const isPublic = matchPrefix(pathnameWithoutLocale, PUBLIC_PREFIX);
@@ -27,12 +30,15 @@ export default async function proxy(req: NextRequest) {
   if (isProtected && !isSignedIn && !isPublic) {
     const callbackUrl = encodeURIComponent(pathname + req.nextUrl.search);
     return NextResponse.redirect(
-      new URL(`/auth/sign-in?callbackUrl=${callbackUrl}`, req.url)
+      new URL(
+        `${withLocale("/auth/sign-in")}?callbackUrl=${callbackUrl}`,
+        req.url,
+      ),
     );
   }
 
   if (isPublic && isSignedIn) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL(withLocale("/"), req.url));
   }
 
   return initMiddleware(req);
