@@ -1,22 +1,35 @@
+import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
-
 import { appendActivityLog } from "../lib/activity-log";
-import { authMutation, authQuery, privateMutation } from "../lib/crpc";
 import {
+  FIRST_LOGIN_POINTS,
+  LOGIN_STREAK_DAYS,
+  LOGIN_STREAK_POINTS,
+  MONTHLY_ACTIVE_POINTS,
+  nextLoginStreak,
+  nextPraiseStreakMonths,
+  PRAISE_STREAK_POINTS,
+  shouldAwardLoginStreak,
+  shouldAwardPraiseStreak,
+} from "../lib/bonuses";
+import { authMutation, authQuery, privateMutation } from "../lib/crpc";
+import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
+import { awardSpecialPoints } from "../lib/points";
+import {
+  GIVING_BUDGET,
+  previousThaiMonthKey,
   thaiDateParts,
   thaiMonthKey,
 } from "../lib/program-rules";
-
-import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { CRPCError } from "better-convex/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 
 const BATCH_SIZE = 100;
-const GIVING_BUDGET = 50;
 
 /**
  * รันทุกวันเวลา 00:00 ICT (cron hourUTC: 17 ของวันก่อน)
- * - วันที่ 1: รีเซ็ดงบมอบ (หรือรีเซ็ตทั้งปีถ้าเป็น ม.ค.)
+ * - วันที่ 1: รีเซ็ดงบมอบ (หรือรีเซ็ตทั้งปีถ้าเป็น ม.ค.) + โบนัสโควต้าหมด
  * - วันที่ 1 และ 16: สรุปการแลกรางวัลปักษ์ก่อนหน้า
  */
 export const dailyProgramMaintenance = privateMutation.mutation(
@@ -37,11 +50,12 @@ export const dailyProgramMaintenance = privateMutation.mutation(
     }
 
     if (day === 1 || day === 16) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.redemption.summarizeFortnight,
-        { cursor: null, periodKey: null, periodStart: null, periodEnd: null },
-      );
+      await ctx.scheduler.runAfter(0, internal.redemption.summarizeFortnight, {
+        cursor: null,
+        periodKey: null,
+        periodStart: null,
+        periodEnd: null,
+      });
     }
   },
 );
@@ -53,6 +67,149 @@ export const monthlyReset = privateMutation.mutation(async ({ ctx }) => {
   });
 });
 
+async function rolloverWallet(
+  ctx: MutationCtx,
+  wallet: Doc<"wallet">,
+  input: {
+    yearReset: boolean;
+    closedMonthKey: string;
+    resetPeriodKey: string;
+    now: number;
+    year: number;
+  },
+) {
+  const employee = await ctx.db.get(wallet.employeeId);
+  const unlimited = employee
+    ? canSendUnlimitedPoints(employee.employeeId)
+    : false;
+  const filled = !unlimited && wallet.givingBudget === 0;
+  const praiseStreakMonths = nextPraiseStreakMonths(
+    filled,
+    wallet.praiseStreakMonths,
+  );
+
+  const previousGiving = wallet.givingBudget;
+  const previousReceiving = wallet.receivingBudget;
+  const previousSpecial = wallet.specialBudget ?? 0;
+
+  if (input.yearReset) {
+    await ctx.db.patch(wallet._id, {
+      givingBudget: GIVING_BUDGET,
+      receivingBudget: 0,
+      specialBudget: 0,
+      lastBudgetUpdate: input.now,
+      praiseStreakMonths,
+      loginStreak: 0,
+      lastDailyBonus: null,
+    });
+
+    await ctx.db.insert("pointLedger", {
+      employeeId: wallet.employeeId,
+      delta: GIVING_BUDGET - previousGiving,
+      balanceAfter: GIVING_BUDGET,
+      balanceType: "giving",
+      sourceType: "monthly_reset",
+      sourceId: `${wallet.employeeId}:${input.resetPeriodKey}:giving`,
+      note: `รีเซ็ดงบมอบคะแนนต้นปี ${input.year}`,
+      createdAt: input.now,
+    });
+
+    if (previousReceiving !== 0) {
+      await ctx.db.insert("pointLedger", {
+        employeeId: wallet.employeeId,
+        delta: -previousReceiving,
+        balanceAfter: 0,
+        balanceType: "receiving",
+        sourceType: "monthly_reset",
+        sourceId: `${wallet.employeeId}:${input.resetPeriodKey}:receiving`,
+        note: `เคลียร์คะแนนสะสมต้นปี ${input.year}`,
+        createdAt: input.now,
+      });
+    }
+
+    if (previousSpecial !== 0) {
+      await ctx.db.insert("pointLedger", {
+        employeeId: wallet.employeeId,
+        delta: -previousSpecial,
+        balanceAfter: 0,
+        balanceType: "special",
+        sourceType: "monthly_reset",
+        sourceId: `${wallet.employeeId}:${input.resetPeriodKey}:special`,
+        note: `เคลียร์คะแนนพิเศษต้นปี ${input.year}`,
+        createdAt: input.now,
+      });
+    }
+  } else {
+    await ctx.db.patch(wallet._id, {
+      givingBudget: GIVING_BUDGET,
+      lastBudgetUpdate: input.now,
+      praiseStreakMonths,
+      loginStreak: 0,
+      lastDailyBonus: null,
+    });
+
+    await ctx.db.insert("pointLedger", {
+      employeeId: wallet.employeeId,
+      delta: GIVING_BUDGET - previousGiving,
+      balanceAfter: GIVING_BUDGET,
+      balanceType: "giving",
+      sourceType: "monthly_reset",
+      sourceId: `${wallet.employeeId}:${input.resetPeriodKey}`,
+      note: `รีเซ็ดงบมอบคะแนนประจำเดือน ${input.resetPeriodKey}`,
+      createdAt: input.now,
+    });
+  }
+
+  if (!filled) return;
+
+  const monthlyAward = await awardSpecialPoints(ctx, {
+    employeeId: wallet.employeeId,
+    delta: MONTHLY_ACTIVE_POINTS,
+    sourceType: "monthly_active",
+    sourceId: `${wallet.employeeId}:${input.closedMonthKey}:monthly_active`,
+    note: `โบนัสใช้โควต้าส่งคำชมครบเดือน ${input.closedMonthKey}`,
+  });
+
+  if (monthlyAward.awarded) {
+    await appendActivityLog(ctx, {
+      actorEmployeeId: wallet.employeeId,
+      type: "monthly_active",
+      sourceId: `${wallet.employeeId}:${input.closedMonthKey}:monthly_active`,
+      summary: `ได้รับโบนัสใช้โควต้าส่งคำชมครบ ${MONTHLY_ACTIVE_POINTS} Special Points`,
+      meta: {
+        employeeId: String(wallet.employeeId),
+        month: input.closedMonthKey,
+        amount: MONTHLY_ACTIVE_POINTS,
+      },
+    });
+  }
+
+  if (!shouldAwardPraiseStreak(praiseStreakMonths)) return;
+
+  const streakAward = await awardSpecialPoints(ctx, {
+    employeeId: wallet.employeeId,
+    delta: PRAISE_STREAK_POINTS,
+    sourceType: "praise_streak",
+    sourceId: `${wallet.employeeId}:${input.closedMonthKey}:praise_streak`,
+    note: `โบนัสส่งคำชมครบโควต้าติดกัน ${praiseStreakMonths} เดือน`,
+  });
+
+  if (streakAward.awarded) {
+    await appendActivityLog(ctx, {
+      actorEmployeeId: wallet.employeeId,
+      type: "praise_streak",
+      sourceId: `${wallet.employeeId}:${input.closedMonthKey}:praise_streak`,
+      summary: `ได้รับโบนัสส่งคำชมต่อเนื่อง ${PRAISE_STREAK_POINTS} Special Points`,
+      meta: {
+        employeeId: String(wallet.employeeId),
+        month: input.closedMonthKey,
+        months: praiseStreakMonths,
+        amount: PRAISE_STREAK_POINTS,
+      },
+    });
+  }
+}
+
 export const resetGivingBudget = privateMutation
   .input(
     z.object({
@@ -60,29 +217,20 @@ export const resetGivingBudget = privateMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const periodKey = thaiMonthKey();
     const now = Date.now();
+    const { year } = thaiDateParts(now);
     const wallets = await ctx.db.query("wallet").paginate({
       cursor: input.cursor ?? null,
       numItems: BATCH_SIZE,
     });
 
     for (const wallet of wallets.page) {
-      const previousGiving = wallet.givingBudget;
-      await ctx.db.patch(wallet._id, {
-        givingBudget: GIVING_BUDGET,
-        lastBudgetUpdate: now,
-      });
-
-      await ctx.db.insert("pointLedger", {
-        employeeId: wallet.employeeId,
-        delta: GIVING_BUDGET - previousGiving,
-        balanceAfter: GIVING_BUDGET,
-        balanceType: "giving",
-        sourceType: "monthly_reset",
-        sourceId: `${wallet.employeeId}:${periodKey}`,
-        note: `รีเซ็ดงบมอบคะแนนประจำเดือน ${periodKey}`,
-        createdAt: now,
+      await rolloverWallet(ctx, wallet, {
+        yearReset: false,
+        closedMonthKey: previousThaiMonthKey(now),
+        resetPeriodKey: thaiMonthKey(now),
+        now,
+        year,
       });
     }
 
@@ -100,62 +248,21 @@ export const resetAll = privateMutation
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const { year } = thaiDateParts();
-    const periodKey = `year-${year}`;
     const now = Date.now();
+    const { year } = thaiDateParts(now);
     const wallets = await ctx.db.query("wallet").paginate({
       cursor: input.cursor ?? null,
       numItems: BATCH_SIZE,
     });
 
     for (const wallet of wallets.page) {
-      const previousReceiving = wallet.receivingBudget;
-      const previousSpecial = wallet.specialBudget ?? 0;
-      const previousGiving = wallet.givingBudget;
-
-      await ctx.db.patch(wallet._id, {
-        givingBudget: GIVING_BUDGET,
-        receivingBudget: 0,
-        specialBudget: 0,
-        lastBudgetUpdate: now,
+      await rolloverWallet(ctx, wallet, {
+        yearReset: true,
+        closedMonthKey: previousThaiMonthKey(now),
+        resetPeriodKey: `year-${year}`,
+        now,
+        year,
       });
-
-      await ctx.db.insert("pointLedger", {
-        employeeId: wallet.employeeId,
-        delta: GIVING_BUDGET - previousGiving,
-        balanceAfter: GIVING_BUDGET,
-        balanceType: "giving",
-        sourceType: "monthly_reset",
-        sourceId: `${wallet.employeeId}:${periodKey}:giving`,
-        note: `รีเซ็ดงบมอบคะแนนต้นปี ${year}`,
-        createdAt: now,
-      });
-
-      if (previousReceiving !== 0) {
-        await ctx.db.insert("pointLedger", {
-          employeeId: wallet.employeeId,
-          delta: -previousReceiving,
-          balanceAfter: 0,
-          balanceType: "receiving",
-          sourceType: "monthly_reset",
-          sourceId: `${wallet.employeeId}:${periodKey}:receiving`,
-          note: `เคลียร์คะแนนสะสมต้นปี ${year}`,
-          createdAt: now,
-        });
-      }
-
-      if (previousSpecial !== 0) {
-        await ctx.db.insert("pointLedger", {
-          employeeId: wallet.employeeId,
-          delta: -previousSpecial,
-          balanceAfter: 0,
-          balanceType: "special",
-          sourceType: "monthly_reset",
-          sourceId: `${wallet.employeeId}:${periodKey}:special`,
-          note: `เคลียร์คะแนนพิเศษต้นปี ${year}`,
-          createdAt: now,
-        });
-      }
     }
 
     if (!wallets.isDone) {
@@ -208,17 +315,13 @@ export const getOne = authQuery.query(async ({ ctx }) => {
   return {
     ...wallet,
     specialBudget: wallet.specialBudget ?? 0,
+    loginStreak: wallet.loginStreak ?? 0,
+    praiseStreakMonths: wallet.praiseStreakMonths ?? 0,
   };
 });
 
-const THAI_OFFSET_MS = 7 * 60 * 60 * 1000;
-
-const toThaiDateString = (ms: number) =>
-  new Date(ms + THAI_OFFSET_MS).toISOString().slice(0, 10);
-
 export const dailyLogin = authMutation.mutation(async ({ ctx }) => {
-  const today = toThaiDateString(Date.now());
-
+  const now = Date.now();
   const wallet = await ctx.db
     .query("wallet")
     .withIndex("by_employeeId", (q) =>
@@ -233,41 +336,91 @@ export const dailyLogin = authMutation.mutation(async ({ ctx }) => {
     });
   }
 
-  if (wallet.lastDailyBonus && toThaiDateString(wallet.lastDailyBonus) === today) {
-    return { claimed: false, specialBudget: wallet.specialBudget ?? 0 };
+  const checkin = nextLoginStreak({
+    lastDailyBonus: wallet.lastDailyBonus,
+    currentStreak: wallet.loginStreak,
+    nowMs: now,
+  });
+
+  if (checkin.alreadyCheckedIn) {
+    return {
+      checkedIn: false,
+      firstLoginAwarded: false,
+      loginStreakAwarded: false,
+      loginStreak: checkin.loginStreak,
+      specialBudget: wallet.specialBudget ?? 0,
+    };
   }
 
-  const newBalance = (wallet.specialBudget ?? 0) + 1;
-
   await ctx.db.patch(wallet._id, {
-    specialBudget: newBalance,
-    lastDailyBonus: Date.now(),
+    lastDailyBonus: now,
+    loginStreak: checkin.loginStreak,
   });
 
-  await ctx.db.insert("pointLedger", {
-    employeeId: wallet.employeeId,
-    delta: 1,
-    balanceAfter: newBalance,
-    balanceType: "special",
-    sourceType: "daily_login",
-    sourceId: today,
-    note: "โบนัสเข้าสู่ระบบประจำวัน",
-    createdAt: Date.now(),
-  });
+  let firstLoginAwarded = false;
+  let loginStreakAwarded = false;
+  let specialBudget = wallet.specialBudget ?? 0;
 
-  await appendActivityLog(ctx, {
-    actorEmployeeId: wallet.employeeId,
-    type: "daily_login",
-    sourceId: `${wallet.employeeId}:${today}`,
-    summary: "รับโบนัสเข้าสู่ระบบประจำวัน",
-    meta: {
-      employeeId: String(wallet.employeeId),
-      date: today,
-      delta: 1,
-    },
-  });
+  if (checkin.isFirstLogin) {
+    const award = await awardSpecialPoints(ctx, {
+      employeeId: wallet.employeeId,
+      delta: FIRST_LOGIN_POINTS,
+      sourceType: "first_login",
+      sourceId: `${wallet.employeeId}:first_login`,
+      note: "ขวัญถุงแรกเข้า",
+    });
+    firstLoginAwarded = award.awarded;
+    specialBudget = award.newBalance;
 
-  return { claimed: true, specialBudget: newBalance };
+    if (award.awarded) {
+      await appendActivityLog(ctx, {
+        actorEmployeeId: wallet.employeeId,
+        type: "first_login",
+        sourceId: `${wallet.employeeId}:first_login`,
+        summary: `ได้รับขวัญถุงแรกเข้า ${FIRST_LOGIN_POINTS} Special Points`,
+        meta: {
+          employeeId: String(wallet.employeeId),
+          date: checkin.today,
+          amount: FIRST_LOGIN_POINTS,
+        },
+      });
+    }
+  }
+
+  if (shouldAwardLoginStreak(checkin.loginStreak)) {
+    const award = await awardSpecialPoints(ctx, {
+      employeeId: wallet.employeeId,
+      delta: LOGIN_STREAK_POINTS,
+      sourceType: "login_streak",
+      sourceId: `${wallet.employeeId}:${checkin.today}:login_streak`,
+      note: `โบนัสเข้าสู่ระบบติดต่อกัน ${LOGIN_STREAK_DAYS} วัน`,
+    });
+    loginStreakAwarded = award.awarded;
+    specialBudget = award.newBalance;
+
+    if (award.awarded) {
+      await appendActivityLog(ctx, {
+        actorEmployeeId: wallet.employeeId,
+        type: "login_streak",
+        sourceId: `${wallet.employeeId}:${checkin.today}:login_streak`,
+        summary: `ได้รับโบนัสเข้าสู่ระบบติดต่อกัน ${LOGIN_STREAK_POINTS} Special Points`,
+        meta: {
+          employeeId: String(wallet.employeeId),
+          date: checkin.today,
+          streak: checkin.loginStreak,
+          amount: LOGIN_STREAK_POINTS,
+        },
+      });
+    }
+  }
+
+  return {
+    checkedIn: true,
+    firstLoginAwarded,
+    loginStreakAwarded,
+    loginStreak: checkin.loginStreak,
+    specialBudget,
+  };
 });
 
 export const dailyBonusHistory = authQuery.query(async ({ ctx }) => {

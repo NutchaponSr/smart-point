@@ -22,7 +22,7 @@ const assertAllowedAvatar = (image: string | null | undefined) => {
 
 export default defineAuth((_ctx) => {
   return {
-    baseURL: process.env.SITE_URL!,
+    baseURL: process.env.SITE_URL || "http://localhost:3000",
     trustedOrigins: [process.env.SITE_URL || "http://localhost:3000"],
     session: {
       expiresIn: 60 * 60 * 24 * 30, // 30 days
@@ -79,4 +79,5 @@ export default defineAuth((_ctx) => {
       }),
     ],
   }
+
 });

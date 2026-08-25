@@ -1,13 +1,11 @@
 "use client";
 
-import {
-  Authenticated,
-  AuthLoading,
-} from "convex/react";
-import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Authenticated, AuthLoading } from "convex/react";
+import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -18,27 +16,47 @@ interface Props {
 const DailyLoginClaimer = () => {
   const crpc = useCRPC();
   const queryClient = useQueryClient();
+  const t = useTranslations("auth.bonus");
 
-  const { mutate: claim } = useMutation(crpc.wallet.dailyLogin.mutationOptions());
+  const { mutate: claim } = useMutation(
+    crpc.wallet.dailyLogin.mutationOptions(),
+  );
 
   useEffect(() => {
-    claim({}, {
-      onSuccess: (data) => {
-        if (!data.claimed) return;
+    claim(
+      {},
+      {
+        onSuccess: (data) => {
+          if (!data.checkedIn) return;
 
-        toast.success("ได้รับ +1 Special Point จากการเข้าสู่ระบบวันนี้!");
+          if (data.firstLoginAwarded) {
+            toast.success(t("first-login"));
+          }
+          if (data.loginStreakAwarded) {
+            toast.success(t("login-streak"));
+          }
+
+          if (data.firstLoginAwarded || data.loginStreakAwarded) {
+            void queryClient.invalidateQueries({
+              queryKey: crpc.wallet.getOne.queryKey(),
+            });
+            void queryClient.invalidateQueries({
+              queryKey: crpc.activityLog.getLatest.queryKey(),
+            });
+          }
+        },
       },
-    });
-  }, [claim]);
+    );
+  }, [claim, crpc.activityLog.getLatest, crpc.wallet.getOne, queryClient, t]);
 
   return null;
-}
+};
 
 export const AuthGuard = ({ children }: Props) => {
   return (
     <>
       <AuthLoading>
-        <div className="flex items-center justify-center h-full">
+        <div className="flex h-full items-center justify-center">
           <Loader2 className="size-6 animate-spin" />
         </div>
       </AuthLoading>
@@ -48,4 +66,4 @@ export const AuthGuard = ({ children }: Props) => {
       </Authenticated>
     </>
   );
-}
+};

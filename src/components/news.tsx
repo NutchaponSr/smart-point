@@ -1,26 +1,27 @@
 "use client";
 
-import Image from "next/image";
-import { Suspense, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { enUS, th } from "date-fns/locale";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
+import { Suspense, useState } from "react";
 import {
   BsBoxArrowInRight,
   BsCheckCircle,
   BsChevronDown,
+  BsGift,
+  BsPersonPlusFill,
   BsPinAngleFill,
   BsSendFill,
   BsShieldCheck,
   BsShieldX,
   BsStars,
-  BsPersonPlusFill,
 } from "react-icons/bs";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
+import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 
 import NotFoundImage from "../../public/extra_character_e.svg";
@@ -30,6 +31,10 @@ type ActivityLogType =
   | "point_transfer_approved"
   | "point_transfer_rejected"
   | "daily_login"
+  | "first_login"
+  | "login_streak"
+  | "monthly_active"
+  | "praise_streak"
   | "event_joined"
   | "event_completed"
   | "event_rejected";
@@ -39,6 +44,10 @@ const logTypeIcon: Record<ActivityLogType, typeof BsSendFill> = {
   point_transfer_approved: BsShieldCheck,
   point_transfer_rejected: BsShieldX,
   daily_login: BsBoxArrowInRight,
+  first_login: BsGift,
+  login_streak: BsBoxArrowInRight,
+  monthly_active: BsStars,
+  praise_streak: BsStars,
   event_joined: BsPersonPlusFill,
   event_completed: BsStars,
   event_rejected: BsShieldX,
@@ -49,6 +58,10 @@ const logTypeTone: Record<ActivityLogType, string> = {
   point_transfer_approved: "text-[#58cc02]",
   point_transfer_rejected: "text-[#ff4b4b]",
   daily_login: "text-[#f1c40f]",
+  first_login: "text-[#f1c40f]",
+  login_streak: "text-[#f1c40f]",
+  monthly_active: "text-[#f1c40f]",
+  praise_streak: "text-[#f1c40f]",
   event_joined: "text-[#1cb0f6]",
   event_completed: "text-[#58cc02]",
   event_rejected: "text-[#ff4b4b]",
@@ -103,7 +116,10 @@ function NewsList() {
 
   if (items.length === 0) {
     return (
-      <EmptyState title={t("empty.title")} description={t("empty.description")} />
+      <EmptyState
+        title={t("empty.title")}
+        description={t("empty.description")}
+      />
     );
   }
 
@@ -189,6 +205,10 @@ const ACTIVITY_LOG_TYPES = new Set<ActivityLogType>([
   "point_transfer_approved",
   "point_transfer_rejected",
   "daily_login",
+  "first_login",
+  "login_streak",
+  "monthly_active",
+  "praise_streak",
   "event_joined",
   "event_completed",
   "event_rejected",
@@ -212,9 +232,7 @@ function formatActivityLogMessage(
   if (!ACTIVITY_LOG_TYPES.has(type)) return item.summary;
 
   const nameFromMeta =
-    typeof item.meta?.receiverName === "string"
-      ? item.meta.receiverName
-      : null;
+    typeof item.meta?.receiverName === "string" ? item.meta.receiverName : null;
   const name = pickLocalized(
     item.subject?.name ?? nameFromMeta ?? item.actor?.name ?? "",
     locale,
@@ -226,6 +244,22 @@ function formatActivityLogMessage(
     return item.viewerRole === "actor"
       ? t("types.point_transfer_rejected_admin", { amount, name })
       : t("types.point_transfer_rejected", { amount, name });
+  }
+
+  if (type === "first_login") {
+    return t("types.first_login", { amount: amount || 10 });
+  }
+
+  if (type === "login_streak") {
+    return t("types.login_streak", { amount: amount || 5 });
+  }
+
+  if (type === "monthly_active") {
+    return t("types.monthly_active", { amount: amount || 5 });
+  }
+
+  if (type === "praise_streak") {
+    return t("types.praise_streak", { amount: amount || 20 });
   }
 
   return t(`types.${type}`, { amount, name, activityName });
@@ -251,8 +285,7 @@ function ActivityLogList() {
   return (
     <ul className="flex flex-col gap-2">
       {items.map((item) => {
-        const Icon =
-          logTypeIcon[item.type as ActivityLogType] ?? BsCheckCircle;
+        const Icon = logTypeIcon[item.type as ActivityLogType] ?? BsCheckCircle;
         const tone =
           logTypeTone[item.type as ActivityLogType] ?? "text-muted-foreground";
         const timeLabel = format(new Date(item.createdAt), "d MMM yyyy HH:mm", {

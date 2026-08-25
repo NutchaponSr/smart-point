@@ -7,7 +7,12 @@ import {
   resolvePositionLoose,
 } from "../lib/employee-directory";
 import { normalizeText } from "../lib/employee-id";
-import { localizedLabel, localizedSearchText, toLocalizedString } from "../lib/localized";
+import {
+  localizedLabel,
+  localizedSearchText,
+  toLocalizedString,
+} from "../lib/localized";
+import { GIVING_BUDGET } from "../lib/program-rules";
 
 import { internal } from "./_generated/api";
 
@@ -63,7 +68,7 @@ export const insertEmployee = privateMutation
     // init wallet ทันที
     await ctx.db.insert("wallet", {
       employeeId: employeeDocId,
-      givingBudget: 100,
+      givingBudget: GIVING_BUDGET,
       receivingBudget: 0,
       specialBudget: 5,
       lastBudgetUpdate: Date.now(),
@@ -116,7 +121,12 @@ export const insertActivity = privateMutation
       endDate: z.number().optional(),
       maxParticipants: z.number().int().positive().optional(),
       isActive: z.boolean(),
-      category: z.enum(["external", "internal", "internal_bu", "specials_point"]),
+      category: z.enum([
+        "external",
+        "internal",
+        "internal_bu",
+        "specials_point",
+      ]),
       allowedDivisions: z.array(z.string()).optional(),
       allowedDepartments: z.array(z.string()).optional(),
     }),
@@ -286,7 +296,10 @@ export const seedReward = optionalAuthAction.action(async ({ ctx }) => {
       onePerOrder: true,
     },
     {
-      name: L("ประกันสุขภาพเสริม 3 เดือน", "Supplementary health insurance 3 months"),
+      name: L(
+        "ประกันสุขภาพเสริม 3 เดือน",
+        "Supplementary health insurance 3 months",
+      ),
       description: L(
         "ความคุ้มครองสุขภาพเสริมนอกเหนือจากประกันบริษัท",
         "Supplementary health coverage beyond company insurance",
@@ -327,7 +340,10 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
   const L = (th: string, en: string) => ({ th, en });
   const activities = [
     {
-      name: L("Town Hall Q2 — ร่วมฟังและรับแต้ม", "Town Hall Q2 — attend and earn points"),
+      name: L(
+        "Town Hall Q2 — ร่วมฟังและรับแต้ม",
+        "Town Hall Q2 — attend and earn points",
+      ),
       description: L(
         "เข้าร่วม Town Hall ครบตามเงื่อนไข HR",
         "Attend Town Hall and meet HR requirements",
@@ -354,7 +370,10 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       allowedDivisions: ["SBM", "SFT3"],
     },
     {
-      name: L("Wellness Week — ส่วนลดแลกของรางวัล", "Wellness Week — reward discount"),
+      name: L(
+        "Wellness Week — ส่วนลดแลกของรางวัล",
+        "Wellness Week — reward discount",
+      ),
       description: L(
         "เข้าร่วมกิจกรรมครบแล้ว HR จะอัปเดตสถานะเป็นเข้าร่วม — ใช้สิทธิ์ส่วนลดแต้มเมื่อ checkout ตะกร้าได้ครั้งหนึ่ง",
         "After completing the activity, HR marks attendance — unlock a one-time checkout point discount",
@@ -365,7 +384,17 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       maxParticipants: undefined,
       isActive: true,
       category: "specials_point" as const,
-      allowedDivisions: ["SAT", "SDS", "SBM", "ICP1", "ICP2", "SFT1", "SFT2", "SFT3", "SAA"],
+      allowedDivisions: [
+        "SAT",
+        "SDS",
+        "SBM",
+        "ICP1",
+        "ICP2",
+        "SFT1",
+        "SFT2",
+        "SFT3",
+        "SAA",
+      ],
     },
     {
       name: L("BU Hackathon 2026", "BU Hackathon 2026"),
@@ -382,7 +411,10 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       allowedDivisions: ["ICP1", "ICP2"],
     },
     {
-      name: L("BU Knowledge Sharing — Lunch & Learn", "BU Knowledge Sharing — Lunch & Learn"),
+      name: L(
+        "BU Knowledge Sharing — Lunch & Learn",
+        "BU Knowledge Sharing — Lunch & Learn",
+      ),
       description: L(
         "แชร์ความรู้ช่วงพักเที่ยงประจำ BU เดือนนี้",
         "Monthly BU lunch-and-learn knowledge sharing",
@@ -396,7 +428,10 @@ export const seedActivity = optionalAuthAction.action(async ({ ctx }) => {
       allowedDivisions: ["SFT1", "SFT2", "SFT3"],
     },
     {
-      name: L("BU Team Building — Outing ประจำปี", "BU Team Building — annual outing"),
+      name: L(
+        "BU Team Building — Outing ประจำปี",
+        "BU Team Building — annual outing",
+      ),
       description: L(
         "กิจกรรมสานสัมพันธ์ภายใน BU ณ ต่างจังหวัด 2 วัน 1 คืน",
         "BU bonding trip: 2 days 1 night out of town",

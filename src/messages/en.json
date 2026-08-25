@@ -303,6 +303,10 @@
       "point_transfer_rejected": "An admin rejected your commendation and refunded {amount} points",
       "point_transfer_rejected_admin": "You rejected {name}'s commendation and refunded {amount} points",
       "daily_login": "Claimed daily login bonus",
+      "first_login": "First-login bonus: +{amount} Special Points",
+      "login_streak": "Logged in 15 days in a row: +{amount} Special Points",
+      "monthly_active": "Used the full 50-point giving quota: +{amount} Special Points",
+      "praise_streak": "Gave the full quota for 3 months in a row: +{amount} Special Points",
       "event_joined": "Joined event: {activityName}",
       "event_completed": "Thanks for joining: {activityName}",
       "event_rejected": "Please attach evidence as required by the event"
@@ -315,6 +319,10 @@
     },
     "logout": "Log out",
     "settings": "Settings",
+    "bonus": {
+      "first-login": "First-login bonus: +10 Special Points!",
+      "login-streak": "Logged in 15 days in a row: +5 Special Points!"
+    },
     "sign-in": {
       "title": "Sign in",
       "employee-id": "Employee ID",

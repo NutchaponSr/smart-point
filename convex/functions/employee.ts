@@ -18,12 +18,13 @@ import {
 import { normalizeText } from "../lib/employee-id";
 import {
   isLocalizedString,
+  type LocalizedString,
   localizedLabel,
   localizedSearchText,
   toLocalizedString,
-  type LocalizedString,
 } from "../lib/localized";
 import { hashPassword } from "../lib/password";
+import { GIVING_BUDGET } from "../lib/program-rules";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
@@ -72,7 +73,9 @@ function defaultSignupEmail(businessEmployeeId: string): string {
   return `${businessEmployeeId}@example.somboon.co.th`;
 }
 
-function normalizeOptionalEmail(email: string | null | undefined): string | undefined {
+function normalizeOptionalEmail(
+  email: string | null | undefined,
+): string | undefined {
   const t = email?.trim() ?? "";
   return t.length > 0 ? t : undefined;
 }
@@ -247,7 +250,7 @@ async function insertEmployeeWalletAndScheduleSignup(
 
   await ctx.db.insert("wallet", {
     employeeId: employeeDocId,
-    givingBudget: 100,
+    givingBudget: GIVING_BUDGET,
     receivingBudget: 0,
     specialBudget: 0,
     lastBudgetUpdate: Date.now(),
@@ -312,15 +315,11 @@ type EmployeeListFilters = {
   rank?: string[] | null;
 };
 
-function normalizeFilterArray(
-  value: string[] | null | undefined,
-): string[] {
+function normalizeFilterArray(value: string[] | null | undefined): string[] {
   if (value == null || value.length === 0) return [];
   return [
     ...new Set(
-      value
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0),
+      value.map((item) => item.trim()).filter((item) => item.length > 0),
     ),
   ];
 }
@@ -330,7 +329,9 @@ function matchesEmployeeSearch(row: EmployeeListRow, normalizedQuery: string) {
   return (
     row.employeeId.toLowerCase().includes(normalizedQuery) ||
     localizedSearchText(row.name).toLowerCase().includes(normalizedQuery) ||
-    localizedSearchText(row.department).toLowerCase().includes(normalizedQuery) ||
+    localizedSearchText(row.department)
+      .toLowerCase()
+      .includes(normalizedQuery) ||
     localizedSearchText(row.position).toLowerCase().includes(normalizedQuery) ||
     rankText(row.rank).toLowerCase().includes(normalizedQuery) ||
     row.division.toLowerCase().includes(normalizedQuery) ||
@@ -552,7 +553,7 @@ export const getOne = authQuery
     if (!employee) {
       throw new CRPCError({ code: "NOT_FOUND", message: "Employee not found" });
     }
-    
+
     return employee;
   });
 
@@ -589,7 +590,12 @@ export const search = authQuery
     ]);
 
     const seen = new Set<string>();
-    const results = [...byEmployeeId, ...byName, ...byDepartment, ...byEmail].filter((e) => {
+    const results = [
+      ...byEmployeeId,
+      ...byName,
+      ...byDepartment,
+      ...byEmail,
+    ].filter((e) => {
       /** `self: true` — ให้ผลค้นหารวมตัวเองได้; default ตัดตัวเองออกสำหรับ picker */
       if (!input.self && e.id === ctx.user.employeeId) return false;
       if (adminEmployeeIds.has(e.id) || isSystemAdminEmployee(e)) return false;
@@ -600,7 +606,9 @@ export const search = authQuery
     });
 
     /** citizenId ใช้เป็นรหัสผ่านเริ่มต้น — ห้ามหลุดไปยังผู้ใช้ทั่วไปผ่านการค้นหา */
-    return results.slice(0, 10).map(({ citizenId: _citizenId, ...rest }) => rest);
+    return results
+      .slice(0, 10)
+      .map(({ citizenId: _citizenId, ...rest }) => rest);
   });
 
 const bulkImportRowSchema = z.object({
@@ -860,7 +868,10 @@ export const create = authMutation
       .first();
 
     if (existing) {
-      throw new CRPCError({ code: "CONFLICT", message: "Employee already exists" });
+      throw new CRPCError({
+        code: "CONFLICT",
+        message: "Employee already exists",
+      });
     }
 
     const employeeDocId = await insertEmployeeWalletAndScheduleSignup(ctx, {
@@ -1033,7 +1044,10 @@ export async function deleteEmployeeCascade(
     .query("redemption")
     .filter((q) => q.eq(q.field("fulfilledBy"), eid))
     .collect()) {
-    await ctx.db.patch(row._id, { fulfilledBy: undefined, fulfilledAt: undefined });
+    await ctx.db.patch(row._id, {
+      fulfilledBy: undefined,
+      fulfilledAt: undefined,
+    });
   }
 
   for (const redemption of await ctx.db
@@ -1065,7 +1079,10 @@ export async function deleteEmployeeCascade(
       .query("activityParticipant")
       .filter((q) => q.eq(q.field("awardedBy"), userRow._id))
       .collect()) {
-      await ctx.db.patch(row._id, { awardedBy: undefined, awardedAt: undefined });
+      await ctx.db.patch(row._id, {
+        awardedBy: undefined,
+        awardedAt: undefined,
+      });
     }
     for (const row of await ctx.db
       .query("review")

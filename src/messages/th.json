@@ -303,6 +303,10 @@
       "point_transfer_rejected": "ผู้ดูแลระบบปฏิเสธคำชมของคุณ และได้คืน {amount} พอยต์แล้ว",
       "point_transfer_rejected_admin": "คุณปฏิเสธคำชมของ {name} และคืน {amount} พอยต์แล้ว",
       "daily_login": "รับโบนัสเข้าสู่ระบบประจำวัน",
+      "first_login": "ได้รับขวัญถุงแรกเข้า +{amount} Special Points",
+      "login_streak": "เข้าสู่ระบบติดต่อกันครบ 15 วัน รับ +{amount} Special Points",
+      "monthly_active": "ใช้โควต้าส่งคำชมครบ 50 คะแนน รับ +{amount} Special Points",
+      "praise_streak": "ส่งคำชมครบโควต้า 3 เดือนติดต่อกัน รับ +{amount} Special Points",
       "event_joined": "เข้าร่วมกิจกรรม: {activityName}",
       "event_completed": "ขอบคุณสำหรับการร่วมกิจกรรม: {activityName}",
       "event_rejected": "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม"
@@ -315,6 +319,10 @@
     },
     "logout": "ออกจากระบบ",
     "settings": "ตั้งค่า",
+    "bonus": {
+      "first-login": "ได้รับขวัญถุงแรกเข้า +10 Special Points!",
+      "login-streak": "เข้าสู่ระบบติดต่อกันครบ 15 วัน รับ +5 Special Points!"
+    },
     "sign-in": {
       "title": "เข้าสู่ระบบ",
       "employee-id": "รหัสพนักงาน",

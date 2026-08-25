@@ -127,6 +127,10 @@ export type DataModel = {
         | "point_transfer_approved"
         | "point_transfer_rejected"
         | "daily_login"
+        | "first_login"
+        | "login_streak"
+        | "monthly_active"
+        | "praise_streak"
         | "event_joined"
         | "event_completed"
         | "event_rejected";
@@ -792,7 +796,11 @@ export type DataModel = {
         | "activity"
         | "monthly_reset"
         | "daily_login"
-        | "monthly_quest";
+        | "monthly_quest"
+        | "first_login"
+        | "login_streak"
+        | "monthly_active"
+        | "praise_streak";
       _id: Id<"pointLedger">;
       _creationTime: number;
     };
@@ -1130,6 +1138,8 @@ export type DataModel = {
       givingBudget: number;
       lastBudgetUpdate: number;
       lastDailyBonus?: null | number;
+      loginStreak?: null | number;
+      praiseStreakMonths?: null | number;
       receivingBudget: number;
       specialBudget?: null | number;
       _id: Id<"wallet">;
@@ -1142,6 +1152,8 @@ export type DataModel = {
       | "_id"
       | "lastBudgetUpdate"
       | "lastDailyBonus"
+      | "loginStreak"
+      | "praiseStreakMonths"
       | "receivingBudget"
       | "specialBudget";
     indexes: {

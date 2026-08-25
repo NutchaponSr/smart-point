@@ -3,10 +3,14 @@ import type { GenericMutationCtx } from "convex/server";
 
 import type { DataModel, Id } from "../functions/_generated/dataModel";
 
-type SpecialPointSourceType =
+export type SpecialPointSourceType =
   | "daily_login"
   | "activity"
-  | "monthly_quest";
+  | "monthly_quest"
+  | "first_login"
+  | "login_streak"
+  | "monthly_active"
+  | "praise_streak";
 
 type PointsMutationCtx = Pick<GenericMutationCtx<DataModel>, "db">;
 

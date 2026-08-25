@@ -7,6 +7,10 @@ export type ActivityLogType =
   | "point_transfer_approved"
   | "point_transfer_rejected"
   | "daily_login"
+  | "first_login"
+  | "login_streak"
+  | "monthly_active"
+  | "praise_streak"
   | "event_joined"
   | "event_completed"
   | "event_rejected";

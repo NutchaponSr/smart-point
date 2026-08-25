@@ -57,6 +57,16 @@ export function thaiMonthKey(nowMs = Date.now()): string {
   return `${year}-${String(month + 1).padStart(2, "0")}`;
 }
 
+/** เดือนไทยที่เพิ่งจบ — ใช้ตอน cron วันที่ 1 */
+export function previousThaiMonthKey(nowMs = Date.now()): string {
+  const { year, month } = thaiDateParts(nowMs);
+  const prev = new Date(Date.UTC(year, month - 1, 1));
+  return `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/** งบมอบคะแนนคำชมต่อเดือน */
+export const GIVING_BUDGET = 50;
+
 /**
  * ช่วงสรุปปักษ์ก่อนหน้า เมื่อรันตอนต้นวันที่ 1 หรือ 16 (ICT)
  * - วันที่ 1 → สรุป 16 ของเดือนก่อน ถึงสิ้นเดือนก่อน
