@@ -570,13 +570,13 @@ export declare const api: {
     approve: FunctionReference<
       "mutation",
       "public",
-      { confirm: boolean; transactionId: string },
+      { transactionId: string },
       any
     >;
     bulkApprove: FunctionReference<
       "mutation",
       "public",
-      { confirm: boolean; transactionIds: Array<string> },
+      { transactionIds: Array<string> },
       any
     >;
     comment: FunctionReference<

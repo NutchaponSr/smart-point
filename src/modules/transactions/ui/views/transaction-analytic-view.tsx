@@ -29,14 +29,11 @@ export const TransactionAnalyticView = () => {
   const crpc = useCRPC();
 
   const [filters, setFilters] = useTransactionFilters();
-  const [ConfirmationDialog, confirm] = useConfirm({
-    title: "อนุมัติธุรกรรม",
-  });
   const [RejectionDialog, reject] = useConfirm({
-    title: "ปฏิเสธธุรกรรม",
+    title: "ลบธุรกรรมและคืนแต้ม",
   });
 
-  const bulkApprove = useMutation(crpc.transaction.bulkApprove.mutationOptions());
+  const bulkRemove = useMutation(crpc.transaction.bulkApprove.mutationOptions());
 
   const debouncedQuery = useDebounce(filters.q, 400);
 
@@ -93,7 +90,6 @@ export const TransactionAnalyticView = () => {
       onExport={onExport}
       menu={<Navigations links={links} />}
     >
-      <ConfirmationDialog />
       <RejectionDialog />
       <section className="space-y-4 p-4 md:p-8">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_4fr]">
@@ -129,44 +125,23 @@ export const TransactionAnalyticView = () => {
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={bulkApprove.isPending}
-                      onClick={async () => {
-                        const ok = await confirm();
-
-                        if (ok) {
-                          bulkApprove.mutate(
-                            {
-                              transactionIds: selectedTransactionIds,
-                              confirm: true,
-                            },
-                            { onSuccess: () => setRowSelection({}) },
-                          );
-                        }
-                      }}
-                    >
-                      อนุมัติ
-                    </Button>
-                    <Button
                       variant="danger"
                       size="sm"
-                      disabled={bulkApprove.isPending}
+                      disabled={bulkRemove.isPending}
                       onClick={async () => {
                         const ok = await reject();
 
                         if (ok) {
-                          bulkApprove.mutate(
+                          bulkRemove.mutate(
                             {
                               transactionIds: selectedTransactionIds,
-                              confirm: false,
                             },
                             { onSuccess: () => setRowSelection({}) },
                           );
                         }
                       }}
                     >
-                      ปฏิเสธ
+                      ลบและคืนแต้ม
                     </Button>
                   </div>
                 </div>

@@ -300,7 +300,8 @@
     "types": {
       "point_transfer_sent": "โอน {amount} พอยต์ให้ {name}",
       "point_transfer_approved": "คำชมของคุณได้รับการอนุมัติ",
-      "point_transfer_rejected": "คำชมของคุณได้รับการปฏิเสธ กรุณาระบุพฤติกรรมให้ชัดเจน",
+      "point_transfer_rejected": "ผู้ดูแลระบบปฏิเสธคำชมของคุณ และได้คืน {amount} พอยต์แล้ว",
+      "point_transfer_rejected_admin": "คุณปฏิเสธคำชมของ {name} และคืน {amount} พอยต์แล้ว",
       "daily_login": "รับโบนัสเข้าสู่ระบบประจำวัน",
       "event_joined": "เข้าร่วมกิจกรรม: {activityName}",
       "event_completed": "ขอบคุณสำหรับการร่วมกิจกรรม: {activityName}",

@@ -2,6 +2,7 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { appendActivityLog } from "../lib/activity-log";
+import { requireAdmin } from "../lib/auth-helper";
 import { authMutation, authQuery } from "../lib/crpc";
 import { listVisibleSubjectEmployeeDocIds } from "../lib/k2-visibility";
 import {
@@ -977,7 +978,7 @@ async function collectTeamCompletedFeedPage(
 type ApproveTransactionResult =
   | {
       transactionId: Id<"transaction">;
-      status: "approved" | "rejected" | "alreadyCompleted" | "alreadyRejected";
+      status: "rejected";
       amount: number;
     }
   | {
@@ -987,10 +988,30 @@ type ApproveTransactionResult =
       message: string;
     };
 
+async function deleteTransactionRelations(
+  ctx: MutationCtx,
+  transactionId: Id<"transaction">,
+) {
+  const likes = await ctx.db
+    .query("like")
+    .withIndex("by_transactionId", (q) => q.eq("transactionId", transactionId))
+    .collect();
+  for (const like of likes) {
+    await ctx.db.delete(like._id);
+  }
+
+  const comments = await ctx.db
+    .query("comment")
+    .withIndex("by_transactionId", (q) => q.eq("transactionId", transactionId))
+    .collect();
+  for (const comment of comments) {
+    await ctx.db.delete(comment._id);
+  }
+}
+
 async function approveTransactionById(
   ctx: MutationCtx & { user: { employeeId: Id<"employee"> } },
   transactionId: Id<"transaction">,
-  confirm: boolean,
 ): Promise<ApproveTransactionResult> {
   const transaction = await ctx.db.get(transactionId);
   if (!transaction) {
@@ -999,31 +1020,6 @@ async function approveTransactionById(
       status: "failed" as const,
       code: "NOT_FOUND" as const,
       message: "Transaction not found",
-    };
-  }
-
-  if (transaction.status === "completed") {
-    return {
-      transactionId: transaction._id,
-      status: "alreadyCompleted" as const,
-      amount: transaction.amount,
-    };
-  }
-
-  if (transaction.status === "rejected") {
-    return {
-      transactionId: transaction._id,
-      status: "alreadyRejected" as const,
-      amount: transaction.amount,
-    };
-  }
-
-  if (transaction.status !== "pending") {
-    return {
-      transactionId: transaction._id,
-      status: "failed" as const,
-      code: "BAD_REQUEST" as const,
-      message: "Transaction is not pending",
     };
   }
 
@@ -1047,113 +1043,44 @@ async function approveTransactionById(
     )
     .collect();
 
-  if (confirm) {
-    const receiverWallet = await ctx.db
-      .query("wallet")
-      .withIndex("by_employeeId", (q) =>
-        q.eq("employeeId", transaction.receiverId),
-      )
-      .first();
+  const shouldRefundSender =
+    transaction.status === "pending" || transaction.status === "completed";
+  const shouldClawbackReceiver = transaction.status === "completed";
 
-    if (!receiverWallet) {
-      return {
-        transactionId: transaction._id,
-        status: "failed" as const,
-        code: "NOT_FOUND" as const,
-        message: "Receiver wallet not found",
-      };
-    }
+  const [senderWallet, receiverWallet] = await Promise.all([
+    shouldRefundSender
+      ? ctx.db
+          .query("wallet")
+          .withIndex("by_employeeId", (q) =>
+            q.eq("employeeId", transaction.senderId),
+          )
+          .first()
+      : Promise.resolve(null),
+    shouldClawbackReceiver
+      ? ctx.db
+          .query("wallet")
+          .withIndex("by_employeeId", (q) =>
+            q.eq("employeeId", transaction.receiverId),
+          )
+          .first()
+      : Promise.resolve(null),
+  ]);
 
-    const existingReceiverLedger = ledgers.find(
-      (ledger) =>
-        ledger.balanceType === "receiving" &&
-        ledger.employeeId === transaction.receiverId,
-    );
-
-    if (!existingReceiverLedger) {
-      const newReceivingBudget =
-        receiverWallet.receivingBudget + transaction.amount;
-
-      await ctx.db.patch(receiverWallet._id, {
-        receivingBudget: newReceivingBudget,
-      });
-
-      await ctx.db.insert("pointLedger", {
-        employeeId: transaction.receiverId,
-        delta: transaction.amount,
-        balanceAfter: newReceivingBudget,
-        balanceType: "receiving",
-        sourceType: "transaction",
-        sourceId: transactionSourceId,
-        note: `Received from ${transaction.senderId}`,
-        createdAt: now,
-      });
-    }
-
-    await ctx.db.patch(transaction._id, {
-      status: "completed",
-      reviewedAt: now,
-      reviewedBy,
-      updatedAt: now,
-    });
-
-    // ปิดชั่วคราว: ไม่ให้ special point แก่ผู้ส่งตอนอนุมัติโอน point
-    // const { start: monthStart, end: monthEnd } = thaiMonthRange(now);
-    // const completedThisMonth = await ctx.db
-    //   .query("transaction")
-    //   .withIndex("by_senderId_status", (q) =>
-    //     q.eq("senderId", transaction.senderId).eq("status", "completed"),
-    //   )
-    //   .collect();
-    // const completedCount = completedThisMonth.filter((row) => {
-    //   const ts = transactionTimestamp(row);
-    //   return ts >= monthStart && ts < monthEnd;
-    // }).length;
-    //
-    // if (completedCount <= MONTHLY_QUEST_GOAL) {
-    //   await awardSpecialPoints(ctx, {
-    //     employeeId: transaction.senderId,
-    //     delta: MONTHLY_QUEST_REWARD_PER_GIVE,
-    //     sourceType: "monthly_quest",
-    //     sourceId: transactionSourceId,
-    //     note: "ภารกิจประจำเดือน: มอบคะแนนให้เพื่อน",
-    //   });
-    // }
-
-    await appendActivityLog(ctx, {
-      actorEmployeeId: reviewedBy,
-      subjectEmployeeId: transaction.senderId,
-      type: "point_transfer_approved",
-      sourceId: transactionSourceId,
-      summary: "คำชมของคุณได้รับการอนุมัติ",
-      meta: {
-        transactionId: transactionSourceId,
-        senderId: String(transaction.senderId),
-        receiverId: String(transaction.receiverId),
-        amount: transaction.amount,
-      },
-    });
-
-    return {
-      transactionId: transaction._id,
-      status: "approved" as const,
-      amount: transaction.amount,
-    };
-  }
-
-  const senderWallet = await ctx.db
-    .query("wallet")
-    .withIndex("by_employeeId", (q) =>
-      q.eq("employeeId", transaction.senderId),
-    )
-    .first();
-
-  if (!senderWallet) {
+  if (shouldRefundSender && !senderWallet) {
     return {
       transactionId: transaction._id,
       status: "failed" as const,
       code: "NOT_FOUND" as const,
       message: "Sender wallet not found",
+    };
+  }
+
+  if (shouldClawbackReceiver && !receiverWallet) {
+    return {
+      transactionId: transaction._id,
+      status: "failed" as const,
+      code: "NOT_FOUND" as const,
+      message: "Receiver wallet not found",
     };
   }
 
@@ -1163,8 +1090,28 @@ async function approveTransactionById(
       ledger.employeeId === transaction.senderId &&
       ledger.delta > 0,
   );
+  const existingClawbackLedger = ledgers.find(
+    (ledger) =>
+      ledger.balanceType === "receiving" &&
+      ledger.employeeId === transaction.receiverId &&
+      ledger.delta < 0,
+  );
 
-  if (!existingRefundLedger) {
+  if (
+    shouldClawbackReceiver &&
+    receiverWallet &&
+    !existingClawbackLedger &&
+    receiverWallet.receivingBudget < transaction.amount
+  ) {
+    return {
+      transactionId: transaction._id,
+      status: "failed" as const,
+      code: "BAD_REQUEST" as const,
+      message: "ผู้รับใช้แต้มไปแล้ว ไม่สามารถลบธุรกรรมและคืนแต้มได้",
+    };
+  }
+
+  if (shouldRefundSender && senderWallet && !existingRefundLedger) {
     const newGivingBudget = senderWallet.givingBudget + transaction.amount;
 
     await ctx.db.patch(senderWallet._id, {
@@ -1178,24 +1125,40 @@ async function approveTransactionById(
       balanceType: "giving",
       sourceType: "transaction",
       sourceId: transactionSourceId,
-      note: "Refund: transaction rejected",
+      note: "คืนแต้ม: ลบธุรกรรม",
       createdAt: now,
     });
   }
 
-  await ctx.db.patch(transaction._id, {
-    status: "rejected",
-    reviewedAt: now,
-    reviewedBy,
-    updatedAt: now,
-  });
+  if (shouldClawbackReceiver && receiverWallet && !existingClawbackLedger) {
+    const newReceivingBudget =
+      receiverWallet.receivingBudget - transaction.amount;
+
+    await ctx.db.patch(receiverWallet._id, {
+      receivingBudget: newReceivingBudget,
+    });
+
+    await ctx.db.insert("pointLedger", {
+      employeeId: transaction.receiverId,
+      delta: -transaction.amount,
+      balanceAfter: newReceivingBudget,
+      balanceType: "receiving",
+      sourceType: "transaction",
+      sourceId: transactionSourceId,
+      note: "หักแต้มคืน: ลบธุรกรรม",
+      createdAt: now,
+    });
+  }
+
+  await deleteTransactionRelations(ctx, transaction._id);
+  await ctx.db.delete(transaction._id);
 
   await appendActivityLog(ctx, {
     actorEmployeeId: reviewedBy,
     subjectEmployeeId: transaction.senderId,
     type: "point_transfer_rejected",
     sourceId: transactionSourceId,
-    summary: "คำชมของคุณได้รับการปฏิเสธ กรุณาระบุพฤติกรรมให้ชัดเจน",
+    summary: "ผู้ดูแลระบบปฏิเสธคำชมของคุณ และได้คืนแต้มแล้ว",
     meta: {
       transactionId: transactionSourceId,
       senderId: String(transaction.senderId),
@@ -1548,14 +1511,14 @@ export const approve = authMutation
   .input(
     z.object({
       transactionId: z.string(),
-      confirm: z.boolean(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const result = await approveTransactionById(
       ctx,
       input.transactionId as Id<"transaction">,
-      input.confirm,
     );
 
     if (result.status === "failed") {
@@ -1572,10 +1535,11 @@ export const bulkApprove = authMutation
   .input(
     z.object({
       transactionIds: z.array(z.string()).min(1).max(100),
-      confirm: z.boolean(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
     const uniqueTransactionIds = Array.from(new Set(input.transactionIds));
     // ต้องทำทีละรายการ — ห้าม Promise.all เพราะหลาย tx ของ receiver/sender
     // คนเดียวกันจะอ่าน wallet ฉบับเดียวกันแล้ว patch ทับกัน (last write wins)
@@ -1585,22 +1549,12 @@ export const bulkApprove = authMutation
         await approveTransactionById(
           ctx,
           transactionId as Id<"transaction">,
-          input.confirm,
         ),
       );
     }
 
-    const approvedCount = results.filter(
-      (item) => item.status === "approved",
-    ).length;
     const rejectedCount = results.filter(
       (item) => item.status === "rejected",
-    ).length;
-    const alreadyCompletedCount = results.filter(
-      (item) => item.status === "alreadyCompleted",
-    ).length;
-    const alreadyRejectedCount = results.filter(
-      (item) => item.status === "alreadyRejected",
     ).length;
     const failedCount = results.filter(
       (item) => item.status === "failed",
@@ -1608,10 +1562,7 @@ export const bulkApprove = authMutation
 
     return {
       total: uniqueTransactionIds.length,
-      approvedCount,
       rejectedCount,
-      alreadyCompletedCount,
-      alreadyRejectedCount,
       failedCount,
       results,
     };

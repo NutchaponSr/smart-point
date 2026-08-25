@@ -300,7 +300,8 @@
     "types": {
       "point_transfer_sent": "Transferred {amount} points to {name}",
       "point_transfer_approved": "Your commendation was approved",
-      "point_transfer_rejected": "Your commendation was rejected. Please describe the behavior more clearly",
+      "point_transfer_rejected": "An admin rejected your commendation and refunded {amount} points",
+      "point_transfer_rejected_admin": "You rejected {name}'s commendation and refunded {amount} points",
       "daily_login": "Claimed daily login bonus",
       "event_joined": "Joined event: {activityName}",
       "event_completed": "Thanks for joining: {activityName}",

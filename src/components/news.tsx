@@ -203,6 +203,7 @@ function formatActivityLogMessage(
     actor: { name: { th: string; en: string } | string } | null;
     subject: { name: { th: string; en: string } | string } | null;
     meta: Record<string, unknown> | null;
+    viewerRole?: "actor" | "subject";
   },
   locale: string,
   t: ReturnType<typeof useTranslations<"activityLog">>,
@@ -220,6 +221,12 @@ function formatActivityLogMessage(
   );
   const activityName = pickLocalized(item.activityName, locale);
   const amount = item.amount ?? "";
+
+  if (type === "point_transfer_rejected") {
+    return item.viewerRole === "actor"
+      ? t("types.point_transfer_rejected_admin", { amount, name })
+      : t("types.point_transfer_rejected", { amount, name });
+  }
 
   return t(`types.${type}`, { amount, name, activityName });
 }

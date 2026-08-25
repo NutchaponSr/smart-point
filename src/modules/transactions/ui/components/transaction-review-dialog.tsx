@@ -82,13 +82,10 @@ export function TransactionReviewDialog({
   onOpenChange,
 }: Props) {
   const crpc = useCRPC();
-  const approve = useMutation(crpc.transaction.approve.mutationOptions());
+  const remove = useMutation(crpc.transaction.approve.mutationOptions());
 
-  const [ConfirmationDialog, confirm] = useConfirm({
-    title: "อนุมัติธุรกรรม",
-  });
   const [RejectionDialog, reject] = useConfirm({
-    title: "ปฏิเสธธุรกรรม",
+    title: "ลบธุรกรรมและคืนแต้ม",
   });
 
   const senderName = transaction.sender?.name
@@ -116,31 +113,18 @@ export function TransactionReviewDialog({
         })
       : null;
 
-  const isPending = transaction.status === "pending";
-
-  const handleApprove = async () => {
-    const ok = await confirm();
-    if (!ok) return;
-
-    approve.mutate(
-      { transactionId: transaction._id, confirm: true },
-      { onSuccess: () => onOpenChange(false) },
-    );
-  };
-
   const handleReject = async () => {
     const ok = await reject();
     if (!ok) return;
 
-    approve.mutate(
-      { transactionId: transaction._id, confirm: false },
+    remove.mutate(
+      { transactionId: transaction._id },
       { onSuccess: () => onOpenChange(false) },
     );
   };
 
   return (
     <>
-      <ConfirmationDialog />
       <RejectionDialog />
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -228,24 +212,15 @@ export function TransactionReviewDialog({
             ) : null}
           </div>
 
-          {isPending ? (
-            <DialogFooter className="border-0 bg-transparent p-4 flex items-center justify-between gap-2">
-              <Button
-                variant="danger"
-                disabled={approve.isPending}
-                onClick={handleReject}
-              >
-                ปฏิเสธ
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={approve.isPending}
-                onClick={handleApprove}
-              >
-                อนุมัติ
-              </Button>
-            </DialogFooter>
-          ) : null}
+          <DialogFooter className="border-0 bg-transparent p-4 flex items-center justify-end gap-2">
+            <Button
+              variant="danger"
+              disabled={remove.isPending}
+              onClick={handleReject}
+            >
+              ลบและคืนแต้ม
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
