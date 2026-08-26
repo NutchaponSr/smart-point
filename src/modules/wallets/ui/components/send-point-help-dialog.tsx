@@ -14,12 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const sendPointGuideCategories = [
-  "helpfulness",
-  "teamwork",
-  "care",
-] as const;
-
 type SendPointHelpDialogProps = {
   className?: string;
 };
@@ -57,30 +51,11 @@ export function SendPointHelpDialog({ className }: SendPointHelpDialogProps) {
           </DialogHeader>
 
           <div className="max-h-[min(50vh,24rem)] overflow-y-auto">
-            <div className="grid divide-y-2 divide-[#e5e5e5]">
-              {sendPointGuideCategories.map((category, index) => {
-                const items = t.raw(
-                  `points-help.categories.${category}.items`,
-                ) as string[];
-
-                return (
-                  <section
-                    key={category}
-                    className="py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <h3 className="mb-1.5 text-sm font-bold text-[#4b4b4b]">
-                      {index + 1}.{" "}
-                      {t(`points-help.categories.${category}.title`)}
-                    </h3>
-                    <ul className="grid list-disc gap-1 ps-4 text-xs leading-relaxed text-[#4b4b4b]/90">
-                      {items.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </section>
-                );
-              })}
-            </div>
+            <ol className="grid list-decimal gap-2 ps-5 text-xs leading-relaxed text-[#4b4b4b]/90">
+              {(t.raw("points-help.items") as string[]).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ol>
           </div>
 
           <DialogFooter className="border-[#e5e5e5] bg-[#f7f7f7]">

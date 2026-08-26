@@ -7,16 +7,20 @@ import { useTranslations } from "next-intl";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
+import { AppVersion } from "@/components/app-version";
 import { News } from "@/components/news";
 import { Currencies } from "@/modules/cart/ui/components/currency";
 
 import { ENABLE_BU_RECOMMENDED } from "@/modules/events/constants";
 import { EventCarousel } from "@/modules/events/ui/components/event-carousel";
 import { Feeds } from "@/modules/transactions/ui/components/feeds";
-import { MonthlyQuest } from "@/modules/overviews/ui/components/monthly-quest";
 import { TransactionContent } from "@/modules/wallets/ui/components/transaction-content";
 
-export const OverviewsView = () => {
+type OverviewsViewProps = {
+  version: string;
+};
+
+export const OverviewsView = ({ version }: OverviewsViewProps) => {
   const t = useTranslations("overview");
   const crpc = useCRPC();
 
@@ -46,6 +50,7 @@ export const OverviewsView = () => {
               </Link>
             </div>
             <EventCarousel autoLoop />
+            <AppVersion className="pt-2 text-center" version={version} />
           </div>
         </aside>
 

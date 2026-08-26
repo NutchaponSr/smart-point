@@ -1,4 +1,7 @@
 {
+  "app": {
+    "version": "Version {version}"
+  },
   "nav": {
     "home": "Home",
     "reward": "Rewards",
@@ -59,40 +62,13 @@
       "title": "Example behaviors",
       "subtitle": "Behaviors you can use to commend a colleague",
       "close": "Close",
-      "categories": {
-        "helpfulness": {
-          "title": "Helpfulness & Support",
-          "items": [
-            "Helping lift items, assist with work, or join activities that are outside your own job responsibilities",
-            "Switching shifts with a colleague when needed",
-            "Teaching or introducing new tools, or taking time to explain systems so colleagues understand",
-            "Solving a problem in time that would otherwise cause serious harm to a customer or project"
-          ]
-        },
-        "teamwork": {
-          "title": "Teamwork & Positivity",
-          "items": [
-            "Listening attentively to colleagues in meetings and respecting others' ideas",
-            "Guiding and helping new employees adapt to the team quickly",
-            "Praising colleagues in person and giving them a strong boost of positive energy",
-            "Brainstorming urgent solutions for colleagues even when it is not your own work",
-            "Leading or driving a project to a smooth, successful finish",
-            "Encouraging colleagues until they unlock their potential and complete difficult work"
-          ]
-        },
-        "care": {
-          "title": "Care & Reliability",
-          "items": [
-            "Arriving at meetings on time so colleagues do not have to wait",
-            "Submitting work before or on the deadline consistently",
-            "Reminding colleagues when they neglect safety equipment (PPE)",
-            "Helping organize equipment or obstacles in shared spaces to prevent accidents",
-            "Reporting or alerting the right people when you find a hazard or unsafe spot on company premises",
-            "Updating your team on the progress of your own work without being asked",
-            "Inventing new ways of working that save time for teammates or the next department in the workflow"
-          ]
-        }
-      }
+      "items": [
+        "Commend because they are a good example of SMART Culture behaviors. Please specify the evident or memorable incident.",
+        "Commend because they are a good example of the 3 Completeness for Balance philosophy. Please specify the evident or memorable incident.",
+        "Commend because they showed good behavior in helping fellow employees, including supporting other departments that are not their direct responsibility.",
+        "Commend because they showed behavior that built the company's image, reputation, and a positive experience for people outside the organization. Please specify the evident or incident experienced.",
+        "Commend because they showed diligence, honesty, patience, and dedication that produced outstanding results or created success for the organization. Please specify the evident or memorable incident."
+      ]
     },
     "sending": "Sending...",
     "send-again": "Send Again",

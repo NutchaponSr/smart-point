@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 
+import { AppVersion } from "@/components/app-version";
 import { Logo } from "@/components/logo";
+import { getAppVersion } from "@/lib/app-version";
 import { LanguageSelector } from "@/modules/auth/ui/components/language-selector";
 
 interface Props {
@@ -9,6 +11,7 @@ interface Props {
 
 export const AuthLayout = async ({ children }: Props) => {
   const t = await getTranslations("auth");
+  const version = await getAppVersion();
 
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-[#f0fbff]">
@@ -33,11 +36,12 @@ export const AuthLayout = async ({ children }: Props) => {
       </main>
 
       <footer
-        className="relative z-1 flex min-h-16 shrink-0 items-center justify-center border-t-2 bg-white/70 px-4 py-3 backdrop-blur-sm sm:h-20 sm:px-10"
+        className="relative z-1 flex min-h-16 shrink-0 items-center justify-center border-t-2 bg-white/70 px-4 py-3 backdrop-blur-sm sm:min-h-20 sm:px-10"
         aria-label={t("language.label")}
       >
-        <div className="w-full overflow-hidden text-center text-sm sm:text-base">
+        <div className="flex w-full justify-between items-center gap-2 overflow-hidden text-center text-sm sm:text-base">
           <LanguageSelector />
+          <AppVersion version={version} />
         </div>
       </footer>
 

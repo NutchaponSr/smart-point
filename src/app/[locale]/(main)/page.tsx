@@ -1,5 +1,6 @@
 import { SearchParams } from "nuqs/server";
 
+import { getAppVersion } from "@/lib/app-version";
 import { crpc, HydrateClient, prefetch } from "@/lib/convex/rsc";
 
 import { getCarouselNow } from "@/modules/events/constants";
@@ -56,10 +57,12 @@ const Page = async ({ searchParams }: Props) => {
     }),
   );
 
+  const version = await getAppVersion();
+
   return (
     <HydrateClient>
       <div className="mx-auto w-full max-w-[1058px] pt-6">
-        <OverviewsView />
+        <OverviewsView version={version} />
       </div>
     </HydrateClient>
   );
