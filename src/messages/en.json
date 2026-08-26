@@ -52,7 +52,7 @@
     "complete": "Send Commendation Successfully!",
     "search-employee": "Search Employee",
     "select-employee": "Select Employee",
-    "commendation-message": "Praise Message",
+    "commendation-message": "Praise Message or Event that you are impressed with",
     "praise-message": "Describe your appreciation...",
     "points-to-give": "Points",
     "note-label": "Note",
@@ -63,11 +63,11 @@
       "subtitle": "Behaviors you can use to commend a colleague",
       "close": "Close",
       "items": [
-        "Commend because they are a good example of SMART Culture behaviors. Please specify the evident or memorable incident.",
-        "Commend because they are a good example of the 3 Completeness for Balance philosophy. Please specify the evident or memorable incident.",
+        "Commend because they are a good example of SMART Culture behaviors.",
+        "Commend because they are a good example of the 3 Completeness for Balance philosophy.",
         "Commend because they showed good behavior in helping fellow employees, including supporting other departments that are not their direct responsibility.",
-        "Commend because they showed behavior that built the company's image, reputation, and a positive experience for people outside the organization. Please specify the evident or incident experienced.",
-        "Commend because they showed diligence, honesty, patience, and dedication that produced outstanding results or created success for the organization. Please specify the evident or memorable incident."
+        "Commend because they showed behavior that built the company's image, reputation, and a positive experience for people outside the organization.",
+        "Commend because they showed diligence, honesty, patience, and dedication that produced outstanding results or created success for the organization."
       ]
     },
     "sending": "Sending...",
