@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/search-input";
 
 import { Currencies } from "@/modules/cart/ui/components/currency";
+import { DonateButton } from "@/modules/rewards/ui/components/donate-button";
 import { RewardScreen } from "@/modules/rewards/ui/screens/reward-screen";
 import { RewardFilters } from "@/modules/rewards/ui/components/reward-filters";
 
@@ -69,6 +70,7 @@ export const RewardView = () => {
               {cartLabel}
             </Button>
           </Link>
+          <DonateButton />
         </aside>
 
         <div className="z-0 min-w-0 flex-1 pb-24 lg:pb-0">

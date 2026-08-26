@@ -57,7 +57,7 @@ export const SignInView = () => {
             value={username}
             placeholder={t("employee-id-placeholder")}
             onChange={(e) => setUsername(e.target.value)}
-            className="flex h-11 min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-base text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf] sm:h-12"
+            className="flex h-11 min-w-0 overflow-hidden rounded-lg border border-[#cfdceb] bg-white text-base text-[#3c3c3c] shadow-sm caret-[#1a5fd0] placeholder:text-[#9aa8b8] focus-visible:border-[#1a5fd0] sm:h-12"
           />
         </fieldset>
 
@@ -79,9 +79,9 @@ export const SignInView = () => {
             value={password}
             placeholder={t("password-placeholder")}
             onChange={(e) => setPassword(e.target.value)}
-            className="flex h-11 min-w-0 overflow-hidden rounded-md border-2 border-[#e5e5e5] bg-white text-base text-[#3c3c3c] caret-[#1cb0f6] placeholder:text-[#afafaf] sm:h-12"
+            className="flex h-11 min-w-0 overflow-hidden rounded-lg border border-[#cfdceb] bg-white text-base text-[#3c3c3c] shadow-sm caret-[#1a5fd0] placeholder:text-[#9aa8b8] focus-visible:border-[#1a5fd0] sm:h-12"
           />
-          <span className="text-xs leading-relaxed text-[#777] sm:text-sm">
+          <span className="text-xs leading-relaxed text-[#8a97a8] sm:text-sm">
             {t("password-hint")}
           </span>
         </fieldset>
@@ -89,7 +89,7 @@ export const SignInView = () => {
         <Button
           variant="primary"
           type="submit"
-          className="mt-1 w-full sm:mt-2"
+          className="mt-1 w-full rounded-lg border-b-0 bg-[#1a5fd0] hover:brightness-110 sm:mt-2"
           size="lg"
         >
           {t("submit")}

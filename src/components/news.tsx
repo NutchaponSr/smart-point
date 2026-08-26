@@ -11,6 +11,7 @@ import {
   BsCheckCircle,
   BsChevronDown,
   BsGift,
+  BsHeart,
   BsPersonPlusFill,
   BsPinAngleFill,
   BsSendFill,
@@ -37,7 +38,8 @@ type ActivityLogType =
   | "praise_streak"
   | "event_joined"
   | "event_completed"
-  | "event_rejected";
+  | "event_rejected"
+  | "donation";
 
 const logTypeIcon: Record<ActivityLogType, typeof BsSendFill> = {
   point_transfer_sent: BsSendFill,
@@ -51,6 +53,7 @@ const logTypeIcon: Record<ActivityLogType, typeof BsSendFill> = {
   event_joined: BsPersonPlusFill,
   event_completed: BsStars,
   event_rejected: BsShieldX,
+  donation: BsHeart,
 };
 
 const logTypeTone: Record<ActivityLogType, string> = {
@@ -65,6 +68,7 @@ const logTypeTone: Record<ActivityLogType, string> = {
   event_joined: "text-[#1cb0f6]",
   event_completed: "text-[#58cc02]",
   event_rejected: "text-[#ff4b4b]",
+  donation: "text-[#cc348d]",
 };
 
 const getDateFnsLocale = (locale: string) => (locale === "th" ? th : enUS);
@@ -212,6 +216,7 @@ const ACTIVITY_LOG_TYPES = new Set<ActivityLogType>([
   "event_joined",
   "event_completed",
   "event_rejected",
+  "donation",
 ]);
 
 function formatActivityLogMessage(

@@ -13,7 +13,8 @@ export type ActivityLogType =
   | "praise_streak"
   | "event_joined"
   | "event_completed"
-  | "event_rejected";
+  | "event_rejected"
+  | "donation";
 
 type ActivityLogMutationCtx = Pick<GenericMutationCtx<DataModel>, "db">;
 

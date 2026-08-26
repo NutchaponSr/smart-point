@@ -193,7 +193,26 @@
     "loading": "Loading...",
     "add-to-cart": "Add to cart",
     "rating": "Rating",
-    "star": "{count} {count, plural, one {star} other {stars}}"
+    "star": "{count} {count, plural, one {star} other {stars}}",
+    "donate": {
+      "title": "Donate points",
+      "cta": "Donate",
+      "amount-label": "Points",
+      "rate": "1 point = 1 baht",
+      "total-label": "Total donated",
+      "baht-unit": "THB",
+      "total-points": "{amount} points total",
+      "available": "{amount} points available",
+      "confirm-title": "Confirm donation",
+      "confirm": "Donate {amount} points (worth {baht} baht) to Admin1?",
+      "confirm-cta": "Confirm donation",
+      "confirming": "Donating...",
+      "cancel": "Cancel",
+      "success": "Donated {amount} points successfully",
+      "insufficient": "Not enough points",
+      "invalid-amount": "Please enter a valid point amount",
+      "error": "Donation failed"
+    }
   },
   "cart": {
     "back-to-rewards": "Back to rewards",
@@ -285,13 +304,21 @@
       "praise_streak": "Gave the full quota for 3 months in a row: +{amount} Special Points",
       "event_joined": "Joined event: {activityName}",
       "event_completed": "Thanks for joining: {activityName}",
-      "event_rejected": "Please attach evidence as required by the event"
+      "event_rejected": "Please attach evidence as required by the event",
+      "donation": "Donated {amount} points ({amount} baht) to {name}"
     }
   },
   "auth": {
     "logo-alt": "Smart Point logo",
     "language": {
       "label": "Select language"
+    },
+    "brand": {
+      "slogan": "Do good, get cheered",
+      "line1": "Spot great behavior from your colleagues",
+      "line2": "Don't forget to share praise through SMART Point",
+      "line3": "Because recognition and encouragement",
+      "line4": "are the real power of working together"
     },
     "logout": "Log out",
     "settings": "Settings",

@@ -193,7 +193,26 @@
     "loading": "กำลังโหลด...",
     "add-to-cart": "เพิ่มลงรถเข็น",
     "rating": "เรตติ้ง",
-    "star": "{count} ดาว"
+    "star": "{count} ดาว",
+    "donate": {
+      "title": "บริจาคพอยต์",
+      "cta": "บริจาค",
+      "amount-label": "จำนวนพอยต์",
+      "rate": "1 พอยต์ = 1 บาท",
+      "total-label": "ยอดบริจาคทั้งหมด",
+      "baht-unit": "บาท",
+      "total-points": "รวม {amount} พอยต์",
+      "available": "ใช้ได้ {amount} พอยต์",
+      "confirm-title": "ยืนยันการบริจาค",
+      "confirm": "บริจาค {amount} พอยต์ (มูลค่า {baht} บาท) ให้ Admin1?",
+      "confirm-cta": "ยืนยันบริจาค",
+      "confirming": "กำลังบริจาค...",
+      "cancel": "ยกเลิก",
+      "success": "บริจาค {amount} พอยต์ สำเร็จ",
+      "insufficient": "พอยต์ไม่เพียงพอ",
+      "invalid-amount": "กรุณากรอกจำนวนพอยต์ที่ถูกต้อง",
+      "error": "บริจาคไม่สำเร็จ"
+    }
   },
   "cart": {
     "back-to-rewards": "กลับไปเลือกรางวัล",
@@ -285,13 +304,21 @@
       "praise_streak": "ส่งคำชมครบโควต้า 3 เดือนติดต่อกัน รับ +{amount} Special Points",
       "event_joined": "เข้าร่วมกิจกรรม: {activityName}",
       "event_completed": "ขอบคุณสำหรับการร่วมกิจกรรม: {activityName}",
-      "event_rejected": "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม"
+      "event_rejected": "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม",
+      "donation": "บริจาค {amount} พอยต์ ({amount} บาท) ให้ {name}"
     }
   },
   "auth": {
     "logo-alt": "โลโก้ Smart Point",
     "language": {
       "label": "เลือกภาษา"
+    },
+    "brand": {
+      "slogan": "ทำดีมีเชียร์",
+      "line1": "พบพฤติกรรมดี ๆ ของเพื่อนร่วมงาน",
+      "line2": "อย่าลืมส่งต่อคำชื่นชมผ่าน SMART Point",
+      "line3": "เพราะการยอมรับและให้กำลังใจ",
+      "line4": "คือพลังสำคัญของการทำงานร่วมกัน"
     },
     "logout": "ออกจากระบบ",
     "settings": "ตั้งค่า",

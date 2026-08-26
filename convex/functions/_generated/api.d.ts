@@ -220,6 +220,10 @@ export declare const api: {
       any
     >;
   };
+  donation: {
+    donate: FunctionReference<"mutation", "public", { points: number }, any>;
+    getTotals: FunctionReference<"query", "public", {}, any>;
+  };
   employee: {
     bulkDelete: FunctionReference<
       "mutation",

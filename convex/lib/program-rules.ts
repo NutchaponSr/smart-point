@@ -65,7 +65,7 @@ export function previousThaiMonthKey(nowMs = Date.now()): string {
 }
 
 /** งบมอบคะแนนคำชมต่อเดือน */
-export const GIVING_BUDGET = 50;
+export const GIVING_BUDGET = 25;
 
 /**
  * ช่วงสรุปปักษ์ก่อนหน้า เมื่อรันตอนต้นวันที่ 1 หรือ 16 (ICT)

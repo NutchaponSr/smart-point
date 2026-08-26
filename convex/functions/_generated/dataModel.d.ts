@@ -133,7 +133,8 @@ export type DataModel = {
         | "praise_streak"
         | "event_joined"
         | "event_completed"
-        | "event_rejected";
+        | "event_rejected"
+        | "donation";
       _id: Id<"activityLog">;
       _creationTime: number;
     };
@@ -512,6 +513,35 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  donation: {
+    document: {
+      bahtAmount: number;
+      createdAt?: number;
+      donorEmployeeId: Id<"employee">;
+      points: number;
+      recipientEmployeeId: Id<"employee">;
+      status: "completed";
+      _id: Id<"donation">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "bahtAmount"
+      | "createdAt"
+      | "_creationTime"
+      | "donorEmployeeId"
+      | "_id"
+      | "points"
+      | "recipientEmployeeId"
+      | "status";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_donorEmployeeId: ["donorEmployeeId", "_creationTime"];
+      by_recipientEmployeeId: ["recipientEmployeeId", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   employee: {
     document: {
       citizenId?: null | string;
@@ -800,7 +830,8 @@ export type DataModel = {
         | "first_login"
         | "login_streak"
         | "monthly_active"
-        | "praise_streak";
+        | "praise_streak"
+        | "donation";
       _id: Id<"pointLedger">;
       _creationTime: number;
     };

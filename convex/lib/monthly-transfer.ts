@@ -3,10 +3,11 @@ import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import type { DataModel } from "../functions/_generated/dataModel";
 import { thaiMonthRange } from "./program-rules";
 
-/** ปิดชั่วคราวได้ — ตั้ง true เพื่อเปิดลิมิต 20 พอยต์/คน/เดือนอีกครั้ง */
+/** ปิดชั่วคราวได้ — ตั้ง true เพื่อเปิดลิมิตพอยต์/คนรับ/เดือน (ต่อผู้ให้คนเดิม) */
 export const MONTHLY_TRANSFER_LIMIT_ENABLED = true;
 
-export const MONTHLY_TRANSFER_CAP_PER_RECEIVER = 20;
+/** คนรับคนเดิมได้ไม่เกิน N พอยต์ต่อเดือน จากผู้ให้คนเดียวกัน */
+export const MONTHLY_TRANSFER_CAP_PER_RECEIVER = 5;
 
 type DbCtx = Pick<
   GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>,

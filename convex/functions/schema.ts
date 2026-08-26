@@ -320,6 +320,23 @@ export const redemption = convexTable(
   ],
 );
 
+/** บริจาคพอยต์แลกได้ → Admin1 (1 พอยต์ = 1 บาท) */
+export const donation = convexTable(
+  "donation",
+  {
+    donorEmployeeId: id("employee").notNull(),
+    recipientEmployeeId: id("employee").notNull(),
+    points: integer().notNull(),
+    bahtAmount: integer().notNull(),
+    status: textEnum(["completed"] as const).notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+  },
+  (t) => [
+    index("by_donorEmployeeId").on(t.donorEmployeeId),
+    index("by_recipientEmployeeId").on(t.recipientEmployeeId),
+  ],
+);
+
 export const activity = convexTable(
   "activity",
   {
@@ -434,6 +451,7 @@ export const activityLog = convexTable(
       "event_joined",
       "event_completed",
       "event_rejected",
+      "donation",
     ] as const).notNull(),
     sourceId: text().notNull(),
     summary: text().notNull(),
@@ -469,6 +487,7 @@ export const pointLedger = convexTable(
       "login_streak",
       "monthly_active",
       "praise_streak",
+      "donation",
     ] as const).notNull(),
     sourceId: text(),
     note: text(),
@@ -527,6 +546,7 @@ export const tables = {
   transaction,
   reward,
   redemption,
+  donation,
   activity,
   activityParticipant,
   activityLog,

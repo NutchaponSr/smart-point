@@ -42,6 +42,10 @@ export const api = {
     removeCartItem: createApiLeaf<"mutation", typeof import("../functions/cart").removeCartItem>(convexApi["cart"]["removeCartItem"], { auth: "required", type: "mutation" }),
     updateCartItemQuantity: createApiLeaf<"mutation", typeof import("../functions/cart").updateCartItemQuantity>(convexApi["cart"]["updateCartItemQuantity"], { auth: "required", type: "mutation" }),
   },
+  donation: {
+    donate: createApiLeaf<"mutation", typeof import("../functions/donation").donate>(convexApi["donation"]["donate"], { auth: "required", type: "mutation" }),
+    getTotals: createApiLeaf<"query", typeof import("../functions/donation").getTotals>(convexApi["donation"]["getTotals"], { auth: "required", type: "query" }),
+  },
   employee: {
     bulkDelete: createApiLeaf<"mutation", typeof import("../functions/employee").bulkDelete>(convexApi["employee"]["bulkDelete"], { auth: "required", type: "mutation" }),
     bulkImport: createApiLeaf<"mutation", typeof import("../functions/employee").bulkImport>(convexApi["employee"]["bulkImport"], { auth: "required", type: "mutation" }),
