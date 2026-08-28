@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { FormHeader } from "@/components/form-header";
 
 import { EmployeeForm } from "@/modules/employee/ui/components/employee-form";
+import { K2WorkflowViewers } from "@/modules/employee/ui/components/k2-workflow-viewers";
 
 import {
   employeeEditSchema,
@@ -135,6 +136,21 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
               </div>
 
               <div className="flex flex-col gap-4">
+                <div className="grid gap-3">
+                  <div className="grid gap-1">
+                    <h3 className="text-base font-semibold">
+                      สิทธิ์ดูธุรกรรม (K2)
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      ผู้ที่ดูธุรกรรมของพนักงานคนนี้ได้
+                    </p>
+                  </div>
+                  <K2WorkflowViewers
+                    mode="edit"
+                    businessEmployeeId={employee.employeeId}
+                  />
+                </div>
+
                 <Button
                   type="button"
                   size="lg"

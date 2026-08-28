@@ -2,7 +2,7 @@
   "guidelinesHash": "533ba2428f2dc572e825555e6e681d2e56e7e757c15a3fdd036a5d705413f020",
   "agentsMdSectionHash": "a8a7b85906a77122f32b3b12bca8f25a1ea037235335decd8c39e7df03405c36",
   "claudeMdHash": "a8a7b85906a77122f32b3b12bca8f25a1ea037235335decd8c39e7df03405c36",
-  "agentSkillsSha": "6bc4b14a2dcd73fd388eb0570afe6d1cdb185f2e",
+  "agentSkillsSha": "cbca615354d9bd457c2cf31186e2bca048ce2fd8",
   "installedSkillNames": [
     "convex",
     "convex-add",

@@ -59,7 +59,9 @@ export const api = {
   },
   k2Workflow: {
     getByEmployeeId: createApiLeaf<"query", typeof import("../functions/k2Workflow").getByEmployeeId>(convexApi["k2Workflow"]["getByEmployeeId"], { auth: "required", type: "query" }),
+    getViewersDetail: createApiLeaf<"query", typeof import("../functions/k2Workflow").getViewersDetail>(convexApi["k2Workflow"]["getViewersDetail"], { auth: "required", type: "query" }),
     listVisibleSubjects: createApiLeaf<"query", typeof import("../functions/k2Workflow").listVisibleSubjects>(convexApi["k2Workflow"]["listVisibleSubjects"], { auth: "required", type: "query" }),
+    upsertViewers: createApiLeaf<"mutation", typeof import("../functions/k2Workflow").upsertViewers>(convexApi["k2Workflow"]["upsertViewers"], { auth: "required", type: "mutation" }),
   },
   leaderboard: {
     getMany: createApiLeaf<"query", typeof import("../functions/leaderboard").getMany>(convexApi["leaderboard"]["getMany"], { auth: "required", type: "query" }),

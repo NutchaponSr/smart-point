@@ -21,7 +21,9 @@ function createProcedureRegistry() {
   const procedureRegistry = {
   "bulkUpsert": ["mutation", typedProcedureResolver(internal["k2Workflow"]["bulkUpsert"], () => (require("../k2Workflow") as Record<string, unknown>)["bulkUpsert"])],
   "getByEmployeeId": ["query", typedProcedureResolver(api["k2Workflow"]["getByEmployeeId"], () => (require("../k2Workflow") as Record<string, unknown>)["getByEmployeeId"])],
+  "getViewersDetail": ["query", typedProcedureResolver(api["k2Workflow"]["getViewersDetail"], () => (require("../k2Workflow") as Record<string, unknown>)["getViewersDetail"])],
   "listVisibleSubjects": ["query", typedProcedureResolver(api["k2Workflow"]["listVisibleSubjects"], () => (require("../k2Workflow") as Record<string, unknown>)["listVisibleSubjects"])],
+  "upsertViewers": ["mutation", typedProcedureResolver(api["k2Workflow"]["upsertViewers"], () => (require("../k2Workflow") as Record<string, unknown>)["upsertViewers"])],
 } as const;
 
   const handlerRegistry = procedureRegistry;

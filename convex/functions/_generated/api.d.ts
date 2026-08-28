@@ -320,7 +320,19 @@ export declare const api: {
       { employeeId: string },
       any
     >;
+    getViewersDetail: FunctionReference<
+      "query",
+      "public",
+      { employeeId: string },
+      any
+    >;
     listVisibleSubjects: FunctionReference<"query", "public", {}, any>;
+    upsertViewers: FunctionReference<
+      "mutation",
+      "public",
+      { employeeId: string; viewers: Array<string> },
+      any
+    >;
   };
   leaderboard: {
     getMany: FunctionReference<

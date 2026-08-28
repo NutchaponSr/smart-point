@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -10,6 +12,10 @@ import { FormHeader } from "@/components/form-header";
 
 import { EmployeeForm } from "@/modules/employee/ui/components/employee-form";
 import { EmployeePreview } from "@/modules/employee/ui/components/employee-preview";
+import {
+  K2WorkflowViewers,
+  type K2ViewerEntry,
+} from "@/modules/employee/ui/components/k2-workflow-viewers";
 
 import { employeeSchema, EmployeeSchema } from "@/modules/employee/schema";
 
@@ -17,6 +23,8 @@ export const NewEmployeeView = () => {
   const crpc = useCRPC();
 
   const create = useMutation(crpc.employee.create.mutationOptions());
+  const upsertK2 = useMutation(crpc.k2Workflow.upsertViewers.mutationOptions());
+  const [k2Viewers, setK2Viewers] = useState<K2ViewerEntry[]>([]);
 
   const form = useForm<EmployeeSchema>({
     resolver: zodResolver(employeeSchema),
@@ -46,11 +54,32 @@ export const NewEmployeeView = () => {
       },
       {
         onSuccess: () => {
-          form.reset();
+          const saveK2 =
+            k2Viewers.length > 0
+              ? upsertK2.mutateAsync({
+                  employeeId: data.employeeId,
+                  viewers: k2Viewers.map((v) => v.businessCode),
+                })
+              : Promise.resolve();
+
+          void saveK2
+            .then(() => {
+              form.reset();
+              setK2Viewers([]);
+            })
+            .catch((error: unknown) => {
+              toast.error(
+                error instanceof Error
+                  ? `สร้างพนักงานแล้ว แต่บันทึกสิทธิ์ K2 ไม่สำเร็จ: ${error.message}`
+                  : "สร้างพนักงานแล้ว แต่บันทึกสิทธิ์ K2 ไม่สำเร็จ",
+              );
+            });
         },
       },
     );
   };
+
+  const watchedEmployeeId = form.watch("employeeId");
 
   return (
     <FormProvider {...form}>
@@ -72,7 +101,24 @@ export const NewEmployeeView = () => {
               </div>
             </div>
 
-            <EmployeePreview />
+            {/* <EmployeePreview /> */}
+
+            <section className="grid gap-3 pt-4">
+              <div className="grid gap-1">
+                <h3 className="text-base font-extrabold text-[#4b4b4b]">
+                  สิทธิ์ดูธุรกรรม (K2)
+                </h3>
+                <p className="text-xs font-medium text-[#777]">
+                  กำหนดผู้ที่ดูธุรกรรมของพนักงานคนนี้ได้
+                </p>
+              </div>
+              <K2WorkflowViewers
+                mode="create"
+                businessEmployeeId={watchedEmployeeId}
+                value={k2Viewers}
+                onChange={setK2Viewers}
+              />
+            </section>
           </aside>
         </div>
       </form>
