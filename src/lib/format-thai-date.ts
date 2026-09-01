@@ -11,6 +11,22 @@ export function formatThaiDate(date: Date | number): string {
   });
 }
 
+const dateFormatOptions: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+};
+
+export function formatLocalizedDate(date: Date | number, locale: string): string {
+  const value = typeof date === "number" ? new Date(date) : date;
+
+  if (locale === "th") {
+    return formatThaiDate(value);
+  }
+
+  return value.toLocaleDateString("en-GB", dateFormatOptions);
+}
+
 export function formatThaiMonthYear(date: Date): string {
   const month = format(date, "LLLL", { locale: th });
   const year = date.getFullYear() + 543;

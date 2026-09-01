@@ -61,9 +61,9 @@ export const AuthLayout = async ({ children }: Props) => {
   const version = await getAppVersion();
 
   return (
-    <div className="relative flex min-h-svh flex-col overflow-x-hidden overflow-y-auto bg-[#1a5fd0] landscape:max-lg:min-h-0 landscape:max-lg:h-svh landscape:max-lg:overflow-hidden">
+    <div className="relative flex min-h-svh w-full min-w-0 flex-col overflow-x-clip overflow-y-auto bg-[#1a5fd0] landscape:max-lg:min-h-0 landscape:max-lg:h-svh landscape:max-lg:overflow-hidden">
       {/* Background */}
-      <div className="pointer-events-none absolute inset-0 motion-reduce:**:animate-none!" aria-hidden>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:**:animate-none!" aria-hidden>
         <div className="absolute inset-0 animate-[auth-wash_14s_ease-in-out_infinite] bg-linear-to-br from-[#ddf4ff] via-[#f0fbff] to-[#d7ffb8]" />
         <div className="absolute -top-20 -right-16 size-48 animate-[auth-blob-a_9s_ease-in-out_infinite] rounded-full bg-[#58cc02]/35 blur-3xl sm:-top-28 sm:-right-24 sm:size-[28rem]" />
         <div className="absolute -bottom-24 -left-12 size-44 animate-[auth-blob-b_11s_ease-in-out_infinite] rounded-full bg-[#1cb0f6]/40 blur-3xl sm:-bottom-36 sm:-left-20 sm:size-[26rem]" />

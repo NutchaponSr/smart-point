@@ -101,12 +101,12 @@ export const EditEventView = ({ eventId }: Props) => {
           title={pickLocalized(activity.name, locale)}
           backHref="/meta/events"
         />
-        <div className="lg:grid lg:grid-cols-[1fr_30vw]">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,30vw)]">
           <div>
             <EventForm />
             <EventBuSelector />
           </div>
-          <aside className="sticky top-0 hidden h-screen flex-col self-start overflow-y-auto bg-background lg:flex lg:border-l-2 lg:border-border">
+          <aside className="sticky top-0 hidden h-screen min-w-0 flex-col self-start overflow-y-auto bg-background lg:flex lg:border-l-2 lg:border-border">
             <div className="grid gap-4 p-4! md:p-6!">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="text-xl leading-snug">

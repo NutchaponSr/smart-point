@@ -45,12 +45,12 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "accessToken"
       | "accessTokenExpiresAt"
       | "accountId"
       | "createdAt"
-      | "_creationTime"
-      | "_id"
       | "idToken"
       | "password"
       | "providerId"
@@ -88,16 +88,16 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "allowedDepartments"
       | "allowedDivisions"
       | "category"
       | "createdAt"
-      | "_creationTime"
       | "description"
       | "description.en"
       | "description.th"
       | "endDate"
-      | "_id"
       | "isActive"
       | "maxParticipants"
       | "name"
@@ -139,9 +139,9 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "actorEmployeeId"
       | "_creationTime"
       | "_id"
+      | "actorEmployeeId"
       | "meta"
       | "sourceId"
       | "subjectEmployeeId"
@@ -179,11 +179,12 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "activityId"
       | "awardedAt"
       | "awardedBy"
       | "createdAt"
-      | "_creationTime"
       | "employeeId"
       | "evidenceFileName"
       | "evidenceMimeType"
@@ -192,7 +193,6 @@ export type DataModel = {
       | "evidenceType"
       | "evidenceUploadedAt"
       | "evidenceUploadedBy"
-      | "_id"
       | "pointAwarded"
       | "status"
       | "updatedAt";
@@ -220,9 +220,9 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "count"
       | "_creationTime"
       | "_id"
+      | "count"
       | "indexName"
       | "keyHash"
       | "keyParts"
@@ -261,10 +261,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "count"
       | "_creationTime"
-      | "fieldName"
       | "_id"
+      | "count"
+      | "fieldName"
       | "indexName"
       | "keyHash"
       | "sortKey"
@@ -316,10 +316,10 @@ export type DataModel = {
     };
     fieldPaths:
       | "_creationTime"
+      | "_id"
       | "docId"
       | "extremaValues"
       | `extremaValues.${string}`
-      | "_id"
       | "indexName"
       | "keyHash"
       | "keyParts"
@@ -357,11 +357,11 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "aggregate"
       | "aggregate.count"
       | "aggregate.sum"
-      | "_creationTime"
-      | "_id"
       | "items"
       | "subtrees";
     indexes: {
@@ -381,9 +381,9 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "aggregateName"
       | "_creationTime"
       | "_id"
+      | "aggregateName"
       | "maxNodeSize"
       | "namespace"
       | "root";
@@ -414,10 +414,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "completedAt"
       | "_creationTime"
-      | "cursor"
       | "_id"
+      | "completedAt"
+      | "cursor"
       | "indexName"
       | "keyDefinitionHash"
       | "kind"
@@ -447,10 +447,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "createdAt"
       | "_creationTime"
-      | "employeeId"
       | "_id"
+      | "createdAt"
+      | "employeeId"
       | "status"
       | "updatedAt";
     indexes: {
@@ -470,7 +470,7 @@ export type DataModel = {
       _id: Id<"cartItem">;
       _creationTime: number;
     };
-    fieldPaths: "cartId" | "_creationTime" | "_id" | "quantity" | "rewardId";
+    fieldPaths: "_creationTime" | "_id" | "cartId" | "quantity" | "rewardId";
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
@@ -492,11 +492,11 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "content"
       | "createdAt"
-      | "_creationTime"
       | "employeeId"
-      | "_id"
       | "transactionId"
       | "updatedAt";
     indexes: {
@@ -525,11 +525,11 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "bahtAmount"
       | "createdAt"
-      | "_creationTime"
       | "donorEmployeeId"
-      | "_id"
       | "points"
       | "recipientEmployeeId"
       | "status";
@@ -558,20 +558,20 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "citizenId"
       | "_creationTime"
+      | "_id"
+      | "citizenId"
       | "department"
       | "department.en"
-      | "departmentSearch"
       | "department.th"
+      | "departmentSearch"
       | "division"
       | "email"
       | "employeeId"
-      | "_id"
       | "name"
       | "name.en"
-      | "nameSearch"
       | "name.th"
+      | "nameSearch"
       | "position"
       | "position.en"
       | "position.th"
@@ -623,9 +623,9 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "createdAt"
       | "_creationTime"
       | "_id"
+      | "createdAt"
       | "privateKey"
       | "publicKey";
     indexes: {
@@ -642,7 +642,7 @@ export type DataModel = {
       _id: Id<"k2Workflow">;
       _creationTime: number;
     };
-    fieldPaths: "_creationTime" | "employeeId" | "employees" | "_id";
+    fieldPaths: "_creationTime" | "_id" | "employeeId" | "employees";
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
@@ -661,10 +661,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "createdAt"
       | "_creationTime"
-      | "employeeId"
       | "_id"
+      | "createdAt"
+      | "employeeId"
       | "transactionId";
     indexes: {
       by_id: ["_id"];
@@ -698,14 +698,14 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "allowDrift"
       | "cancelRequested"
       | "completedAt"
-      | "_creationTime"
       | "currentIndex"
       | "direction"
       | "dryRun"
-      | "_id"
       | "lastError"
       | "migrationIds"
       | "runId"
@@ -740,13 +740,13 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "applied"
       | "checksum"
       | "completedAt"
-      | "_creationTime"
       | "cursor"
       | "direction"
-      | "_id"
       | "lastError"
       | "migrationId"
       | "processed"
@@ -779,13 +779,13 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "body"
       | "body.en"
       | "body.th"
       | "createdAt"
       | "createdBy"
-      | "_creationTime"
-      | "_id"
       | "isPinned"
       | "isPublished"
       | "publishedAt"
@@ -836,13 +836,13 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "balanceAfter"
       | "balanceType"
       | "createdAt"
-      | "_creationTime"
       | "delta"
       | "employeeId"
-      | "_id"
       | "note"
       | "sourceId"
       | "sourceType";
@@ -883,14 +883,14 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "carrier"
       | "createdAt"
-      | "_creationTime"
       | "deliveredAt"
       | "employeeId"
       | "fulfilledAt"
       | "fulfilledBy"
-      | "_id"
       | "note"
       | "pointCostPerItem"
       | "pointSpent"
@@ -933,12 +933,12 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
+      | "_creationTime"
+      | "_id"
       | "byStatusCancelled"
       | "byStatusFulfilled"
       | "byStatusPending"
       | "createdAt"
-      | "_creationTime"
-      | "_id"
       | "periodEnd"
       | "periodKey"
       | "periodStart"
@@ -965,10 +965,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "comment"
-      | "createdAt"
       | "_creationTime"
       | "_id"
+      | "comment"
+      | "createdAt"
       | "redemptionId"
       | "rewardId"
       | "stars"
@@ -998,12 +998,12 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "createdAt"
       | "_creationTime"
+      | "_id"
+      | "createdAt"
       | "description"
       | "description.en"
       | "description.th"
-      | "_id"
       | "image"
       | "isActive"
       | "name"
@@ -1034,10 +1034,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "createdAt"
       | "_creationTime"
-      | "expiresAt"
       | "_id"
+      | "createdAt"
+      | "expiresAt"
       | "ipAddress"
       | "token"
       | "updatedAt"
@@ -1071,10 +1071,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "amount"
-      | "createdAt"
       | "_creationTime"
       | "_id"
+      | "amount"
+      | "createdAt"
       | "message"
       | "receiverId"
       | "rejectionReason"
@@ -1113,13 +1113,13 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "createdAt"
       | "_creationTime"
+      | "_id"
+      | "createdAt"
       | "displayUsername"
       | "email"
       | "emailVerified"
       | "employeeId"
-      | "_id"
       | "image"
       | "name"
       | "role"
@@ -1147,10 +1147,10 @@ export type DataModel = {
       _creationTime: number;
     };
     fieldPaths:
-      | "createdAt"
       | "_creationTime"
-      | "expiresAt"
       | "_id"
+      | "createdAt"
+      | "expiresAt"
       | "identifier"
       | "updatedAt"
       | "value";
@@ -1178,9 +1178,9 @@ export type DataModel = {
     };
     fieldPaths:
       | "_creationTime"
+      | "_id"
       | "employeeId"
       | "givingBudget"
-      | "_id"
       | "lastBudgetUpdate"
       | "lastDailyBonus"
       | "loginStreak"

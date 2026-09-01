@@ -1,14 +1,8 @@
 "use client";
 
-import Link from "next/link";
-
 import RubyIcon from "../../../../../public/ruby.svg";
 
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -16,17 +10,14 @@ import {
   CheckCircle2Icon,
   UsersIcon,
 } from "lucide-react";
-import { toast } from "sonner";
 import { format } from "date-fns";
 import type { ApiOutputs } from "@convex/api";
 import { useLocale } from "next-intl";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
-
-import { useConfirm } from "@/hooks/use-confirm";
 
 import { Button } from "@/components/ui/button";
 
@@ -37,6 +28,7 @@ import {
   getCarouselNow,
 } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
+import { EventDetailDialog } from "@/modules/events/ui/components/event-detail-dialog";
 
 type RecommendedEvent =
   ApiOutputs["activity"]["recommended"]["items"][number];
@@ -76,11 +68,13 @@ export const EventCarousel = ({
 }: Props) => {
   const locale = useLocale();
   const crpc = useCRPC();
-  const queryClient = useQueryClient();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<RecommendedEvent | null>(
+    null,
+  );
 
   const updateEdges = useCallback(() => {
     const node = scrollerRef.current;
@@ -104,12 +98,6 @@ export const EventCarousel = ({
       now: getCarouselNow(),
     }),
   );
-
-  const join = useMutation(crpc.activity.join.mutationOptions());
-
-  const [ConfirmationDialog, confirm] = useConfirm({
-    title: "เข้าร่วมกิจกรรม",
-  });
 
   const scrollByCard = useCallback((direction: 1 | -1) => {
     const node = scrollerRef.current;
@@ -150,42 +138,14 @@ export const EventCarousel = ({
   }, [autoLoop, scrollByCard]);
 
   useEffect(() => {
-    if (!autoLoop || data.items.length <= 1 || isPaused) return;
+    if (!autoLoop || data.items.length <= 1 || isPaused || selectedEvent) return;
 
     const timer = setInterval(() => {
       scrollNext();
     }, AUTO_PLAY_MS);
 
     return () => clearInterval(timer);
-  }, [autoLoop, data.items.length, isPaused, scrollNext]);
-
-  const onJoin = async (event: RecommendedEvent) => {
-    const ok = await confirm();
-    if (!ok) return;
-
-    join.mutate(
-      { activityId: String(event.id) },
-      {
-        onSuccess: () => {
-          toast.success(
-            `เข้าร่วม "${pickLocalized(event.name, locale)}" เรียบร้อย`,
-          );
-          queryClient.invalidateQueries({
-            queryKey: crpc.activity.recommended.queryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: crpc.activity.list.queryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: crpc.activity.getMany.queryKey(),
-          });
-        },
-        onError: (error) => {
-          toast.error(error.message || "เข้าร่วมกิจกรรมไม่สำเร็จ");
-        },
-      },
-    );
-  };
+  }, [autoLoop, data.items.length, isPaused, scrollNext, selectedEvent]);
 
   const canScroll = !atStart || !atEnd;
   const showPrev = canScroll && (autoLoop || !atStart);
@@ -207,7 +167,13 @@ export const EventCarousel = ({
           : undefined
       }
     >
-      <ConfirmationDialog />
+      <EventDetailDialog
+        event={selectedEvent}
+        open={selectedEvent != null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEvent(null);
+        }}
+      />
       {data.items.length === 0 ? (
         <div className="grid place-items-center gap-2 rounded-md border-2 border-dashed border-border bg-background p-10 text-center">
           <p className="text-lg font-bold">
@@ -222,13 +188,13 @@ export const EventCarousel = ({
           </p>
         </div>
       ) : (
-        <div className="relative w-full min-w-0">
+        <div className="relative w-full min-w-0 overflow-x-clip">
           <button
             type="button"
             aria-label="เลื่อนไปก่อนหน้า"
             onClick={scrollPrev}
             className={cn(
-              "absolute top-1/2 -left-10 z-10 -translate-y-1/2 transition-opacity h-full px-2 flex items-center justify-center",
+              "absolute inset-y-0 left-0 z-10 flex items-center px-1 transition-opacity",
               !showPrev && "hidden",
             )}
           >
@@ -239,7 +205,7 @@ export const EventCarousel = ({
             aria-label="เลื่อนไปถัดไป"
             onClick={scrollNext}
             className={cn(
-              "absolute top-1/2 -right-10 z-10 -translate-y-1/2 transition-opacity px-2 flex items-center justify-center",
+              "absolute inset-y-0 right-0 z-10 flex items-center px-1 transition-opacity",
               !showNext && "hidden",
             )}
           >
@@ -277,6 +243,11 @@ export const EventCarousel = ({
                   palette.border,
                 )}
               >
+                <button
+                  type="button"
+                  className="flex flex-1 flex-col text-left"
+                  onClick={() => setSelectedEvent(event)}
+                >
                 <div
                   className={cn(
                     "flex items-start justify-between gap-2 p-4 text-white",
@@ -297,12 +268,7 @@ export const EventCarousel = ({
                   </span>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-3 p-4">
-                  <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
-                    {pickLocalized(event.description, locale) ||
-                      "ไม่มีรายละเอียดกิจกรรม"}
-                  </p>
-
+                <div className="flex flex-1 flex-col gap-3 p-4 pb-0">
                   {buRestrictedCategories.includes(
                     event.category as (typeof buRestrictedCategories)[number],
                   ) && (
@@ -360,25 +326,31 @@ export const EventCarousel = ({
                       </div>
                     ) : null}
                   </div>
+                </div>
+                </button>
 
-                  <div className="mt-auto pt-1">
+                <div className="p-4 pt-3">
                     {joined ? (
-                      <div className="flex h-11 items-center justify-center gap-2 rounded-md bg-[#d7ffb8] text-base font-medium text-[#58a700]">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#d7ffb8] text-base font-medium text-[#58a700] hover:bg-[#c6f5a7]"
+                        onClick={() => setSelectedEvent(event)}
+                      >
                         <CheckCircle2Icon className="size-5" />
                         เข้าร่วมแล้ว
-                      </div>
+                      </Button>
                     ) : (
                       <Button
                         type="button"
                         variant={isFull ? "locked" : "default"}
                         className="w-full tracking-wide"
-                        disabled={isFull || join.isPending}
-                        onClick={() => onJoin(event)}
+                        disabled={isFull}
+                        onClick={() => setSelectedEvent(event)}
                       >
                         {isFull ? "เต็มแล้ว" : "เข้าร่วม"}
                       </Button>
                     )}
-                  </div>
                 </div>
               </article>
             );

@@ -72,12 +72,12 @@ export const NewEventView = () => {
             </div>
           </div>
         </header>
-        <section className="lg:grid lg:grid-cols-[1fr_30vw]">
+        <section className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,30vw)]">
           <div>
             <EventForm />
             <EventBuSelector />
           </div>
-          <aside className="sticky top-0 hidden h-screen flex-col gap-4 self-start overflow-y-auto border-l-2 border-[#e5e5e5] bg-[#f7f7f7] p-6 lg:flex">
+          <aside className="sticky top-0 hidden h-screen min-w-0 flex-col gap-4 self-start overflow-y-auto border-l-2 border-[#e5e5e5] bg-[#f7f7f7] p-6 lg:flex">
             <div className="flex items-start justify-between gap-4">
               <div className="grid gap-1">
                 <h2 className="text-xl font-extrabold text-[#4b4b4b]">

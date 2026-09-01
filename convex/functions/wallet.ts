@@ -100,7 +100,7 @@ async function rolloverWallet(
       lastBudgetUpdate: input.now,
       praiseStreakMonths,
       loginStreak: 0,
-      lastDailyBonus: null,
+      // keep lastDailyBonus — first_login is gated by pointLedger, not null check
     });
 
     await ctx.db.insert("pointLedger", {
@@ -145,7 +145,7 @@ async function rolloverWallet(
       lastBudgetUpdate: input.now,
       praiseStreakMonths,
       loginStreak: 0,
-      lastDailyBonus: null,
+      // keep lastDailyBonus — clearing it falsely re-triggers isFirstLogin
     });
 
     await ctx.db.insert("pointLedger", {
@@ -361,7 +361,9 @@ export const dailyLogin = authMutation.mutation(async ({ ctx }) => {
   let loginStreakAwarded = false;
   let specialBudget = wallet.specialBudget ?? 0;
 
-  if (checkin.isFirstLogin) {
+  // Idempotent via pointLedger sourceId — do not gate on lastDailyBonus
+  // (monthly reset used to clear it and look like a false "first login").
+  {
     const award = await awardSpecialPoints(ctx, {
       employeeId: wallet.employeeId,
       delta: FIRST_LOGIN_POINTS,

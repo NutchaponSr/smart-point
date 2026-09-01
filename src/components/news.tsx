@@ -224,6 +224,7 @@ function formatActivityLogMessage(
     type: string;
     summary: string;
     amount: number | null;
+    bahtAmount?: number | null;
     activityName: { th: string; en: string } | string | null;
     actor: { name: { th: string; en: string } | string } | null;
     subject: { name: { th: string; en: string } | string } | null;
@@ -242,8 +243,16 @@ function formatActivityLogMessage(
     item.subject?.name ?? nameFromMeta ?? item.actor?.name ?? "",
     locale,
   );
+  const actorName = pickLocalized(item.actor?.name ?? "", locale);
   const activityName = pickLocalized(item.activityName, locale);
   const amount = item.amount ?? "";
+  const bahtAmount = item.bahtAmount ?? item.amount ?? "";
+
+  if (type === "donation") {
+    return item.viewerRole === "subject"
+      ? t("types.donation_received", { amount, bahtAmount, name: actorName })
+      : t("types.donation", { amount, bahtAmount, name });
+  }
 
   if (type === "point_transfer_rejected") {
     return item.viewerRole === "actor"
@@ -251,8 +260,12 @@ function formatActivityLogMessage(
       : t("types.point_transfer_rejected", { amount, name });
   }
 
+  if (type === "daily_login") {
+    return t("types.daily_login", { amount: amount || 5 });
+  }
+
   if (type === "first_login") {
-    return t("types.first_login", { amount: amount || 10 });
+    return t("types.first_login", { amount: amount || 5 });
   }
 
   if (type === "login_streak") {

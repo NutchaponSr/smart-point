@@ -2,7 +2,6 @@
 
 import RubyIcon from "../../../../../public/ruby.svg";
 
-import { format } from "date-fns";
 import type { ApiOutputs } from "@convex/api";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -10,18 +9,22 @@ import {
   BsCalendar2Fill,
   BsCheckCircleFill,
 } from "react-icons/bs";
+import { useState } from "react";
 
 import { useLocale } from "next-intl";
 
 import { pickLocalized } from "@/lib/i18n/localized";
+import { formatLocalizedDate } from "@/lib/format-thai-date";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { usePagination } from "@/hooks/use-pagination";
 
 import { Pagination } from "@/components/pagniation";
+import { Button } from "@/components/ui/button";
 
 import { AttachButton } from "@/modules/events/ui/components/attach-button";
+import { EventDetailDialog } from "@/modules/events/ui/components/event-detail-dialog";
 
 import { categories, statuses } from "@/modules/events/constants";
 import { useEventFilters } from "@/modules/events/stores/use-event-filters";
@@ -48,6 +51,7 @@ const statusActionClassName =
 export const MyEventScreen = () => {
   const locale = useLocale();
   const crpc = useCRPC();
+  const [selectedEvent, setSelectedEvent] = useState<MyEvent | null>(null);
 
   const [filters, setFilters] = useEventFilters();
 
@@ -74,6 +78,13 @@ export const MyEventScreen = () => {
 
   return (
     <section className="grid">
+      <EventDetailDialog
+        event={selectedEvent}
+        open={selectedEvent != null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEvent(null);
+        }}
+      />
       <div className="flex items-center justify-between gap-4 mt-6 mb-3">
         <h2 className="text-xl font-extrabold">เข้าร่วมแล้ว</h2>
         <Pagination
@@ -111,9 +122,13 @@ export const MyEventScreen = () => {
             return (
               <li
                 key={String(event.myParticipation.participantId)}
-                className="flex flex-col border-t-2 bg-background px-4 py-6 transition-colors sm:flex-row sm:items-center gap-8"
+                className="flex flex-col border-t-2 bg-background px-4 py-6 transition-colors hover:bg-[#fafafa] sm:flex-row sm:items-center gap-8"
               >
-                <div className="grid min-w-0 flex-1 gap-1.5">
+                <button
+                  type="button"
+                  className="grid min-w-0 flex-1 gap-1.5 text-left"
+                  onClick={() => setSelectedEvent(event)}
+                >
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
@@ -154,30 +169,34 @@ export const MyEventScreen = () => {
                           <BsCalendar2Fill className="size-3.5" />
                         </span>
                         <span>
-                          {format(event.startDate, "dd LLL yyyy")}
+                          {formatLocalizedDate(event.startDate, locale)}
                           {event.endDate
-                            ? ` – ${format(event.endDate, "dd LLL yyyy")}`
+                            ? ` – ${formatLocalizedDate(event.endDate, locale)}`
                             : null}
                         </span>
                       </span>
                     </div>
                   </div>
-                </div>
+                </button>
 
                 <div className="shrink-0 sm:w-36 self-start mt-8">
                   {canAttach ? (
                     <AttachButton event={event} />
                   ) : (
-                    <div
+                    <Button
+                      type="button"
+                      variant="ghost"
                       className={cn(
                         statusActionClassName,
+                        "w-full",
                         statusBadgeClassName[participationStatus] ??
                           "bg-muted text-muted-foreground",
                       )}
+                      onClick={() => setSelectedEvent(event)}
                     >
                       <BsCheckCircleFill className="size-4" />
                       {statusLabel}
-                    </div>
+                    </Button>
                   )}
                 </div>
               </li>

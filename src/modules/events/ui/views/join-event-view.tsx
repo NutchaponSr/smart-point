@@ -249,31 +249,31 @@ export const JoinEventView = ({ eventId }: Props) => {
       </header>
       <section className="lg:grid lg:grid-cols-[1fr_30vw]">
         <div>
-          <section className="border-b-2 border-border bg-background">
+          <section className="min-w-0 overflow-hidden border-b-2 border-border bg-background">
             <header className="grid gap-4 p-3 not-first:border-t">
-              <h1 className="text-lg font-normal leading-[1.2]">
+              <h1 className="text-lg font-normal leading-[1.2] [overflow-wrap:anywhere]">
                 {activityName}
               </h1>
             </header>
-            <section className="grid grid-cols-[auto_1fr] gap-px border-t-2 border-border p-0 sm:grid-cols-[auto_auto_minmax(max-content,full)]">
-            <div className="p-3 outline-2outline-offset-0 outline-border border-r-2">
+            <section className="grid grid-cols-[auto_minmax(0,1fr)] border-t-2 border-border p-0">
+            <div className="border-r-2 p-3">
               <div className="flex items-center gap-1 text-base font-medium text-[#cc348d]">
                 <img src={Ruby.src} alt="คะแนนพิเศษ" className="size-6" />
                 {activity.point}
               </div>
             </div>
-              <div className="flex items-center justify-between w-full grow px-4 py-3 max-sm:col-span-full">
-                <div className="flex items-center gap-1 grow">
+              <div className="flex min-w-0 items-center justify-between gap-2 px-4 py-3">
+                <div className="flex shrink-0 items-center gap-1">
                   <GoPersonFill className="size-4 stroke-[0.25]" />
                   <span className="text-sm font-normal">
                     {activity.maxParticipants ? `${activity.joinedCount} / ${activity.maxParticipants}` : "ไม่จำกัด"}
                   </span>
                 </div>
-                <u className="text-xs">{categories[activity.category]?.th}</u>
+                <u className="min-w-0 text-right text-xs [overflow-wrap:anywhere]">{categories[activity.category]?.th}</u>
               </div>
             </section>
-            <section className="border-t-2 border-border p-3">
-              <p className="text-xs">
+            <section className="min-w-0 border-t-2 border-border p-3">
+              <p className="whitespace-pre-wrap text-xs [overflow-wrap:anywhere]">
                 {pickLocalized(activity.description, locale)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">

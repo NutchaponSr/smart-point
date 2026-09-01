@@ -29,13 +29,13 @@ export const OverviewsView = ({ version }: OverviewsViewProps) => {
   return (
     <div className="flex flex-col gap-6 px-6">
       <div className="flex flex-col gap-6 lg:flex-row-reverse lg:gap-12">
-        <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-[368px] lg:shrink-0 lg:self-start">
+        <aside className="flex w-full min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-92 lg:shrink-0 lg:self-start">
           <div className="mb-2 flex h-11 flex-row items-center justify-between">
             <Currencies />
           </div>
           <News />
           {/* <MonthlyQuest /> */}
-          <div className="flex flex-col gap-4">
+          <div className="flex min-w-0 flex-col gap-4">
             <div className="flex flex-row items-center justify-between">
               <h2 className="text-base font-bold">
                 {ENABLE_BU_RECOMMENDED
@@ -50,7 +50,7 @@ export const OverviewsView = ({ version }: OverviewsViewProps) => {
               </Link>
             </div>
             <EventCarousel autoLoop />
-            <AppVersion className="pt-2 text-center" version={version} />
+            {/* <AppVersion className="pt-2 text-center" version={version} /> */}
           </div>
         </aside>
 

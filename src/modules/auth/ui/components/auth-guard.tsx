@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
+import { FIRST_LOGIN_POINTS } from "../../../../../convex/lib/bonuses";
+import { authClient } from "@/lib/convex/auth-client";
 import { useCRPC } from "@/lib/convex/crpc";
 
 interface Props {
@@ -23,14 +25,20 @@ const DailyLoginClaimer = () => {
   const crpc = useCRPC();
   const queryClient = useQueryClient();
   const t = useTranslations("auth.bonus");
-  const inFlightRef = useRef(false);
+  const { data: session } = authClient.useSession();
+  const claimedKeyRef = useRef<string | null>(null);
+
+  const userKey =
+    session?.user?.employeeId ?? session?.user?.id ?? null;
 
   const { mutate: claim } = useMutation(
     crpc.wallet.dailyLogin.mutationOptions(),
   );
 
   useEffect(() => {
-    const storageKey = `dailyLoginClaimed:${thaiDateKey()}`;
+    if (!userKey) return;
+
+    const storageKey = `dailyLoginClaimed:${userKey}:${thaiDateKey()}`;
 
     try {
       if (sessionStorage.getItem(storageKey) === "1") return;
@@ -38,8 +46,8 @@ const DailyLoginClaimer = () => {
       // private mode / blocked storage — fall through to ref guard
     }
 
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
+    if (claimedKeyRef.current === storageKey) return;
+    claimedKeyRef.current = storageKey;
 
     claim(
       {},
@@ -53,26 +61,32 @@ const DailyLoginClaimer = () => {
 
           if (!data.checkedIn) return;
 
+          const awarded = data.firstLoginAwarded || data.loginStreakAwarded;
+
           if (data.firstLoginAwarded) {
-            toast.success(t("first-login"));
+            toast.success(t("first-login", { amount: FIRST_LOGIN_POINTS }));
           }
           if (data.loginStreakAwarded) {
             toast.success(t("login-streak"));
           }
 
+          if (!awarded) return;
+
           void queryClient.invalidateQueries({
             queryKey: crpc.wallet.getOne.queryKey(),
           });
           void queryClient.invalidateQueries({
-            queryKey: crpc.activityLog.getLatest.queryKey({ limit: 10 }),
+            queryKey: crpc.activityLog.getLatest.queryKey(),
           });
         },
         onError: () => {
-          inFlightRef.current = false;
+          if (claimedKeyRef.current === storageKey) {
+            claimedKeyRef.current = null;
+          }
         },
       },
     );
-  }, [claim]);
+  }, [claim, userKey, queryClient, crpc, t]);
 
   return null;
 };

@@ -106,7 +106,17 @@ async function enrichActivityLog(
   }
 
   const activityName = await resolveActivityName(ctx, meta);
-  const amount = metaNumber(meta, "amount");
+  let amount = metaNumber(meta, "amount");
+  let bahtAmount = metaNumber(meta, "bahtAmount") ?? amount;
+
+  if (row.type === "donation" && amount == null && row.sourceId) {
+    const donation = await ctx.db.get(row.sourceId as Id<"donation">);
+    if (donation) {
+      amount = donation.points;
+      bahtAmount = donation.bahtAmount ?? donation.points;
+    }
+  }
+
   const viewerRole: "actor" | "subject" =
     row.actorEmployeeId === viewerId ? "actor" : "subject";
 
@@ -118,6 +128,7 @@ async function enrichActivityLog(
     refs: buildRefs(row.type, row.sourceId, meta),
     meta,
     amount,
+    bahtAmount,
     activityName,
     viewerRole,
     createdAt: row._creationTime,

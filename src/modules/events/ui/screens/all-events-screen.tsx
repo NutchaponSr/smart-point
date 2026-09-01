@@ -2,30 +2,24 @@
 
 import RubyIcon from "../../../../../public/ruby.svg";
 
-import { toast } from "sonner";
-import { format } from "date-fns";
 import type { ApiOutputs } from "@convex/api";
 import { useDebounce } from "@uidotdev/usehooks";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
-import { 
   BsCalendar2Fill,
   BsPeopleFill,
   BsCheckCircleFill,
- } from "react-icons/bs";
-
+} from "react-icons/bs";
+import { useState } from "react";
 
 import { useLocale } from "next-intl";
 
 import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { useCRPC } from "@/lib/convex/crpc";
+import { formatLocalizedDate } from "@/lib/format-thai-date";
 
 import { usePagination } from "@/hooks/use-pagination";
-import { useConfirm } from "@/hooks/use-confirm";
 
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/pagniation";
@@ -36,6 +30,7 @@ import {
 } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
 import { useEventFilters } from "@/modules/events/stores/use-event-filters";
+import { EventDetailDialog } from "@/modules/events/ui/components/event-detail-dialog";
 
 type Event = ApiOutputs["activity"]["getMany"]["page"][number];
 
@@ -49,7 +44,7 @@ const categoryBadgeClassName: Record<Event["category"], string> = {
 export const AllEventsScreen = () => {
   const locale = useLocale();
   const crpc = useCRPC();
-  const queryClient = useQueryClient();
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const [filters, setFilters] = useEventFilters();
 
@@ -74,45 +69,17 @@ export const AllEventsScreen = () => {
     }),
   );
 
-  const join = useMutation(crpc.activity.join.mutationOptions());
-
-  const [ConfirmationDialog, confirm] = useConfirm({
-    title: "เข้าร่วมกิจกรรม",
-  });
-
   const canGoForward = events.hasNextPage && events.continueCursor != null;
-
-  const onJoin = async (event: Event) => {
-    const ok = await confirm();
-    if (!ok) return;
-
-    join.mutate(
-      { activityId: String(event.id) },
-      {
-        onSuccess: () => {
-          toast.success(
-            `เข้าร่วม "${pickLocalized(event.name, locale)}" เรียบร้อย`,
-          );
-          queryClient.invalidateQueries({
-            queryKey: crpc.activity.getMany.queryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: crpc.activity.recommended.queryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: crpc.activity.list.queryKey(),
-          });
-        },
-        onError: (error) => {
-          toast.error(error.message || "เข้าร่วมกิจกรรมไม่สำเร็จ");
-        },
-      },
-    );
-  };
 
   return (
     <section className="grid">
-      <ConfirmationDialog />
+      <EventDetailDialog
+        event={selectedEvent}
+        open={selectedEvent != null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEvent(null);
+        }}
+      />
       <div className="flex items-center justify-between gap-4 mt-6 mb-3">
         <h2 className="text-xl font-extrabold">กิจกรรมที่เข้าร่วมได้</h2>
         <Pagination
@@ -144,9 +111,13 @@ export const AllEventsScreen = () => {
             return (
               <li
                 key={String(event.id)}
-                className="flex flex-col border-t-2 bg-background px-4 py-6 transition-colors sm:flex-row sm:items-center gap-8"
+                className="flex flex-col border-t-2 bg-background px-4 py-6 transition-colors hover:bg-[#fafafa] sm:flex-row sm:items-center gap-8"
               >
-                <div className="grid min-w-0 flex-1 gap-1.5">
+                <button
+                  type="button"
+                  className="grid min-w-0 flex-1 gap-1.5 text-left"
+                  onClick={() => setSelectedEvent(event)}
+                >
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
@@ -191,9 +162,9 @@ export const AllEventsScreen = () => {
                           <BsCalendar2Fill className="size-3.5" />
                         </span>
                         <span>
-                          {format(event.startDate, "dd LLL yyyy")}
+                          {formatLocalizedDate(event.startDate, locale)}
                           {event.endDate
-                            ? ` – ${format(event.endDate, "dd LLL yyyy")}`
+                            ? ` – ${formatLocalizedDate(event.endDate, locale)}`
                             : null}
                         </span>
                       </span>
@@ -224,21 +195,26 @@ export const AllEventsScreen = () => {
                       </div>
                     ) : null}
                   </div>
-                </div>
+                </button>
 
                 <div className="shrink-0 sm:w-36 self-start mt-8">
                   {joined ? (
-                    <div className="flex h-10 items-center justify-center gap-1.5 rounded-md bg-[#d7ffb8] text-sm font-medium text-[#58a700]">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="flex h-10 w-full items-center justify-center gap-1.5 rounded-md bg-[#d7ffb8] text-sm font-medium text-[#58a700] hover:bg-[#c6f5a7]"
+                      onClick={() => setSelectedEvent(event)}
+                    >
                       <BsCheckCircleFill className="size-4" />
                       เข้าร่วมแล้ว
-                    </div>
+                    </Button>
                   ) : (
                     <Button
                       type="button"
                       variant={isFull ? "locked" : "secondary"}
                       className="w-full tracking-wide"
-                      disabled={isFull || join.isPending}
-                      onClick={() => onJoin(event)}
+                      disabled={isFull}
+                      onClick={() => setSelectedEvent(event)}
                     >
                       {isFull ? "เต็มแล้ว" : "เข้าร่วม"}
                     </Button>

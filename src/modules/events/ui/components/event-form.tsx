@@ -32,7 +32,7 @@ export const EventForm = () => {
         <h2 className="text-xl leading-snug">
           กิจกรรม
         </h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 md:*:min-w-0">
           <Controller
             control={control}
             name="name.th"
@@ -60,7 +60,7 @@ export const EventForm = () => {
             )}
           />
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 md:*:min-w-0">
           <Controller
             control={control}
             name="description.th"
@@ -132,14 +132,14 @@ export const EventForm = () => {
             </FieldSet>
           )}
         />
-        <div className="flex items-center gap-4 w-full">
+        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:*:min-w-0">
           <Controller
             control={control}
             name="startDate"
             render={({ field, fieldState }) => (
               <FieldSet label="วันที่เริ่มต้น" errorMessage={fieldState.error?.message}>
                 <DatePicker output="number" value={field.value} onSelect={field.onChange}>
-                  <Button size="lg" type="button" className="justify-start px-4">
+                  <Button size="lg" type="button" className="w-full justify-start px-4">
                     {formatThaiDate(field.value)}
                   </Button>
                 </DatePicker>
@@ -152,7 +152,7 @@ export const EventForm = () => {
             render={({ field, fieldState }) => (
               <FieldSet label="วันที่สิ้นสุด" errorMessage={fieldState.error?.message}>
                 <DatePicker output="number" value={field.value} onSelect={field.onChange}>
-                  <Button size="lg" type="button" className="justify-start px-4">
+                  <Button size="lg" type="button" className="w-full justify-start px-4">
                     {formatThaiDate(field.value)}
                   </Button>
                 </DatePicker>

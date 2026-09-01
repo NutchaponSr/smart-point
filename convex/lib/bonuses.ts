@@ -1,6 +1,6 @@
 import { thaiDateKey } from "./program-rules";
 
-export const FIRST_LOGIN_POINTS = 10;
+export const FIRST_LOGIN_POINTS = 5;
 export const LOGIN_STREAK_DAYS = 15;
 export const LOGIN_STREAK_POINTS = 5;
 export const MONTHLY_ACTIVE_POINTS = 5;
