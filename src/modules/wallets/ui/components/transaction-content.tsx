@@ -98,10 +98,7 @@ export const TransactionContent = ({
     ...crpc.transaction.getMonthlyTransferQuota.queryOptions({
       receiverId: selectedReceiverId?.trim() || "_",
     }),
-    enabled:
-      !canSendUnlimitedPoints &&
-      Boolean(selectedReceiverId?.trim()) &&
-      step === "send",
+    enabled: !canSendUnlimitedPoints && step === "send",
   });
 
   const quotaBlocksSend =
@@ -110,6 +107,12 @@ export const TransactionContent = ({
     step === "send" &&
     monthlyQuota != null &&
     (monthlyQuota.remaining === 0 || selectedAmount > monthlyQuota.remaining);
+
+  const dailyBlocksSend =
+    !canSendUnlimitedPoints &&
+    monthlyQuota?.dailyEnabled === true &&
+    monthlyQuota.alreadySentToday === true &&
+    step === "send";
 
   return (
     <section
@@ -162,7 +165,7 @@ export const TransactionContent = ({
           size="lg"
           variant="secondary"
           className="w-full rounded-md font-bold tracking-wide"
-          disabled={transaction.isPending || quotaBlocksSend}
+          disabled={transaction.isPending || quotaBlocksSend || dailyBlocksSend}
           onClick={async () => {
             if (step === "complete") {
               animate("send", "backward");
@@ -175,6 +178,11 @@ export const TransactionContent = ({
             const isValid = await form.trigger(fieldsToValidate);
 
             if (!isValid) {
+              return;
+            }
+
+            if (dailyBlocksSend) {
+              toast.error(t("daily-send-limit"));
               return;
             }
 

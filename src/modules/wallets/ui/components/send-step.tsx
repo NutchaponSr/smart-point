@@ -80,12 +80,16 @@ export const SendStep = ({
 
   const { data: monthlyQuota } = useQuery({
     ...crpc.transaction.getMonthlyTransferQuota.queryOptions({
-      receiverId: selectedEmployeeId,
+      receiverId: selectedEmployeeId || "_",
     }),
-    enabled: !canSendUnlimitedPoints && selectedEmployeeId.length > 0,
+    enabled: !canSendUnlimitedPoints,
   });
 
   const limitEnabled = !canSendUnlimitedPoints && monthlyQuota?.enabled === true;
+  const alreadySentToday =
+    !canSendUnlimitedPoints &&
+    monthlyQuota?.dailyEnabled === true &&
+    monthlyQuota.alreadySentToday === true;
   // const remainingToReceiver = limitEnabled
   //   ? (monthlyQuota?.remaining ?? null)
   //   : null;
@@ -197,6 +201,11 @@ export const SendStep = ({
             {employeeErrorMessage}
           </p>
         )}
+        {alreadySentToday ? (
+          <p className="text-xs font-medium text-[#ea2b2b]">
+            {t("daily-send-limit")}
+          </p>
+        ) : null}
         {limitEnabled && monthlyQuota && selectedEmployeeId ? (
           <p
             className={cn(

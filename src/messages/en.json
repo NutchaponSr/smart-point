@@ -73,6 +73,7 @@
     "sending": "Sending...",
     "send-again": "Send Again",
     "send": "Send",
+    "daily-send-limit": "You already sent a commendation today. You can send again tomorrow.",
     "complete-title": "Your Commendation has been sent to the recipient",
     "complete-description": "Your transaction has been recorded and can be checked in the transaction history or event points.",
     "currency": {

@@ -41,6 +41,17 @@ export function thaiDateKey(nowMs = Date.now()): string {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/** ขอบวันตามปฏิทิน Asia/Bangkok — end เป็น exclusive */
+export function thaiDayRange(nowMs = Date.now()): {
+  start: number;
+  end: number;
+} {
+  const { year, month, day } = thaiDateParts(nowMs);
+  const start = Date.UTC(year, month, day) - THAI_OFFSET_MS;
+  const end = Date.UTC(year, month, day + 1) - THAI_OFFSET_MS;
+  return { start, end };
+}
+
 /** ขอบเดือนตามปฏิทิน Asia/Bangkok — end เป็น exclusive */
 export function thaiMonthRange(nowMs = Date.now()): {
   start: number;

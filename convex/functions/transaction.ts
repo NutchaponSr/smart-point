@@ -4,6 +4,11 @@ import z from "zod/v4";
 import { appendActivityLog } from "../lib/activity-log";
 import { requireAdmin } from "../lib/auth-helper";
 import { authMutation, authQuery } from "../lib/crpc";
+import {
+  DAILY_SEND_CAP,
+  DAILY_SEND_LIMIT_ENABLED,
+  getDailySendUsed,
+} from "../lib/daily-send";
 import { listVisibleSubjectEmployeeDocIds } from "../lib/k2-visibility";
 import {
   getMonthlyTransferUsed,
@@ -1425,6 +1430,20 @@ export const send = authMutation
         });
       }
 
+      if (DAILY_SEND_LIMIT_ENABLED) {
+        const daily = await getDailySendUsed({
+          ctx,
+          senderId: sender._id,
+        });
+
+        if (daily.alreadySentToday) {
+          throw new CRPCError({
+            code: "BAD_REQUEST",
+            message: "วันนี้ส่งคำชมไปแล้ว ส่งได้อีกครั้งในวันพรุ่งนี้",
+          });
+        }
+      }
+
       if (MONTHLY_TRANSFER_LIMIT_ENABLED) {
         const quota = await getMonthlyTransferUsed({
           ctx,
@@ -1949,6 +1968,15 @@ export const comment = authMutation
     };
   });
 
+const emptyDailyQuota = {
+  dailyEnabled: false as const,
+  alreadySentToday: false,
+  dailyCap: DAILY_SEND_CAP,
+  dailyRemaining: DAILY_SEND_CAP,
+  dayStart: null as number | null,
+  dayEnd: null as number | null,
+};
+
 export const getMonthlyTransferQuota = authQuery
   .input(
     z.object({
@@ -1969,10 +1997,30 @@ export const getMonthlyTransferQuota = authQuery
         .first(),
     ]);
 
-    if (
-      !MONTHLY_TRANSFER_LIMIT_ENABLED ||
-      (sender && canSendUnlimitedPoints(sender.employeeId))
-    ) {
+    const unlimited = Boolean(
+      sender && canSendUnlimitedPoints(sender.employeeId),
+    );
+
+    const daily =
+      sender && !unlimited && DAILY_SEND_LIMIT_ENABLED
+        ? await getDailySendUsed({
+            ctx,
+            senderId: sender._id,
+          })
+        : null;
+
+    const dailyFields = daily
+      ? {
+          dailyEnabled: true as const,
+          alreadySentToday: daily.alreadySentToday,
+          dailyCap: daily.cap,
+          dailyRemaining: daily.remaining,
+          dayStart: daily.dayStart,
+          dayEnd: daily.dayEnd,
+        }
+      : emptyDailyQuota;
+
+    if (unlimited || !MONTHLY_TRANSFER_LIMIT_ENABLED) {
       return {
         enabled: false as const,
         cap: MONTHLY_TRANSFER_CAP_PER_RECEIVER,
@@ -1981,6 +2029,7 @@ export const getMonthlyTransferQuota = authQuery
         monthStart: null as number | null,
         monthEnd: null as number | null,
         receiverName: receiver?.name ?? null,
+        ...dailyFields,
       };
     }
 
@@ -1993,6 +2042,7 @@ export const getMonthlyTransferQuota = authQuery
         monthStart: null as number | null,
         monthEnd: null as number | null,
         receiverName: receiver?.name ?? null,
+        ...dailyFields,
       };
     }
 
@@ -2006,6 +2056,7 @@ export const getMonthlyTransferQuota = authQuery
       enabled: true as const,
       ...quota,
       receiverName: receiver.name,
+      ...dailyFields,
     };
   });
 
