@@ -101,9 +101,9 @@
   --sidebar-ring: oklch(0.708 0 0);
   --blue: oklch(0.55 0.18 258.43);
   --orange: oklch(0.86 0.18 88.95);
-  --purple: #72A0C1;
+  --purple: #72a0c1;
   --yellow: oklch(0.93 0.19 110.24);
-  --green: oklch(0.64 0.1 185.05);  
+  --green: oklch(0.64 0.1 185.05);
   --pink: oklch(0.8 0.17 335.24);
 }
 

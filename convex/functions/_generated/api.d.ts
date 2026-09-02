@@ -342,17 +342,11 @@ export declare const api: {
         cursor?: string | null;
         division?: Array<string> | null;
         limit: number;
-        period: "30d" | "fullTime";
         q?: string | null;
       },
       any
     >;
-    getMyEntry: FunctionReference<
-      "query",
-      "public",
-      { period: "30d" | "fullTime" },
-      any
-    >;
+    getMyEntry: FunctionReference<"query", "public", {}, any>;
   };
   news: {
     bulkDelete: FunctionReference<
@@ -964,6 +958,14 @@ export declare const internal: {
       "mutation",
       "internal",
       { rows: Array<{ employeeId: string; employees: Array<string> }> },
+      any
+    >;
+  };
+  leaderboard: {
+    backfill: FunctionReference<
+      "mutation",
+      "internal",
+      { cursor: string | null },
       any
     >;
   };

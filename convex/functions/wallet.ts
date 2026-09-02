@@ -13,6 +13,7 @@ import {
   shouldAwardPraiseStreak,
 } from "../lib/bonuses";
 import { authMutation, authQuery, privateMutation } from "../lib/crpc";
+import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
 import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
 import { awardSpecialPoints } from "../lib/points";
 import {
@@ -139,6 +140,8 @@ async function rolloverWallet(
         createdAt: input.now,
       });
     }
+
+    await syncLeaderboardEntry(ctx, wallet.employeeId);
   } else {
     await ctx.db.patch(wallet._id, {
       givingBudget: GIVING_BUDGET,
@@ -295,6 +298,7 @@ export const initial = privateMutation
       specialBudget: 0,
       lastBudgetUpdate: Date.now(),
     });
+    await syncLeaderboardEntry(ctx, input.employeeId as Id<"employee">);
   });
 
 export const getOne = authQuery.query(async ({ ctx }) => {

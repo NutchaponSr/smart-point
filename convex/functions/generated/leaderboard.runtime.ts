@@ -19,6 +19,7 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
+  "backfill": ["mutation", typedProcedureResolver(internal["leaderboard"]["backfill"], () => (require("../leaderboard") as Record<string, unknown>)["backfill"])],
   "getMany": ["query", typedProcedureResolver(api["leaderboard"]["getMany"], () => (require("../leaderboard") as Record<string, unknown>)["getMany"])],
   "getMyEntry": ["query", typedProcedureResolver(api["leaderboard"]["getMyEntry"], () => (require("../leaderboard") as Record<string, unknown>)["getMyEntry"])],
 } as const;

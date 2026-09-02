@@ -1,4 +1,4 @@
-import { SearchParams } from "nuqs/server";
+import type { SearchParams } from "nuqs/server";
 
 import { crpc, HydrateClient, prefetch } from "@/lib/convex/rsc";
 
@@ -15,28 +15,34 @@ const Page = async ({ searchParams }: Props) => {
     await loadEventFilters(searchParams);
 
   prefetch(crpc.wallet.getOne.queryOptions());
-  prefetch(crpc.activity.recommended.queryOptions({
-    limit: 10,
-    now: getCarouselNow(),
-  }));
+  prefetch(
+    crpc.activity.recommended.queryOptions({
+      limit: 10,
+      now: getCarouselNow(),
+    }),
+  );
 
-  prefetch(crpc.activity.getMany.queryOptions({
-    q: q,
-    view: view,
-    limit: limit,
-    cursor: null,
-    minParticipants: minParticipants,
-    maxParticipants: maxParticipants,
-    eligibleOnly: true,
-  }));
+  prefetch(
+    crpc.activity.getMany.queryOptions({
+      q: q,
+      view: view,
+      limit: limit,
+      cursor: null,
+      minParticipants: minParticipants,
+      maxParticipants: maxParticipants,
+      eligibleOnly: true,
+    }),
+  );
 
-  prefetch(crpc.activity.list.queryOptions({
-    status: status,
-    q: q,
-    view: view,
-    limit: limit,
-    cursor: null,
-  }));
+  prefetch(
+    crpc.activity.list.queryOptions({
+      status: status,
+      q: q,
+      view: view,
+      limit: limit,
+      cursor: null,
+    }),
+  );
 
   return (
     <HydrateClient>
@@ -44,7 +50,7 @@ const Page = async ({ searchParams }: Props) => {
         <MyEventView />
       </div>
     </HydrateClient>
-  )
-}
+  );
+};
 
 export default Page;

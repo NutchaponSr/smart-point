@@ -1,8 +1,8 @@
+import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
-import { CRPCError } from "better-convex/server";
-
 import { authMutation, authQuery } from "../lib/crpc";
+import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
 import { localizedSearchText } from "../lib/localized";
 import { splitRedeemCost } from "../lib/points";
 import { assertRedemptionOpen } from "../lib/program-rules";
@@ -22,12 +22,12 @@ async function resolveStorageImageUrl(
 
 async function getActiveCartId(
   ctx: { db: DbCtx["db"] },
-  employeeId: Id<"employee">
+  employeeId: Id<"employee">,
 ): Promise<Id<"cart"> | null> {
   const cart = await ctx.db
     .query("cart")
     .withIndex("by_employeeId_status", (q) =>
-      q.eq("employeeId", employeeId).eq("status", "active")
+      q.eq("employeeId", employeeId).eq("status", "active"),
     )
     .first();
   return cart?._id ?? null;
@@ -35,12 +35,12 @@ async function getActiveCartId(
 
 async function requireActiveCart(
   ctx: { db: DbCtx["db"] },
-  employeeId: Id<"employee">
+  employeeId: Id<"employee">,
 ) {
   const cart = await ctx.db
     .query("cart")
     .withIndex("by_employeeId_status", (q) =>
-      q.eq("employeeId", employeeId).eq("status", "active")
+      q.eq("employeeId", employeeId).eq("status", "active"),
     )
     .first();
   if (!cart) {
@@ -56,7 +56,7 @@ export const getCart = authQuery.query(async ({ ctx }) => {
   const cart = await ctx.db
     .query("cart")
     .withIndex("by_employeeId_status", (q) =>
-      q.eq("employeeId", ctx.user.employeeId).eq("status", "active")
+      q.eq("employeeId", ctx.user.employeeId).eq("status", "active"),
     )
     .first();
 
@@ -83,12 +83,12 @@ export const getCart = authQuery.query(async ({ ctx }) => {
         ...item,
         reward: { ...reward, image },
       };
-    })
+    }),
   );
 
   const totalPoints = items.reduce(
     (sum, item) => sum + (item.reward?.pointCost ?? 0) * item.quantity,
-    0
+    0,
   );
 
   return { cart, items, totalPoints };
@@ -99,7 +99,7 @@ export const addCart = authMutation
     z.object({
       rewardId: z.string(),
       quantity: z.number().int().min(1).default(1),
-    })
+    }),
   )
   .mutation(async ({ ctx, input }) => {
     const raw = await ctx.db.get(input.rewardId as Id<"reward">);
@@ -132,7 +132,7 @@ export const addCart = authMutation
     const existing = await ctx.db
       .query("cartItem")
       .withIndex("by_cartId_rewardId", (q) =>
-        q.eq("cartId", cartId).eq("rewardId", input.rewardId as Id<"reward">)
+        q.eq("cartId", cartId).eq("rewardId", input.rewardId as Id<"reward">),
       )
       .first();
 
@@ -164,7 +164,7 @@ export const removeCartItem = authMutation
   .input(
     z.object({
       cartItemId: z.string(),
-    })
+    }),
   )
   .mutation(async ({ ctx, input }) => {
     const cart = await requireActiveCart(ctx, ctx.user.employeeId);
@@ -183,7 +183,7 @@ export const updateCartItemQuantity = authMutation
     z.object({
       cartItemId: z.string(),
       quantity: z.number().int().min(1),
-    })
+    }),
   )
   .mutation(async ({ ctx, input }) => {
     const cart = await requireActiveCart(ctx, ctx.user.employeeId);
@@ -228,7 +228,7 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
   const cart = await ctx.db
     .query("cart")
     .withIndex("by_employeeId_status", (q) =>
-      q.eq("employeeId", ctx.user.employeeId).eq("status", "active")
+      q.eq("employeeId", ctx.user.employeeId).eq("status", "active"),
     )
     .first();
 
@@ -255,7 +255,7 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
   for (const item of cartItems) {
     qtyByReward.set(
       item.rewardId,
-      (qtyByReward.get(item.rewardId) ?? 0) + item.quantity
+      (qtyByReward.get(item.rewardId) ?? 0) + item.quantity,
     );
   }
 
@@ -289,9 +289,7 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
 
   const wallet = await ctx.db
     .query("wallet")
-    .withIndex("by_employeeId", (q) =>
-      q.eq("employeeId", ctx.user.employeeId)
-    )
+    .withIndex("by_employeeId", (q) => q.eq("employeeId", ctx.user.employeeId))
     .first();
 
   if (!wallet) {
@@ -351,6 +349,7 @@ export const redeemCart = authMutation.mutation(async ({ ctx }) => {
     receivingBudget: split.newReceiving,
     specialBudget: split.newSpecial,
   });
+  await syncLeaderboardEntry(ctx, ctx.user.employeeId);
 
   const now = Date.now();
   const sourceId = String(redemptionIds[0]);

@@ -17,6 +17,10 @@ import {
 } from "../lib/employee-directory";
 import { normalizeText } from "../lib/employee-id";
 import {
+  deleteLeaderboardEntry,
+  syncLeaderboardEntry,
+} from "../lib/leaderboard-entry";
+import {
   isLocalizedString,
   type LocalizedString,
   localizedLabel,
@@ -180,6 +184,7 @@ async function syncBusinessEmployeeId(
   }
 
   await ctx.db.patch(employeeDocId, { employeeId: nextBusinessId });
+  await syncLeaderboardEntry(ctx, employeeDocId);
   if (linkedUser) {
     await ctx.db.patch(linkedUser._id, {
       username: nextBusinessId,
@@ -210,6 +215,7 @@ async function applyEmployeeProfilePatch(
     division: fields.division,
     ...(fields.citizenId !== undefined ? { citizenId: fields.citizenId } : {}),
   });
+  await syncLeaderboardEntry(ctx, employeeDocId);
 }
 
 async function insertEmployeeWalletAndScheduleSignup(
@@ -255,6 +261,7 @@ async function insertEmployeeWalletAndScheduleSignup(
     specialBudget: 0,
     lastBudgetUpdate: Date.now(),
   });
+  await syncLeaderboardEntry(ctx, employeeDocId);
 
   await ctx.scheduler.runAfter(0, internal.employee.signUpEmployeeInternal, {
     name: localizedLabel(name, "th"),
@@ -1132,6 +1139,8 @@ export async function deleteEmployeeCascade(
     await ctx.db.delete(row._id);
   }
 
+  await deleteLeaderboardEntry(ctx, eid);
+
   await ctx.db.delete(eid);
 }
 
@@ -1258,6 +1267,7 @@ export const migrateEmployeeLocalizedFields = privateMutation.mutation(
         position,
         rank,
       });
+      await syncLeaderboardEntry(ctx, employee._id);
       updated += 1;
     }
 

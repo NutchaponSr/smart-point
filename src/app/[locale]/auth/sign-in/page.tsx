@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
-
-import { SignInView } from "@/modules/auth/ui/views/sign-in-view";
 import { AuthScreen } from "@/modules/auth/ui/screens/auth-screen";
+import { SignInView } from "@/modules/auth/ui/views/sign-in-view";
 
 const SignInPage = async () => {
   const t = await getTranslations("auth");

@@ -652,6 +652,40 @@ export type DataModel = {
     searchIndexes: {};
     vectorIndexes: {};
   };
+  leaderboard: {
+    document: {
+      division: string;
+      employeeCode: string;
+      employeeId: Id<"employee">;
+      points: number;
+      receivingBudget: number;
+      searchText: string;
+      sortKey: string;
+      specialBudget: number;
+      _id: Id<"leaderboard">;
+      _creationTime: number;
+    };
+    fieldPaths:
+      | "_creationTime"
+      | "_id"
+      | "division"
+      | "employeeCode"
+      | "employeeId"
+      | "points"
+      | "receivingBudget"
+      | "searchText"
+      | "sortKey"
+      | "specialBudget";
+    indexes: {
+      by_id: ["_id"];
+      by_creation_time: ["_creationTime"];
+      by_division_sortKey: ["division", "sortKey", "_creationTime"];
+      by_employeeId: ["employeeId", "_creationTime"];
+      by_sortKey: ["sortKey", "_creationTime"];
+    };
+    searchIndexes: {};
+    vectorIndexes: {};
+  };
   like: {
     document: {
       createdAt?: number;

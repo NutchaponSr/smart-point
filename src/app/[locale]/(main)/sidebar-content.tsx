@@ -2,28 +2,24 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
-
-import FolderIcon from "../../../../public/folder.svg";
-import ComputerIcon from "../../../../public/computer.svg";
-
-import { cn } from "@/lib/utils";
-
-import { metadata, navigations } from "@/constants";
-
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-
-import { Logo } from "@/components/logo";
-
+import { metadata, navigations } from "@/constants";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
+import {
+  canShowByRole,
+  usePermission,
+} from "@/modules/auth/hooks/use-permisson";
 import { UserButtonDropdown } from "@/modules/auth/ui/components/user-button";
-
-import { canShowByRole, usePermission } from "@/modules/auth/hooks/use-permisson";
+import ComputerIcon from "../../../../public/computer.svg";
+import FolderIcon from "../../../../public/folder.svg";
 
 interface SidebarContentProps {
   onNavigate?: () => void;

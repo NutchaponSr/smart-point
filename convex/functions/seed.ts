@@ -7,6 +7,7 @@ import {
   resolvePositionLoose,
 } from "../lib/employee-directory";
 import { normalizeText } from "../lib/employee-id";
+import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
 import {
   localizedLabel,
   localizedSearchText,
@@ -73,6 +74,7 @@ export const insertEmployee = privateMutation
       specialBudget: 5,
       lastBudgetUpdate: Date.now(),
     });
+    await syncLeaderboardEntry(ctx, employeeDocId);
 
     return employeeDocId;
   });

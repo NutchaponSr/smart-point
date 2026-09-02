@@ -1,4 +1,4 @@
-import { SearchParams } from "nuqs/server";
+import type { SearchParams } from "nuqs/server";
 
 import { getAppVersion } from "@/lib/app-version";
 import { crpc, HydrateClient, prefetch } from "@/lib/convex/rsc";
@@ -12,7 +12,7 @@ import {
 
 interface Props {
   searchParams: Promise<SearchParams>;
-};
+}
 
 const Page = async ({ searchParams }: Props) => {
   const [params, feedParams] = await Promise.all([
@@ -44,7 +44,7 @@ const Page = async ({ searchParams }: Props) => {
       to: params.to,
       view: params.view,
       by: params.by,
-    })
+    }),
   );
   prefetch(
     crpc.transaction.feeds.infiniteQueryOptions({
@@ -66,6 +66,6 @@ const Page = async ({ searchParams }: Props) => {
       </div>
     </HydrateClient>
   );
-}
+};
 
 export default Page;

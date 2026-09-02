@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { notFound } from "next/navigation";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
+import { Providers } from "@/components/providers";
 import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
-import { Providers } from "@/components/providers";
-import { notFound } from "next/navigation";
-import { getMessages } from "next-intl/server";
-import { NextIntlClientProvider } from "next-intl";
 
 const googleSans = localFont({
   src: [

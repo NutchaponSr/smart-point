@@ -12,6 +12,6 @@ const Page = () => {
       <CheckoutView />
     </HydrateClient>
   );
-}
+};
 
 export default Page;

@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { MenuIcon } from "lucide-react";
-
+import { useState } from "react";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/logo";
 
 import { SidebarContent } from "./sidebar-content";
 
@@ -38,10 +37,7 @@ export const MobileNavigations = () => {
           className="w-64 max-w-[85vw] gap-0 border-[#e5e5e5] bg-background p-4 text-[#afafaf] shadow-none"
         >
           <SheetTitle className="sr-only">เมนูนำทาง</SheetTitle>
-          <SidebarContent
-            expandMetadata
-            onNavigate={() => setOpen(false)}
-          />
+          <SidebarContent expandMetadata onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
       <Logo className="mt-0 px-2" />

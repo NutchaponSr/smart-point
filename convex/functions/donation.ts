@@ -1,12 +1,12 @@
-import z from "zod/v4";
-
 import { CRPCError } from "better-convex/server";
+import z from "zod/v4";
 
 import { appendActivityLog } from "../lib/activity-log";
 import { authMutation, authQuery } from "../lib/crpc";
+import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
 import { localizedLabel } from "../lib/localized";
-import { getWalletOrThrow, splitRedeemCost } from "../lib/points";
 import { UNLIMITED_POINT_SEND_EMPLOYEE_ID } from "../lib/point-send-privileges";
+import { getWalletOrThrow, splitRedeemCost } from "../lib/points";
 import { assertRedemptionOpen, GIVING_BUDGET } from "../lib/program-rules";
 
 import type { Id } from "./_generated/dataModel";
@@ -134,12 +134,14 @@ export const donate = authMutation
       receivingBudget: split.newReceiving,
       specialBudget: split.newSpecial,
     });
+    await syncLeaderboardEntry(ctx, donorEmployeeId);
 
     const newRecipientReceiving =
       recipientWallet.receivingBudget + input.points;
     await ctx.db.patch(recipientWallet._id, {
       receivingBudget: newRecipientReceiving,
     });
+    await syncLeaderboardEntry(ctx, recipientEmployeeId);
 
     const sourceId = String(donationId);
 

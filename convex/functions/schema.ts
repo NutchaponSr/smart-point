@@ -535,6 +535,31 @@ export const k2Workflow = convexTable(
   ],
 );
 
+/**
+ * Slim ranking projection — leaderboard queries read this instead of
+ * scanning employee + wallet. Updated only when ranking fields change
+ * (not lastDailyBonus / loginStreak).
+ */
+export const leaderboard = convexTable(
+  "leaderboard",
+  {
+    employeeId: id("employee").notNull(),
+    employeeCode: text().notNull(),
+    division: text().notNull(),
+    points: integer().notNull(),
+    receivingBudget: integer().notNull(),
+    specialBudget: integer().notNull(),
+    /** Lexicographic rank: lower = higher on the board. */
+    sortKey: text().notNull(),
+    searchText: text().notNull(),
+  },
+  (t) => [
+    uniqueIndex("by_employeeId").on(t.employeeId),
+    index("by_sortKey").on(t.sortKey),
+    index("by_division_sortKey").on(t.division, t.sortKey),
+  ],
+);
+
 export const tables = {
   user,
   session,
@@ -559,6 +584,7 @@ export const tables = {
   comment,
   news,
   k2Workflow,
+  leaderboard,
 };
 
 /** ต้องรัน `defineSchema` ก่อน `defineRelations` เพื่อให้ `tables` มี `OrmSchemaDefinition` (จำเป็นต่อ ORM select().filter()…​.paginate() ฯลฯ) */

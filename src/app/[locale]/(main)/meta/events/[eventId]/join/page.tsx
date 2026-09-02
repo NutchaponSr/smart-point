@@ -16,6 +16,6 @@ const Page = async ({ params }: Props) => {
       <JoinEventView eventId={eventId} />
     </HydrateClient>
   );
-};  
+};
 
 export default Page;

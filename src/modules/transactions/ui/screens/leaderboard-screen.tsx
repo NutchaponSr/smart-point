@@ -1,16 +1,12 @@
-import { useCallback } from "react";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
-import { useSuspenseQuery } from "@tanstack/react-query";
-
-import { useCRPC } from "@/lib/convex/crpc";
-
-import { usePagination } from "@/hooks/use-pagination";
-
+import { useCallback } from "react";
 import { Pagination } from "@/components/pagniation";
 
-import { LeaderboardList } from "@/modules/transactions/ui/components/leaderboard-list";
-
+import { usePagination } from "@/hooks/use-pagination";
+import { useCRPC } from "@/lib/convex/crpc";
 import { useLeaderboardFilters } from "@/modules/transactions/stores/use-leaderboard-filters";
+import { LeaderboardList } from "@/modules/transactions/ui/components/leaderboard-list";
 
 export const LeaderboardScreen = () => {
   const crpc = useCRPC();
@@ -18,7 +14,7 @@ export const LeaderboardScreen = () => {
   const [filters, setFilters] = useLeaderboardFilters();
 
   const debouncedQuery = useDebounce(filters.q, 400);
-  const filterResetKey = [filters.division.join(","), filters.period].join("|");
+  const filterResetKey = filters.division.join(",");
 
   const onPageChange = useCallback(
     (page: number) => {
@@ -27,12 +23,7 @@ export const LeaderboardScreen = () => {
     [setFilters],
   );
 
-  const {
-    requestCursor,
-    canGoBack,
-    goBack,
-    goForward,
-  } = usePagination({
+  const { requestCursor, canGoBack, goBack, goForward } = usePagination({
     debouncedQuery,
     limit: filters.limit,
     urlPage: filters.page,
@@ -42,25 +33,27 @@ export const LeaderboardScreen = () => {
 
   const normalizedQuery = debouncedQuery.trim() || undefined;
 
-  const { data: leaderboard } = useSuspenseQuery(crpc.leaderboard.getMany.queryOptions({
-    period: filters.period,
-    limit: filters.limit,
-    cursor: requestCursor,
-    q: normalizedQuery,
-    division: filters.division.length > 0 ? filters.division : null,
-  }));
+  const { data: leaderboard } = useSuspenseQuery(
+    crpc.leaderboard.getMany.queryOptions({
+      limit: filters.limit,
+      cursor: requestCursor,
+      q: normalizedQuery,
+      division: filters.division.length > 0 ? filters.division : null,
+    }),
+  );
 
-  const { data: myEntry } = useSuspenseQuery(crpc.leaderboard.getMyEntry.queryOptions({
-    period: filters.period,
-  }));
+  const { data: currentUser } = useQuery(
+    crpc.user.getCurrentUser.queryOptions(),
+  );
 
-  const canGoForward = leaderboard.hasNextPage && leaderboard.continueCursor != null;
+  const canGoForward =
+    leaderboard.hasNextPage && leaderboard.continueCursor != null;
 
   return (
     <section className="grid gap-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 grow">
-          <Pagination 
+          <Pagination
             canGoBack={canGoBack}
             canGoForward={canGoForward}
             onBack={goBack}
@@ -71,10 +64,10 @@ export const LeaderboardScreen = () => {
           />
         </div>
       </div>
-      
-      <LeaderboardList 
+
+      <LeaderboardList
         entries={leaderboard.page}
-        myEmployeeId={myEntry?.employeeId ?? null}
+        myEmployeeId={currentUser?.employeeId ?? null}
       />
     </section>
   );

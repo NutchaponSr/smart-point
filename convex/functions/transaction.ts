@@ -9,14 +9,9 @@ import {
   DAILY_SEND_LIMIT_ENABLED,
   getDailySendUsed,
 } from "../lib/daily-send";
+import { normalizeText } from "../lib/employee-id";
 import { listVisibleSubjectEmployeeDocIds } from "../lib/k2-visibility";
-import {
-  getMonthlyTransferUsed,
-  MONTHLY_TRANSFER_CAP_PER_RECEIVER,
-  MONTHLY_TRANSFER_LIMIT_ENABLED,
-  thaiMonthRange,
-} from "../lib/monthly-transfer";
-import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
+import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
 // import { awardSpecialPoints } from "../lib/points";
 import {
   coerceLocalized,
@@ -24,7 +19,13 @@ import {
   localizedLabel,
   localizedSearchText,
 } from "../lib/localized";
-import { normalizeText } from "../lib/employee-id";
+import {
+  getMonthlyTransferUsed,
+  MONTHLY_TRANSFER_CAP_PER_RECEIVER,
+  MONTHLY_TRANSFER_LIMIT_ENABLED,
+  thaiMonthRange,
+} from "../lib/monthly-transfer";
+import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -451,11 +452,7 @@ async function collectFilteredEnrichedTransactionPage(
     const partyNamesById = await getPartyNamesByTransaction(ctx, afterCursor);
     for (const tx of afterCursor) {
       if (
-        transactionMatchesListFilters(
-          tx,
-          bounds,
-          partyNamesById.get(tx._id),
-        )
+        transactionMatchesListFilters(tx, bounds, partyNamesById.get(tx._id))
       ) {
         matched.push(tx);
         if (matched.length >= target) break;
@@ -1142,6 +1139,7 @@ async function approveTransactionById(
     await ctx.db.patch(receiverWallet._id, {
       receivingBudget: newReceivingBudget,
     });
+    await syncLeaderboardEntry(ctx, transaction.receiverId);
 
     await ctx.db.insert("pointLedger", {
       employeeId: transaction.receiverId,
@@ -1471,6 +1469,7 @@ export const send = authMutation
     await ctx.db.patch(receiverWallet._id, {
       receivingBudget: newReceivingBudget,
     });
+    await syncLeaderboardEntry(ctx, receiver._id);
 
     const transactionId = await ctx.db.insert("transaction", {
       senderId: sender._id,
@@ -1565,10 +1564,7 @@ export const bulkApprove = authMutation
     const results: ApproveTransactionResult[] = [];
     for (const transactionId of uniqueTransactionIds) {
       results.push(
-        await approveTransactionById(
-          ctx,
-          transactionId as Id<"transaction">,
-        ),
+        await approveTransactionById(ctx, transactionId as Id<"transaction">),
       );
     }
 
@@ -1671,29 +1667,29 @@ export const feeds = authQuery
     assertTransactionListRanges(bounds.min, bounds.max, bounds.from, bounds.to);
 
     const scope = input.scope ?? "mine";
-    const viewerBusinessCode = normalizeText(
-      ctx.user.employee.employeeId,
-      5,
-    );
+    const viewerBusinessCode = normalizeText(ctx.user.employee.employeeId, 5);
 
-    const { page: transactions, nextCursor, exhausted } =
-      scope === "team"
-        ? await collectTeamCompletedFeedPage(
-            ctx,
-            viewerBusinessCode,
-            input.limit,
-            decodeTeamFeedsCursor(input.cursor),
-            input.view,
-            bounds,
-          )
-        : await collectMyCompletedFeedPage(
-            ctx,
-            ctx.user.employeeId,
-            input.limit,
-            decodeFeedsCursor(input.cursor),
-            input.view,
-            bounds,
-          );
+    const {
+      page: transactions,
+      nextCursor,
+      exhausted,
+    } = scope === "team"
+      ? await collectTeamCompletedFeedPage(
+          ctx,
+          viewerBusinessCode,
+          input.limit,
+          decodeTeamFeedsCursor(input.cursor),
+          input.view,
+          bounds,
+        )
+      : await collectMyCompletedFeedPage(
+          ctx,
+          ctx.user.employeeId,
+          input.limit,
+          decodeFeedsCursor(input.cursor),
+          input.view,
+          bounds,
+        );
 
     const txMeta = await Promise.all(
       transactions.map(async (tx) => {

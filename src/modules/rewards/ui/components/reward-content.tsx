@@ -41,7 +41,7 @@ export const RewardContent = ({ rewards, hasNextPage, onLoad }: Props) => {
       </div>
 
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-16 border-2 border-dashed border-border rounded-md">
+        <div className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border rounded-md">
           <img src={illustrationSrc} alt={t("empty-alt")} className="size-20" />
 
           <div className="text-center">
@@ -65,8 +65,8 @@ export const RewardContent = ({ rewards, hasNextPage, onLoad }: Props) => {
           </ul>
 
           {hasNextPage && (
-            <div className="mt-8 w-full text-center">
-              <Button size="lg" variant="secondaryOutline" onClick={onLoad}>
+            <div className="w-full pb-8 md:pb-20">
+              <Button size="lg" variant="secondaryOutline" onClick={onLoad} className="w-full">
                 {t("load-more")}
               </Button>
             </div>

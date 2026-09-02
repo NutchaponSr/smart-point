@@ -13,6 +13,6 @@ const Page = () => {
       </div>
     </HydrateClient>
   );
-}
+};
 
 export default Page;

@@ -2,6 +2,7 @@ import { CRPCError } from "better-convex/server";
 import type { GenericMutationCtx } from "convex/server";
 
 import type { DataModel, Id } from "../functions/_generated/dataModel";
+import { syncLeaderboardEntry } from "./leaderboard-entry";
 
 export type SpecialPointSourceType =
   | "daily_login"
@@ -86,6 +87,7 @@ export async function awardSpecialPoints(
   const now = Date.now();
 
   await ctx.db.patch(wallet._id, { specialBudget: newBalance });
+  await syncLeaderboardEntry(ctx, input.employeeId);
   await ctx.db.insert("pointLedger", {
     employeeId: input.employeeId,
     delta: input.delta,

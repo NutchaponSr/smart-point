@@ -1,9 +1,7 @@
 import { NewRewardView } from "@/modules/rewards/ui/views/new-reward-view";
 
 const Page = () => {
-  return (
-    <NewRewardView />
-  );
-}
+  return <NewRewardView />;
+};
 
-export default Page;  
+export default Page;

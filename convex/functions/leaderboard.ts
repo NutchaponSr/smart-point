@@ -1,154 +1,96 @@
 import z from "zod/v4";
-import { authQuery } from "../lib/crpc";
-import {
-  coerceLocalized,
-  localizedSearchText,
-  type LocalizedString,
-} from "../lib/localized";
-import type { Id } from "./_generated/dataModel";
+import type { PaginationResult } from "convex/server";
+import { authQuery, privateMutation } from "../lib/crpc";
+import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
+import { coerceLocalized, type LocalizedString } from "../lib/localized";
+import { internal } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
 
-/** Kept for API compatibility — wallet balances have no time window. */
-const periodSchema = z.enum(["30d", "fullTime"]);
+const BACKFILL_BATCH = 50;
 
-type EmployeeListRow = {
-  employeeId: string;
-  name: LocalizedString | string;
-  email: string | null;
-  department: LocalizedString | string;
-  position: LocalizedString | string;
-  rank: LocalizedString | string;
-  division: string;
-};
-
-function rankText(rank: LocalizedString | string): string {
-  return typeof rank === "string" ? rank : rank.th.trim() || rank.en.trim();
-}
-
-type LeaderboardEmployeeFilters = {
-  query?: string | null;
-  division?: string[] | null;
-};
-
-function normalizeFilterArray(
-  value: string[] | null | undefined,
-): string[] {
+function normalizeFilterArray(value: string[] | null | undefined): string[] {
   if (value == null || value.length === 0) return [];
   return [
     ...new Set(
-      value
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0),
+      value.map((item) => item.trim()).filter((item) => item.length > 0),
     ),
   ];
 }
 
-/** Same rules as `employee.getMany` — filter leaderboard rows by searchable fields. */
-function matchesEmployeeSearch(
-  row: EmployeeListRow,
-  normalizedQuery: string,
-): boolean {
-  if (!normalizedQuery) return true;
-  return (
-    row.employeeId.toLowerCase().includes(normalizedQuery) ||
-    localizedSearchText(row.name).toLowerCase().includes(normalizedQuery) ||
-    localizedSearchText(row.department)
-      .toLowerCase()
-      .includes(normalizedQuery) ||
-    localizedSearchText(row.position).toLowerCase().includes(normalizedQuery) ||
-    rankText(row.rank).toLowerCase().includes(normalizedQuery) ||
-    row.division.toLowerCase().includes(normalizedQuery) ||
-    (row.email ?? "").toLowerCase().includes(normalizedQuery)
-  );
+function parseOffsetCursor(raw: string | null | undefined): number {
+  if (raw == null || raw.trim() === "") return 0;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-function matchesLeaderboardEmployeeFilters(
-  row: EmployeeListRow,
-  filters: {
-    divisions: string[];
-    normalizedQuery: string;
-  },
-): boolean {
-  if (
-    filters.divisions.length > 0 &&
-    !filters.divisions.includes(row.division)
-  ) {
-    return false;
-  }
-  return (
-    rankText(row.rank) !== "Admin" &&
-    matchesEmployeeSearch(row, filters.normalizedQuery)
-  );
-}
-
-function leaderboardEmployeeBaseQuery(
+async function paginateLeaderboardIndex(
   ctx: QueryCtx,
-  input: LeaderboardEmployeeFilters,
-) {
-  const divisions = normalizeFilterArray(input.division);
-  const normalizedQuery = input.query?.trim().toLowerCase() ?? "";
-  const matches = (row: EmployeeListRow) =>
-    matchesLeaderboardEmployeeFilters(row, {
-      divisions,
-      normalizedQuery,
-    });
+  args: { division?: string; startIndex: number; limit: number },
+): Promise<{ slice: Doc<"leaderboard">[]; hasNext: boolean }> {
+  const need = args.startIndex + args.limit + 1;
+  const division = args.division;
+  const window =
+    division == null
+      ? await ctx.db.query("leaderboard").withIndex("by_sortKey").take(need)
+      : await ctx.db
+          .query("leaderboard")
+          .withIndex("by_division_sortKey", (q) => q.eq("division", division))
+          .take(need);
 
-  if (divisions.length === 1) {
-    return ctx.orm.query.employee
-      .select()
-      .withIndex("by_division_employeeId", (q) =>
-        q.eq("division", divisions[0]!),
-      )
-      .orderBy({ employeeId: "asc" })
-      .filter(matches)
-      .map((row) => row);
-  }
-
-  return ctx.orm.query.employee
-    .select()
-    .withIndex("by_employeeId")
-    .orderBy({ employeeId: "asc" })
-    .filter(matches)
-    .map((row) => row);
+  return {
+    slice: window.slice(args.startIndex, args.startIndex + args.limit),
+    hasNext: window.length > args.startIndex + args.limit,
+  };
 }
 
-async function collectFilteredEmployees(
+async function paginateMergedDivisions(
   ctx: QueryCtx,
-  filters: LeaderboardEmployeeFilters,
-): Promise<
-  Array<{
-    _id: Id<"employee">;
-    employeeCode: string;
-    employeeName: LocalizedString | string;
-    department: LocalizedString | string | null;
-  }>
-> {
-  const baseQuery = leaderboardEmployeeBaseQuery(ctx, filters);
-  const out: Array<{
-    _id: Id<"employee">;
-    employeeCode: string;
-    employeeName: LocalizedString | string;
-    department: LocalizedString | string | null;
-  }> = [];
+  divisions: string[],
+  startIndex: number,
+  limit: number,
+): Promise<{ slice: Doc<"leaderboard">[]; hasNext: boolean }> {
+  const need = startIndex + limit + 1;
+  const pages = await Promise.all(
+    divisions.map((division) =>
+      ctx.db
+        .query("leaderboard")
+        .withIndex("by_division_sortKey", (q) => q.eq("division", division))
+        .take(need),
+    ),
+  );
+  const merged = pages
+    .flat()
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 
+  return {
+    slice: merged.slice(startIndex, startIndex + limit),
+    hasNext: merged.length > startIndex + limit,
+  };
+}
+
+async function collectLeaderboardRange(
+  ctx: QueryCtx,
+  division?: string,
+): Promise<Doc<"leaderboard">[]> {
+  const out: Doc<"leaderboard">[] = [];
   let cursor: string | null = null;
 
   while (true) {
-    const pageResult = await baseQuery.paginate({
-      cursor,
-      limit: 100,
-    });
-
-    for (const row of pageResult.page) {
-      out.push({
-        _id: row.id as Id<"employee">,
-        employeeCode: row.employeeId,
-        employeeName: coerceLocalized(row.name),
-        department: row.department
-          ? coerceLocalized(row.department)
-          : null,
-      });
+    let pageResult: PaginationResult<Doc<"leaderboard">>;
+    if (division == null) {
+      pageResult = await ctx.db
+        .query("leaderboard")
+        .withIndex("by_sortKey")
+        .paginate({ cursor, numItems: 100 });
+    } else {
+      pageResult = await ctx.db
+        .query("leaderboard")
+        .withIndex("by_division_sortKey", (q) => q.eq("division", division))
+        .paginate({ cursor, numItems: 100 });
     }
+
+    out.push(...pageResult.page);
 
     if (pageResult.isDone || pageResult.continueCursor == null) {
       break;
@@ -159,66 +101,134 @@ async function collectFilteredEmployees(
   return out;
 }
 
-type RankedRow = {
+async function collectSortedEntries(
+  ctx: QueryCtx,
+  divisions: string[],
+): Promise<Doc<"leaderboard">[]> {
+  if (divisions.length === 0) {
+    return await collectLeaderboardRange(ctx);
+  }
+  if (divisions.length === 1) {
+    return await collectLeaderboardRange(ctx, divisions[0]);
+  }
+
+  const groups = await Promise.all(
+    divisions.map((division) => collectLeaderboardRange(ctx, division)),
+  );
+  return groups.flat().sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+}
+
+function toHydrateRows(slice: Doc<"leaderboard">[], startIndex: number) {
+  return slice.map((row, index) => ({
+    employeeId: row.employeeId,
+    employeeCode: row.employeeCode,
+    points: row.points,
+    receivingBudget: row.receivingBudget,
+    specialBudget: row.specialBudget,
+    rank: startIndex + index + 1,
+  }));
+}
+
+function leaderboardPageResult(
+  rows: LeaderboardPageRow[],
+  hasNextPage: boolean,
+  endIndex: number,
+) {
+  const continueCursor = hasNextPage ? String(endIndex) : null;
+  return {
+    page: rows,
+    continueCursor,
+    hasNextPage,
+    isDone: !hasNextPage,
+  };
+}
+
+function matchesDigestSearch(
+  row: Doc<"leaderboard">,
+  normalizedQuery: string,
+): boolean {
+  if (!normalizedQuery) return true;
+  return row.searchText.includes(normalizedQuery);
+}
+
+type LeaderboardPageRow = {
+  rank: number;
   employeeId: Id<"employee">;
   employeeCode: string;
-  employeeName: LocalizedString | string;
-  department: LocalizedString | string | null;
+  employeeName: LocalizedString;
+  avatarImage: string | null;
+  department: LocalizedString | null;
   points: number;
   receivingBudget: number;
   specialBudget: number;
 };
 
-function parseOffsetCursor(raw: string | null | undefined): number {
-  if (raw == null || raw.trim() === "") return 0;
-  const n = Number.parseInt(raw, 10);
-  return Number.isFinite(n) && n >= 0 ? n : 0;
-}
-
-/** Rank by current wallet: receivingBudget + specialBudget (highest first). */
-async function buildRankedRows(
+async function hydratePage(
   ctx: QueryCtx,
-  filters: LeaderboardEmployeeFilters,
-): Promise<RankedRow[]> {
-  const [employees, wallets] = await Promise.all([
-    collectFilteredEmployees(ctx, filters),
-    // eslint-disable-next-line @convex-dev/no-query-collect -- join all wallets once into a Map (avoid N+1)
-    ctx.db.query("wallet").collect(),
-  ]);
-
-  const walletByEmployeeId = new Map(
-    wallets.map((wallet) => [String(wallet.employeeId), wallet]),
-  );
-
-  return employees
-    .map((employee) => {
-      const wallet = walletByEmployeeId.get(String(employee._id));
-      const receivingBudget = wallet?.receivingBudget ?? 0;
-      const specialBudget = wallet?.specialBudget ?? 0;
+  rows: Array<{
+    employeeId: Id<"employee">;
+    employeeCode: string;
+    points: number;
+    receivingBudget: number;
+    specialBudget: number;
+    rank: number;
+  }>,
+): Promise<LeaderboardPageRow[]> {
+  return await Promise.all(
+    rows.map(async (row) => {
+      const [employee, user] = await Promise.all([
+        ctx.db.get(row.employeeId),
+        ctx.db
+          .query("user")
+          .withIndex("by_employeeId", (q) => q.eq("employeeId", row.employeeId))
+          .first(),
+      ]);
 
       return {
-        employeeId: employee._id,
-        employeeCode: employee.employeeCode,
-        employeeName: employee.employeeName,
-        department: employee.department,
-        points: receivingBudget + specialBudget,
-        receivingBudget,
-        specialBudget,
+        rank: row.rank,
+        employeeId: row.employeeId,
+        employeeCode: row.employeeCode,
+        employeeName: coerceLocalized(employee?.name ?? row.employeeCode),
+        avatarImage: user?.image ?? null,
+        department: employee?.department
+          ? coerceLocalized(employee.department)
+          : null,
+        points: row.points,
+        receivingBudget: row.receivingBudget,
+        specialBudget: row.specialBudget,
       };
-    })
-    .sort(
-      (a, b) =>
-        b.points - a.points ||
-        a.employeeCode.localeCompare(b.employeeCode) ||
-        String(a.employeeId).localeCompare(String(b.employeeId)),
-    );
+    }),
+  );
 }
+
+export const backfill = privateMutation
+  .input(
+    z.object({
+      cursor: z.string().nullable(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const employees = await ctx.db.query("employee").paginate({
+      cursor: input.cursor ?? null,
+      numItems: BACKFILL_BATCH,
+    });
+
+    for (const employee of employees.page) {
+      await syncLeaderboardEntry(ctx, employee._id);
+    }
+
+    if (!employees.isDone) {
+      await ctx.scheduler.runAfter(0, internal.leaderboard.backfill, {
+        cursor: employees.continueCursor,
+      });
+    }
+
+    return null;
+  });
 
 export const getMany = authQuery
   .input(
     z.object({
-      /** Ignored — ranking uses current wallet balances. */
-      period: periodSchema,
       limit: z.number().min(1).max(100),
       cursor: z.string().nullish(),
       q: z.string().optional().nullable(),
@@ -226,100 +236,70 @@ export const getMany = authQuery
     }),
   )
   .query(async ({ ctx, input }) => {
-    const [globalRanked, filteredRanked] = await Promise.all([
-      buildRankedRows(ctx, {
-        query: null,
-        division: null,
-      }),
-      buildRankedRows(ctx, {
-        query: input.q,
-        division: input.division,
-      }),
-    ]);
-
-    const globalRankByEmployeeId = new Map(
-      globalRanked.map((row, index) => [String(row.employeeId), index + 1]),
-    );
-
     const startIndex = parseOffsetCursor(input.cursor ?? null);
     const endIndex = startIndex + input.limit;
-    const pageSlice = filteredRanked.slice(startIndex, endIndex);
+    const divisions = normalizeFilterArray(input.division);
+    const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
 
-    const avatarEntries = await Promise.all(
-      pageSlice.map(async (row) => {
-        const user = await ctx.db
-          .query("user")
-          .withIndex("by_employeeId", (q) =>
-            q.eq("employeeId", row.employeeId),
-          )
-          .first();
-        return [String(row.employeeId), user?.image ?? null] as const;
-      }),
+    if (!normalizedQuery) {
+      const page =
+        divisions.length === 0
+          ? await paginateLeaderboardIndex(ctx, {
+              startIndex,
+              limit: input.limit,
+            })
+          : divisions.length === 1 && divisions[0]
+            ? await paginateLeaderboardIndex(ctx, {
+                division: divisions[0],
+                startIndex,
+                limit: input.limit,
+              })
+            : await paginateMergedDivisions(
+                ctx,
+                divisions,
+                startIndex,
+                input.limit,
+              );
+
+      const rows = await hydratePage(
+        ctx,
+        toHydrateRows(page.slice, startIndex),
+      );
+      return leaderboardPageResult(rows, page.hasNext, endIndex);
+    }
+
+    const scoped = await collectSortedEntries(ctx, divisions);
+    const filtered = scoped.filter((row) =>
+      matchesDigestSearch(row, normalizedQuery),
     );
-    const avatarByEmployeeId = new Map(avatarEntries);
-
-    const rows = pageSlice.flatMap((row) => {
-      const rank = globalRankByEmployeeId.get(String(row.employeeId));
-      if (rank == null) return [];
-
-      return [
-        {
-          rank,
-          employeeId: row.employeeId,
-          employeeCode: row.employeeCode,
-          employeeName: row.employeeName,
-          avatarImage: avatarByEmployeeId.get(String(row.employeeId)) ?? null,
-          department: row.department,
-          points: row.points,
-          receivingBudget: row.receivingBudget,
-          specialBudget: row.specialBudget,
-        },
-      ];
-    });
-
-    const continueCursor =
-      endIndex >= filteredRanked.length ? null : String(endIndex);
-    const hasNextPage = continueCursor !== null;
-
-    return {
-      page: rows,
-      continueCursor,
-      hasNextPage,
-      isDone: !hasNextPage,
-    };
+    const pageSlice = filtered.slice(startIndex, endIndex);
+    const rows = await hydratePage(ctx, toHydrateRows(pageSlice, startIndex));
+    return leaderboardPageResult(rows, endIndex < filtered.length, endIndex);
   });
 
 export const getMyEntry = authQuery
-  .input(
-    z.object({
-      /** Ignored — ranking uses current wallet balances. */
-      period: periodSchema,
-    }),
-  )
+  .input(z.object({}))
   .query(async ({ ctx }) => {
-    const ranked = await buildRankedRows(ctx, {
-      query: null,
-    });
-    const myId = String(ctx.user.employee.id);
+    const myId = ctx.user.employee.id as Id<"employee">;
+    const mine = await ctx.db
+      .query("leaderboard")
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", myId))
+      .unique();
 
-    const index = ranked.findIndex((row) => String(row.employeeId) === myId);
-    if (index === -1) {
+    if (mine == null) {
       return null;
     }
 
-    const row = ranked.at(index);
-    if (row == null) {
-      return null;
-    }
     return {
-      rank: index + 1,
-      employeeId: row.employeeId,
-      employeeCode: row.employeeCode,
-      employeeName: row.employeeName,
+      employeeId: mine.employeeId,
+      employeeCode: mine.employeeCode,
+      employeeName: coerceLocalized(ctx.user.employee.name),
       avatarImage: ctx.user.image ?? null,
-      department: row.department,
-      points: row.points,
-      receivingBudget: row.receivingBudget,
-      specialBudget: row.specialBudget,
+      department: ctx.user.employee.department
+        ? coerceLocalized(ctx.user.employee.department)
+        : null,
+      points: mine.points,
+      receivingBudget: mine.receivingBudget,
+      specialBudget: mine.specialBudget,
     };
   });
