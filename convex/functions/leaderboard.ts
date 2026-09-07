@@ -11,6 +11,9 @@ const SEARCH_TAKE = 1024;
 
 const BACKFILL_BATCH = 50;
 
+/** Cap for walking the global sort index when resolving true ranks after a filter. */
+const RANK_SCAN_CAP = 4096;
+
 function normalizeFilterArray(value: string[] | null | undefined): string[] {
   if (value == null || value.length === 0) return [];
   return [
@@ -103,14 +106,65 @@ async function searchLeaderboardEntries(
   return merged.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 }
 
-function toHydrateRows(slice: Doc<"leaderboard">[], startIndex: number) {
-  return slice.map((row, index) => ({
+function sequentialRanks(
+  slice: Doc<"leaderboard">[],
+  startIndex: number,
+): Map<string, number> {
+  return new Map(slice.map((row, index) => [row._id, startIndex + index + 1]));
+}
+
+/**
+ * Global board rank (1 = first by sortKey), independent of search/division
+ * filters. Reads from the start of `by_sortKey` through the worst row on this
+ * page so filtered results keep their real position instead of 1..N.
+ */
+async function globalRanksForSlice(
+  ctx: QueryCtx,
+  slice: Doc<"leaderboard">[],
+): Promise<Map<string, number>> {
+  const ranks = new Map<string, number>();
+  const first = slice[0];
+  if (first == null) {
+    return ranks;
+  }
+
+  const needed = new Set(slice.map((row) => row._id));
+  const worstSortKey = slice.reduce(
+    (worst, row) => (row.sortKey > worst ? row.sortKey : worst),
+    first.sortKey,
+  );
+
+  const window = await ctx.db
+    .query("leaderboard")
+    .withIndex("by_sortKey", (q) => q.lte("sortKey", worstSortKey))
+    .take(RANK_SCAN_CAP);
+
+  window.forEach((row, index) => {
+    if (needed.has(row._id)) {
+      ranks.set(row._id, index + 1);
+    }
+  });
+
+  for (const row of slice) {
+    if (!ranks.has(row._id)) {
+      ranks.set(row._id, RANK_SCAN_CAP);
+    }
+  }
+
+  return ranks;
+}
+
+function toHydrateRows(
+  slice: Doc<"leaderboard">[],
+  ranks: ReadonlyMap<string, number>,
+) {
+  return slice.map((row) => ({
     employeeId: row.employeeId,
     employeeCode: row.employeeCode,
     points: row.points,
     receivingBudget: row.receivingBudget,
     specialBudget: row.specialBudget,
-    rank: startIndex + index + 1,
+    rank: ranks.get(row._id) ?? 0,
   }));
 }
 
@@ -238,10 +292,11 @@ export const getMany = authQuery
                 input.limit,
               );
 
-      const rows = await hydratePage(
-        ctx,
-        toHydrateRows(page.slice, startIndex),
-      );
+      const ranks =
+        divisions.length === 0
+          ? sequentialRanks(page.slice, startIndex)
+          : await globalRanksForSlice(ctx, page.slice);
+      const rows = await hydratePage(ctx, toHydrateRows(page.slice, ranks));
       return leaderboardPageResult(rows, page.hasNext, endIndex);
     }
 
@@ -251,7 +306,8 @@ export const getMany = authQuery
       divisions,
     );
     const pageSlice = scoped.slice(startIndex, endIndex);
-    const rows = await hydratePage(ctx, toHydrateRows(pageSlice, startIndex));
+    const ranks = await globalRanksForSlice(ctx, pageSlice);
+    const rows = await hydratePage(ctx, toHydrateRows(pageSlice, ranks));
     return leaderboardPageResult(rows, endIndex < scoped.length, endIndex);
   });
 
