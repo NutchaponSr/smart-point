@@ -683,7 +683,12 @@ export type DataModel = {
       by_employeeId: ["employeeId", "_creationTime"];
       by_sortKey: ["sortKey", "_creationTime"];
     };
-    searchIndexes: {};
+    searchIndexes: {
+      search_text: {
+        searchField: "searchText";
+        filterFields: "division";
+      };
+    };
     vectorIndexes: {};
   };
   like: {

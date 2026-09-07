@@ -557,6 +557,7 @@ export const leaderboard = convexTable(
     uniqueIndex("by_employeeId").on(t.employeeId),
     index("by_sortKey").on(t.sortKey),
     index("by_division_sortKey").on(t.division, t.sortKey),
+    searchIndex("search_text").on(t.searchText).filter(t.division),
   ],
 );
 

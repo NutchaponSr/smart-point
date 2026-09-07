@@ -14,6 +14,7 @@ interface Props {
   children: React.ReactNode;
   onImport?: (file: File) => Promise<void>;
   onExport?: () => Promise<void>;
+  extraExports?: Array<{ label: string; onSelect: () => void }>;
   filter?: React.ReactNode;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
@@ -26,6 +27,7 @@ export const Main = ({
   children,
   onImport,
   onExport,
+  extraExports,
   filter,
   searchValue,
   onSearchChange,
@@ -47,10 +49,11 @@ export const Main = ({
               />
             )}
             {filter}
-            {(onImport || onExport) && (
+            {(onImport || onExport || (extraExports && extraExports.length > 0)) && (
               <ExcelDropdown
                 onImport={onImport}
                 onExport={onExport}
+                extraExports={extraExports}
               />
             )}
             {newLink && (

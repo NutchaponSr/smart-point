@@ -59,7 +59,8 @@ export const EmployeeAnalyticView = () => {
     }),
   );
 
-  const { onImport, onExport, errors, clearErrors } = useEmployeeExcel({
+  const { onImport, onExport, onExportFirstLogin, errors, clearErrors } =
+    useEmployeeExcel({
     searchQuery: debouncedQuery,
     division: filters.division,
     department: filters.department,
@@ -76,6 +77,14 @@ export const EmployeeAnalyticView = () => {
         title="พนักงาน"
         onImport={onImport}
         onExport={onExport}
+        extraExports={[
+          {
+            label: "ดาวน์โหลดขวัญถุงแรกเข้า",
+            onSelect: () => {
+              void onExportFirstLogin();
+            },
+          },
+        ]}
         searchValue={filters.q}
         onSearchChange={(q) => setFilters({ ...filters, q })}
         newLink="/meta/employees/new"

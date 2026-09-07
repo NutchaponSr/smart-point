@@ -12,11 +12,13 @@ import { Button } from "@/components/ui/button";
 interface Props {
   onImport?: (file: File) => Promise<void>;
   onExport?: () => void;
+  extraExports?: Array<{ label: string; onSelect: () => void }>;
 }
 
 export const ExcelDropdown = ({
   onImport,
   onExport,
+  extraExports,
 }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +61,11 @@ export const ExcelDropdown = ({
             ดาวน์โหลด Excel
           </DropdownMenuItem>
         )}
+        {extraExports?.map((item) => (
+          <DropdownMenuItem key={item.label} onSelect={item.onSelect}>
+            {item.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

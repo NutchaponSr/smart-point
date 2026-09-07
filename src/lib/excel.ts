@@ -147,6 +147,46 @@ export function exportToExcel<T extends ExcelRow>(
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 }
 
+function applyExportHeaders<T extends ExcelRow>(
+  data: T[],
+  headers?: Record<string, string>,
+): ExcelRow[] {
+  if (!headers) return data;
+  return data.map((row) => {
+    const transformedRow: ExcelRow = {};
+    for (const [key, value] of Object.entries(row)) {
+      transformedRow[headers[key] ?? key] = value;
+    }
+    return transformedRow;
+  });
+}
+
+/** CSV UTF-8 with BOM — Excel on Windows opens Thai correctly when BOM is present */
+export function exportToCsvUtf8<T extends ExcelRow>(
+  data: T[],
+  options: ExportOptions = {},
+): void {
+  const { filename = "export", headers } = options;
+  const exportData = applyExportHeaders(data, headers);
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const body = new TextEncoder().encode(csv);
+  const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+  const bytes = new Uint8Array(bom.length + body.length);
+  bytes.set(bom, 0);
+  bytes.set(body, bom.length);
+
+  const blob = new Blob([bytes], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename.endsWith(".csv") ? filename : `${filename}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function exportToExcelBuffer<T extends ExcelRow>(
   data: T[],
   options: ExportOptions = {}

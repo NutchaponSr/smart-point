@@ -122,7 +122,9 @@ export const api = {
   wallet: {
     dailyBonusHistory: createApiLeaf<"query", typeof import("../functions/wallet").dailyBonusHistory>(convexApi["wallet"]["dailyBonusHistory"], { auth: "required", type: "query" }),
     dailyLogin: createApiLeaf<"mutation", typeof import("../functions/wallet").dailyLogin>(convexApi["wallet"]["dailyLogin"], { auth: "required", type: "mutation" }),
+    exportFirstLogin: createApiLeaf<"mutation", typeof import("../functions/wallet").exportFirstLogin>(convexApi["wallet"]["exportFirstLogin"], { auth: "required", type: "mutation" }),
     getOne: createApiLeaf<"query", typeof import("../functions/wallet").getOne>(convexApi["wallet"]["getOne"], { auth: "required", type: "query" }),
+    listFirstLogin: createApiLeaf<"query", typeof import("../functions/wallet").listFirstLogin>(convexApi["wallet"]["listFirstLogin"], { auth: "required", type: "query" }),
   },
   _http: {
   },

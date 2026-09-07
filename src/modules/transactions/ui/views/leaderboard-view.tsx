@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-
-import LeaderboardIcon from "../../../../../public/leaderboard.svg";
-
-import { LeaderboardScreen } from "@/modules/transactions/ui/screens/leaderboard-screen";
+import { Suspense } from "react";
 import { LeaderboardFilters } from "@/modules/transactions/ui/components/leaderboard-filters";
+
+import {
+  LeaderboardScreen,
+  LeaderboardScreenFallback,
+} from "@/modules/transactions/ui/screens/leaderboard-screen";
+import LeaderboardIcon from "../../../../../public/leaderboard.svg";
 
 export const LeaderboardView = () => {
   const t = useTranslations("leaderboard");
@@ -32,7 +35,9 @@ export const LeaderboardView = () => {
               <p className="text-sm text-muted-foreground sm:text-base"></p>
             </header>
 
-            <LeaderboardScreen />
+            <Suspense fallback={<LeaderboardScreenFallback />}>
+              <LeaderboardScreen />
+            </Suspense>
           </div>
         </div>
       </div>

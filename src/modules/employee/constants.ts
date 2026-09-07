@@ -34,6 +34,21 @@ export const employeeHeaders: Record<string, string> = {
   citizenId: "Citizen Id",
 };
 
+export const firstLoginGiftHeaders: Record<string, string> = {
+  employeeCode: "รหัสพนักงาน",
+  nameTh: "ชื่อ (TH)",
+  nameEn: "ชื่อ (EN)",
+  username: "Username",
+  email: "อีเมล",
+  division: "หน่วยงาน",
+  departmentTh: "แผนก",
+  positionTh: "ตำแหน่ง",
+  rank: "ระดับ",
+  points: "แต้ม",
+  note: "รายการ",
+  awardedAtText: "เวลาที่ได้รับ (ICT)",
+};
+
 export const departments = [
   {
     slug: "hr",

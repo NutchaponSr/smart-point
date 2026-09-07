@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { isLocalizedString } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
-import { exportToExcel, importExcelWithValidation } from "@/lib/excel";
+import { exportToCsvUtf8, exportToExcel, importExcelWithValidation } from "@/lib/excel";
 
 import type { ValidationError } from "@/types/excel";
 
@@ -14,6 +14,7 @@ import {
   BULK_IMPORT_CHUNK_SIZE,
   employeeHeaderMapping,
   employeeHeaders,
+  firstLoginGiftHeaders,
 } from "@/modules/employee/constants";
 import {
   employeeExportSchema,
@@ -62,6 +63,9 @@ export function useEmployeeExcel({
 
   const bulkImport = useMutation(crpc.employee.bulkImport.mutationOptions());
   const exportMutation = useMutation(crpc.employee.exportAll.mutationOptions());
+  const exportFirstLoginMutation = useMutation(
+    crpc.wallet.exportFirstLogin.mutationOptions(),
+  );
 
   const onImport = async (file: File) => {
     setState({ status: "loading", operation: "import" });
@@ -215,6 +219,54 @@ export function useEmployeeExcel({
     }
   };
 
+  const onExportFirstLogin = async () => {
+    setState({ status: "loading", operation: "export" });
+
+    try {
+      const data = await exportFirstLoginMutation.mutateAsync({});
+      exportToCsvUtf8(
+        data.map((row) => ({
+          employeeCode: row.employeeCode,
+          nameTh: row.nameTh,
+          nameEn: row.nameEn,
+          username: row.username,
+          email: row.email.toLowerCase().endsWith("@example.somboon.co.th")
+            ? ""
+            : row.email,
+          division: row.division,
+          departmentTh: row.departmentTh,
+          positionTh: row.positionTh,
+          rank: row.rank,
+          points: row.points,
+          note: row.note,
+          awardedAtText: new Date(row.awardedAt).toLocaleString("sv-SE", {
+            timeZone: "Asia/Bangkok",
+          }),
+        })),
+        {
+          filename: "first-login-gift",
+          headers: firstLoginGiftHeaders,
+        },
+      );
+      setState({ status: "success", operation: "export" });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
+      setState({
+        status: "error",
+        errors: [
+          {
+            row: 0,
+            field: "export",
+            message,
+            value: null,
+          },
+        ],
+      });
+      toast.error(message);
+    }
+  };
+
   const clearErrors = () => setState({ status: "idle" });
 
   return {
@@ -223,6 +275,7 @@ export function useEmployeeExcel({
     errors: state.status === "error" ? state.errors : [],
     onImport,
     onExport,
+    onExportFirstLogin,
     clearErrors,
   };
 }

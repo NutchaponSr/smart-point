@@ -1,11 +1,13 @@
 import z from "zod/v4";
-import type { PaginationResult } from "convex/server";
 import { authQuery, privateMutation } from "../lib/crpc";
 import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
 import { coerceLocalized, type LocalizedString } from "../lib/localized";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
+
+/** Convex search returns at most 1024 hits; keep one bounded take per query. */
+const SEARCH_TAKE = 1024;
 
 const BACKFILL_BATCH = 50;
 
@@ -69,53 +71,36 @@ async function paginateMergedDivisions(
   };
 }
 
-async function collectLeaderboardRange(
+async function searchLeaderboardEntries(
   ctx: QueryCtx,
-  division?: string,
-): Promise<Doc<"leaderboard">[]> {
-  const out: Doc<"leaderboard">[] = [];
-  let cursor: string | null = null;
-
-  while (true) {
-    let pageResult: PaginationResult<Doc<"leaderboard">>;
-    if (division == null) {
-      pageResult = await ctx.db
-        .query("leaderboard")
-        .withIndex("by_sortKey")
-        .paginate({ cursor, numItems: 100 });
-    } else {
-      pageResult = await ctx.db
-        .query("leaderboard")
-        .withIndex("by_division_sortKey", (q) => q.eq("division", division))
-        .paginate({ cursor, numItems: 100 });
-    }
-
-    out.push(...pageResult.page);
-
-    if (pageResult.isDone || pageResult.continueCursor == null) {
-      break;
-    }
-    cursor = pageResult.continueCursor;
-  }
-
-  return out;
-}
-
-async function collectSortedEntries(
-  ctx: QueryCtx,
+  query: string,
   divisions: string[],
 ): Promise<Doc<"leaderboard">[]> {
+  const runSearch = async (division?: string) =>
+    await ctx.db
+      .query("leaderboard")
+      .withSearchIndex("search_text", (q) => {
+        const searched = q.search("searchText", query);
+        return division == null ? searched : searched.eq("division", division);
+      })
+      .take(SEARCH_TAKE);
+
   if (divisions.length === 0) {
-    return await collectLeaderboardRange(ctx);
-  }
-  if (divisions.length === 1) {
-    return await collectLeaderboardRange(ctx, divisions[0]);
+    const hits = await runSearch();
+    return hits.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   }
 
   const groups = await Promise.all(
-    divisions.map((division) => collectLeaderboardRange(ctx, division)),
+    divisions.map((division) => runSearch(division)),
   );
-  return groups.flat().sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  const seen = new Set<string>();
+  const merged: Doc<"leaderboard">[] = [];
+  for (const row of groups.flat()) {
+    if (seen.has(row._id)) continue;
+    seen.add(row._id);
+    merged.push(row);
+  }
+  return merged.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 }
 
 function toHydrateRows(slice: Doc<"leaderboard">[], startIndex: number) {
@@ -141,14 +126,6 @@ function leaderboardPageResult(
     hasNextPage,
     isDone: !hasNextPage,
   };
-}
-
-function matchesDigestSearch(
-  row: Doc<"leaderboard">,
-  normalizedQuery: string,
-): boolean {
-  if (!normalizedQuery) return true;
-  return row.searchText.includes(normalizedQuery);
 }
 
 type LeaderboardPageRow = {
@@ -268,13 +245,14 @@ export const getMany = authQuery
       return leaderboardPageResult(rows, page.hasNext, endIndex);
     }
 
-    const scoped = await collectSortedEntries(ctx, divisions);
-    const filtered = scoped.filter((row) =>
-      matchesDigestSearch(row, normalizedQuery),
+    const scoped = await searchLeaderboardEntries(
+      ctx,
+      normalizedQuery,
+      divisions,
     );
-    const pageSlice = filtered.slice(startIndex, endIndex);
+    const pageSlice = scoped.slice(startIndex, endIndex);
     const rows = await hydratePage(ctx, toHydrateRows(pageSlice, startIndex));
-    return leaderboardPageResult(rows, endIndex < filtered.length, endIndex);
+    return leaderboardPageResult(rows, endIndex < scoped.length, endIndex);
   });
 
 export const getMyEntry = authQuery

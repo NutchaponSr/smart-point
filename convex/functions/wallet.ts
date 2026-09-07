@@ -12,7 +12,9 @@ import {
   shouldAwardLoginStreak,
   shouldAwardPraiseStreak,
 } from "../lib/bonuses";
+import { requireAdmin } from "../lib/auth-helper";
 import { authMutation, authQuery, privateMutation } from "../lib/crpc";
+import { coerceLocalized } from "../lib/localized";
 import { syncLeaderboardEntry } from "../lib/leaderboard-entry";
 import { canSendUnlimitedPoints } from "../lib/point-send-privileges";
 import { awardSpecialPoints } from "../lib/points";
@@ -24,7 +26,7 @@ import {
 } from "../lib/program-rules";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 const BATCH_SIZE = 100;
 
@@ -446,4 +448,102 @@ export const dailyBonusHistory = authQuery.query(async ({ ctx }) => {
     note: entry.note,
     createdAt: entry.createdAt ?? entry._creationTime,
   }));
+});
+
+const FIRST_LOGIN_EXPORT_LIMIT = 2000;
+const PLACEHOLDER_EMAIL_SUFFIX = "@example.somboon.co.th";
+
+function publicEmail(
+  ...candidates: Array<string | undefined | null>
+): string {
+  for (const candidate of candidates) {
+    const value = candidate?.trim() ?? "";
+    if (!value) continue;
+    if (value.toLowerCase().endsWith(PLACEHOLDER_EMAIL_SUFFIX)) continue;
+    return value;
+  }
+  return "";
+}
+
+export type FirstLoginAwardRow = {
+  awardedAt: number;
+  points: number;
+  note: string;
+  employeeCode: string;
+  nameTh: string;
+  nameEn: string;
+  email: string;
+  departmentTh: string;
+  departmentEn: string;
+  positionTh: string;
+  positionEn: string;
+  rank: string;
+  division: string;
+  username: string;
+  hasUserAccount: boolean;
+};
+
+async function loadFirstLoginAwards(
+  ctx: Pick<QueryCtx | MutationCtx, "db">,
+): Promise<FirstLoginAwardRow[]> {
+  const entries = await ctx.db
+    .query("pointLedger")
+    .withIndex("by_sourceType_sourceId", (q) =>
+      q.eq("sourceType", "first_login"),
+    )
+    .take(FIRST_LOGIN_EXPORT_LIMIT + 1);
+
+  if (entries.length > FIRST_LOGIN_EXPORT_LIMIT) {
+    throw new CRPCError({
+      code: "BAD_REQUEST",
+      message: `พบข้อมูลมากเกิน ${FIRST_LOGIN_EXPORT_LIMIT} รายการ`,
+    });
+  }
+
+  const rows: FirstLoginAwardRow[] = [];
+  for (const entry of entries) {
+    const employee = await ctx.db.get(entry.employeeId);
+    const user = await ctx.db
+      .query("user")
+      .withIndex("by_employeeId", (q) => q.eq("employeeId", entry.employeeId))
+      .first();
+    const name = coerceLocalized(employee?.name);
+    const department = coerceLocalized(employee?.department);
+    const position = coerceLocalized(employee?.position);
+    const rank = coerceLocalized(employee?.rank);
+
+    rows.push({
+      awardedAt: entry.createdAt ?? entry._creationTime,
+      points: entry.delta,
+      note: entry.note ?? "",
+      employeeCode: employee?.employeeId ?? "",
+      nameTh: name.th,
+      nameEn: name.en,
+      email: publicEmail(employee?.email, user?.email),
+      departmentTh: department.th,
+      departmentEn: department.en,
+      positionTh: position.th,
+      positionEn: position.en,
+      rank: rank.th,
+      division: employee?.division ?? "",
+      username: user?.username ?? "",
+      hasUserAccount: Boolean(user),
+    });
+  }
+
+  rows.sort((a, b) => a.awardedAt - b.awardedAt);
+  return rows;
+}
+
+/** รายชื่อคนที่ได้รับขวัญถุงแรกเข้า พร้อมข้อมูลพนักงาน — แอดมินเท่านั้น */
+export const listFirstLogin = authQuery.query(async ({ ctx }) => {
+  requireAdmin(ctx.user);
+  const rows = await loadFirstLoginAwards(ctx);
+  return { count: rows.length, rows };
+});
+
+/** ส่งออกรายชื่อขวัญถุงแรกเข้า — แอดมินเท่านั้น */
+export const exportFirstLogin = authMutation.mutation(async ({ ctx }) => {
+  requireAdmin(ctx.user);
+  return await loadFirstLoginAwards(ctx);
 });

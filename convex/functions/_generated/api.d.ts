@@ -740,7 +740,9 @@ export declare const api: {
   wallet: {
     dailyBonusHistory: FunctionReference<"query", "public", {}, any>;
     dailyLogin: FunctionReference<"mutation", "public", {}, any>;
+    exportFirstLogin: FunctionReference<"mutation", "public", {}, any>;
     getOne: FunctionReference<"query", "public", {}, any>;
+    listFirstLogin: FunctionReference<"query", "public", {}, any>;
   };
 };
 
