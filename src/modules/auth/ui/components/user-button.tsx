@@ -1,27 +1,24 @@
 "use client";
 
-import { useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
+import { useMemo } from "react";
 import { BsDoorOpen } from "react-icons/bs";
-
-import { authClient } from "@/lib/convex/auth-client";
-import { useCRPC } from "@/lib/convex/crpc";
-import { pickLocalized } from "@/lib/i18n/localized";
-import { getAvatarInitialFromName } from "@/lib/name-initial";
-
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRouter } from "@/i18n/navigation";
+import { authClient } from "@/lib/convex/auth-client";
+import { useCRPC } from "@/lib/convex/crpc";
+import { pickLocalized } from "@/lib/i18n/localized";
+import { getAvatarInitialFromName } from "@/lib/name-initial";
 import { UserAvatar } from "./user-avatar";
-import { Button } from "@/components/ui/button";
 
-const KEEP_FULL_NAME =
-  /^(admin|แอดมิน)\s*[1-3]$/i;
+const KEEP_FULL_NAME = /^(admin|แอดมิน)\s*[1-3]$/i;
 
 function shortDisplayName(fullName: string): string {
   const trimmed = fullName.trim();
@@ -54,11 +51,19 @@ export const UserButton = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <div role="button" className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-pink p-4 text-2xl lg:hover:text-black no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20">
+        <div
+          role="button"
+          className="flex w-full items-center justify-center h-full hover:bg-white border-black bg-pink p-4 text-2xl lg:hover:text-black no-underline transition-colors duration-200 hover:text-black max-w-20 min-w-20 cursor-pointer max-h-20 min-h-20"
+        >
           {fallback}
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" alignOffset={4} side="bottom" sideOffset={6}>
+      <DropdownMenuContent
+        align="start"
+        alignOffset={4}
+        side="bottom"
+        sideOffset={6}
+      >
         <DropdownMenuItem
           onClick={() => {
             authClient.signOut({
@@ -110,7 +115,12 @@ export const UserButtonDropdown = () => {
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" alignOffset={4} side="bottom" sideOffset={6}>
+      <DropdownMenuContent
+        align="start"
+        alignOffset={4}
+        side="bottom"
+        sideOffset={6}
+      >
         <DropdownMenuItem
           className="h-8"
           onClick={() => {

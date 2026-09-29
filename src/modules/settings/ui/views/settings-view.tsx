@@ -1,41 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { useLocale } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
-
-import TH from "../../../../../public/TH.svg";
-import EN from "../../../../../public/US.svg";
-
-import { routing } from "@/i18n/routing";
-import { authClient } from "@/lib/convex/auth-client";
-
-import { cn } from "@/lib/utils";
-
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { usePathname, useRouter } from "@/i18n/navigation";
+import type { routing } from "@/i18n/routing";
+import { authClient } from "@/lib/convex/auth-client";
+import { cn } from "@/lib/utils";
+import TH from "../../../../../public/TH.svg";
+import EN from "../../../../../public/US.svg";
 import { AvatarProfileHeader } from "../components/avatar-profile-header";
 
 const sections = ["account", "language"] as const;
 type Section = (typeof sections)[number];
-
-const LOCALE_OPTIONS = [
-  {
-    value: "th" as const,
-    label: "ไทย",
-    description: "Thai",
-    image: TH,
-  },
-  {
-    value: "en" as const,
-    label: "English",
-    description: "อังกฤษ",
-    image: EN,
-  },
-];
 
 function SettingsCard({
   title,
@@ -80,6 +61,7 @@ function SidebarLink({
 }
 
 export const SettingsView = () => {
+  const t = useTranslations("settings");
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale() as (typeof routing.locales)[number];
@@ -89,6 +71,21 @@ export const SettingsView = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const localeOptions = [
+    {
+      value: "th" as const,
+      label: t("locale-th"),
+      description: t("locale-th-desc"),
+      image: TH,
+    },
+    {
+      value: "en" as const,
+      label: t("locale-en"),
+      description: t("locale-en-desc"),
+      image: EN,
+    },
+  ];
 
   const onLocaleChange = (newLocale: (typeof routing.locales)[number]) => {
     if (newLocale === locale) return;
@@ -107,10 +104,10 @@ export const SettingsView = () => {
         onSuccess: () => {
           setCurrentPassword("");
           setNewPassword("");
-          toast.success("เปลี่ยนรหัสผ่านสำเร็จ");
+          toast.success(t("password-success"));
         },
         onError: () => {
-          toast.error("เปลี่ยนรหัสผ่านไม่สำเร็จ");
+          toast.error(t("password-error"));
         },
         onSettled: () => {
           setIsSubmitting(false);
@@ -141,7 +138,7 @@ export const SettingsView = () => {
             <div className="grid gap-8">
               <header>
                 <h1 className="text-2xl font-bold text-[#3c3c3c] sm:text-3xl">
-                  บัญชี
+                  {t("account")}
                 </h1>
               </header>
 
@@ -149,7 +146,7 @@ export const SettingsView = () => {
 
               <section className="grid gap-1">
                 <h2 className="border-b-2 border-[#e5e5e5] pb-3 text-xl font-bold text-[#3c3c3c]">
-                  เปลี่ยนรหัสผ่าน
+                  {t("change-password")}
                 </h2>
 
                 <form onSubmit={onSubmit} className="grid gap-6 pt-4">
@@ -158,7 +155,7 @@ export const SettingsView = () => {
                       htmlFor="current-password"
                       className="text-base font-bold text-[#3c3c3c]"
                     >
-                      รหัสผ่านปัจจุบัน
+                      {t("current-password")}
                     </Label>
                     <Input
                       required
@@ -176,7 +173,7 @@ export const SettingsView = () => {
                       htmlFor="new-password"
                       className="text-base font-bold text-[#3c3c3c]"
                     >
-                      รหัสผ่านใหม่
+                      {t("new-password")}
                     </Label>
                     <Input
                       required
@@ -196,7 +193,7 @@ export const SettingsView = () => {
                     disabled={isSubmitting}
                     className="w-full sm:w-auto sm:justify-self-start"
                   >
-                    {isSubmitting ? "กำลังบันทึก..." : "บันทึกรหัสผ่าน"}
+                    {isSubmitting ? t("saving") : t("save-password")}
                   </Button>
                 </form>
               </section>
@@ -205,17 +202,17 @@ export const SettingsView = () => {
             <div className="grid gap-8">
               <header>
                 <h1 className="text-2xl font-bold text-[#3c3c3c] sm:text-3xl">
-                  ภาษา
+                  {t("language")}
                 </h1>
               </header>
 
               <section className="grid gap-1">
                 <h2 className="border-b-2 border-[#e5e5e5] pb-3 text-xl font-bold text-[#3c3c3c]">
-                  เลือกภาษาที่แสดงผล
+                  {t("language-heading")}
                 </h2>
 
                 <div className="grid gap-3 pt-4 sm:grid-cols-2">
-                  {LOCALE_OPTIONS.map((option) => {
+                  {localeOptions.map((option) => {
                     const selected = locale === option.value;
 
                     return (
@@ -260,27 +257,27 @@ export const SettingsView = () => {
         </div>
 
         <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-[272px] lg:shrink-0 lg:self-start">
-          <SettingsCard title="บัญชี">
+          <SettingsCard title={t("account")}>
             <SidebarLink
               active={section === "account"}
               onClick={() => setSection("account")}
             >
-              บัญชี
+              {t("account")}
             </SidebarLink>
             <SidebarLink
               active={section === "language"}
               onClick={() => setSection("language")}
             >
-              ภาษา
+              {t("language")}
             </SidebarLink>
           </SettingsCard>
 
-          <SettingsCard title="การสนับสนุน">
+          <SettingsCard title={t("support")}>
             <a
               href="mailto:support@smart-point.local"
               className="block px-4 py-3 text-base font-bold text-[#3c3c3c] transition-colors hover:bg-[#f7f7f7]"
             >
-              ศูนย์ช่วยเหลือ
+              {t("help-center")}
             </a>
           </SettingsCard>
 
@@ -292,7 +289,7 @@ export const SettingsView = () => {
             disabled={isSigningOut}
             onClick={onSignOut}
           >
-            {isSigningOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}
+            {isSigningOut ? t("logging-out") : t("logout")}
           </Button>
         </aside>
       </div>

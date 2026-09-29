@@ -220,6 +220,26 @@ export declare const api: {
       any
     >;
   };
+  dashboard: {
+    getCultureStats: FunctionReference<
+      "query",
+      "public",
+      { end: number; start: number },
+      any
+    >;
+    getKpis: FunctionReference<
+      "query",
+      "public",
+      { end: number; start: number },
+      any
+    >;
+    getOutcomeStats: FunctionReference<
+      "query",
+      "public",
+      { end: number; start: number },
+      any
+    >;
+  };
   donation: {
     donate: FunctionReference<"mutation", "public", { points: number }, any>;
     getTotals: FunctionReference<"query", "public", {}, any>;

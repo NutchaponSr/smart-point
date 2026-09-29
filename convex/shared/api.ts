@@ -42,6 +42,11 @@ export const api = {
     removeCartItem: createApiLeaf<"mutation", typeof import("../functions/cart").removeCartItem>(convexApi["cart"]["removeCartItem"], { auth: "required", type: "mutation" }),
     updateCartItemQuantity: createApiLeaf<"mutation", typeof import("../functions/cart").updateCartItemQuantity>(convexApi["cart"]["updateCartItemQuantity"], { auth: "required", type: "mutation" }),
   },
+  dashboard: {
+    getCultureStats: createApiLeaf<"query", typeof import("../functions/dashboard").getCultureStats>(convexApi["dashboard"]["getCultureStats"], { auth: "required", type: "query" }),
+    getKpis: createApiLeaf<"query", typeof import("../functions/dashboard").getKpis>(convexApi["dashboard"]["getKpis"], { auth: "required", type: "query" }),
+    getOutcomeStats: createApiLeaf<"query", typeof import("../functions/dashboard").getOutcomeStats>(convexApi["dashboard"]["getOutcomeStats"], { auth: "required", type: "query" }),
+  },
   donation: {
     donate: createApiLeaf<"mutation", typeof import("../functions/donation").donate>(convexApi["donation"]["donate"], { auth: "required", type: "mutation" }),
     getTotals: createApiLeaf<"query", typeof import("../functions/donation").getTotals>(convexApi["donation"]["getTotals"], { auth: "required", type: "query" }),

@@ -1,22 +1,30 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+
+import { Main } from "@/components/main";
 import { Navigations } from "@/components/navigations";
 
 import { links } from "@/modules/dashboard/constants";
+import { type DayRange, defaultRange } from "@/modules/dashboard/date-range";
+import { CultureSection } from "@/modules/dashboard/ui/components/culture-section";
+import { KpiSection } from "@/modules/dashboard/ui/components/kpi-section";
+import { PreorderSection } from "@/modules/dashboard/ui/components/preorder-section";
 
 export const DashboardView = () => {
+  const t = useTranslations("dashboard");
+  const [range, setRange] = useState<DayRange>(defaultRange);
+
   return (
-    <div>
-      <header className="flex flex-col gap-4 border-border p-4 md:py-6 md:px-8 border-b-0 sm:border-b-2 h-[142.5px]">
-        <div className="flex min-h-8 items-center justify-between gap-2">
-          <h1 className="line-clamp-2 text-2xl hidden! sm:block!">
-            แดชบอร์ด
-          </h1>
+    <Main title={t("title")} menu={<Navigations links={links} />}>
+      <section className="flex flex-col gap-6 p-4 md:p-8">
+        <KpiSection range={range} onRangeChange={setRange} />
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <CultureSection range={range} />
+          <PreorderSection range={range} />
         </div>
-        <div className="flex gap-3 overflow-x-auto">
-          <Navigations links={links} />
-        </div>
-      </header>
-    </div>
+      </section>
+    </Main>
   );
 };
