@@ -12,7 +12,7 @@ import {
 } from "react-icons/bs";
 import { useState } from "react";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ import { Pagination } from "@/components/pagniation";
 import {
   categories,
   buRestrictedCategories,
+  hasActivityEnded,
 } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
 import { useEventFilters } from "@/modules/events/stores/use-event-filters";
@@ -43,6 +44,7 @@ const categoryBadgeClassName: Record<Event["category"], string> = {
 
 export const AllEventsScreen = () => {
   const locale = useLocale();
+  const t = useTranslations("events.list");
   const crpc = useCRPC();
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
@@ -81,7 +83,7 @@ export const AllEventsScreen = () => {
         }}
       />
       <div className="flex items-center justify-between gap-4 mt-6 mb-3">
-        <h2 className="text-xl font-extrabold">กิจกรรมที่เข้าร่วมได้</h2>
+        <h2 className="text-xl font-extrabold">{t("title")}</h2>
         <Pagination
           canGoBack={canGoBack}
           canGoForward={canGoForward}
@@ -95,9 +97,9 @@ export const AllEventsScreen = () => {
 
       {events.page.length === 0 ? (
         <div className="grid place-items-center gap-2 rounded-md border-2 border-dashed border-border bg-background p-10 text-center">
-          <p className="text-lg font-bold">ไม่พบกิจกรรม</p>
+          <p className="text-lg font-bold">{t("empty-title")}</p>
           <p className="text-sm text-muted-foreground">
-            ลองเปลี่ยนคำค้นหาหรือตัวกรองดูอีกครั้ง
+            {t("empty-description")}
           </p>
         </div>
       ) : (
@@ -107,6 +109,11 @@ export const AllEventsScreen = () => {
               event.maxParticipants != null &&
               event.joinedCount >= event.maxParticipants;
             const joined = event.myStatus != null;
+            const ended = hasActivityEnded(
+              event.endDate == null
+                ? null
+                : new Date(event.endDate).getTime(),
+            );
 
             return (
               <li
@@ -125,10 +132,10 @@ export const AllEventsScreen = () => {
                         categoryBadgeClassName[event.category],
                       )}
                     >
-                      {categories[event.category].th}
+                      {pickLocalized(categories[event.category], locale)}
                     </span>
                     <span className="flex items-center gap-1 rounded-md px-2 py-1.5 text-[#cc348d] font-semibold">
-                      <img src={RubyIcon.src} alt="คะแนนพิเศษ" className="size-5 fill-current" />
+                      <img src={RubyIcon.src} alt={t("special-points")} className="size-5 fill-current" />
                       {event.point}
                     </span>
                   </div>
@@ -175,7 +182,7 @@ export const AllEventsScreen = () => {
                         <span>
                           {event.maxParticipants
                             ? `${event.joinedCount} / ${event.maxParticipants}`
-                            : `ไม่จำกัด`}
+                            : t("unlimited")}
                         </span>
                       </span>
                     </div>
@@ -206,7 +213,16 @@ export const AllEventsScreen = () => {
                       onClick={() => setSelectedEvent(event)}
                     >
                       <BsCheckCircleFill className="size-4" />
-                      เข้าร่วมแล้ว
+                      {t("joined")}
+                    </Button>
+                  ) : ended ? (
+                    <Button
+                      type="button"
+                      variant="locked"
+                      className="w-full tracking-wide"
+                      disabled
+                    >
+                      {t("ended")}
                     </Button>
                   ) : (
                     <Button
@@ -216,7 +232,7 @@ export const AllEventsScreen = () => {
                       disabled={isFull}
                       onClick={() => setSelectedEvent(event)}
                     >
-                      {isFull ? "เต็มแล้ว" : "เข้าร่วม"}
+                      {isFull ? t("full") : t("join")}
                     </Button>
                   )}
                 </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ENABLE_BU_RECOMMENDED } from "@/modules/events/constants";
@@ -10,8 +12,10 @@ import { AllEventsScreen } from "@/modules/events/ui/screens/all-events-screen";
 import { Currencies } from "@/modules/cart/ui/components/currency";
 
 export const MyEventView = () => {
+  const t = useTranslations("events");
+
   return (
-    <div className="flex flex-col gap-6 px-6">
+    <div className="flex flex-col gap-6 px-6 pb-10">
       <div className="flex flex-col gap-6 lg:flex-row-reverse lg:gap-12">
         <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:z-1 lg:w-92 lg:shrink-0 lg:self-start">
           <div className="mb-2 flex h-11 flex-row items-center justify-between">
@@ -26,13 +30,13 @@ export const MyEventView = () => {
               <div className="grid min-w-0 gap-1">
                 <h2 className="text-xl font-bold text-white sm:text-2xl">
                   {ENABLE_BU_RECOMMENDED
-                    ? "กิจกรรมสำหรับ BU / สังกัดของคุณ"
-                    : "กิจกรรมแนะนำ"}
+                    ? t("mine.recommended-bu-title")
+                    : t("mine.recommended-title")}
                 </h2>
                 <p className="text-sm text-white/90">
                   {ENABLE_BU_RECOMMENDED
-                    ? "แสดงเฉพาะกิจกรรมที่เปิดให้ BU หรือสังกัดของคุณเข้าร่วม"
-                    : "กิจกรรมที่คุณมีสิทธิ์เข้าร่วม"}
+                    ? t("mine.recommended-bu-description")
+                    : t("mine.recommended-description")}
                 </p>
               </div>
             </header>
@@ -47,13 +51,13 @@ export const MyEventView = () => {
                   value="all"
                   className="min-h-12 flex-none rounded-md border-2 border-transparent bg-transparent px-4 py-2 text-base font-bold text-primary after:hidden hover:bg-[#f7f7f7] hover:text-primary data-active:border-[#84d8ff] data-active:bg-[#ddf4ff] data-active:text-[#1cb0f6] hover:data-active:text-[#1cb0f6]"
                 >
-                  กิจกรรมที่เข้าร่วมได้
+                  {t("list.title")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="joined"
                   className="min-h-12 flex-none rounded-md border-2 border-transparent bg-transparent px-4 py-2 text-base font-bold text-primary after:hidden hover:bg-[#f7f7f7] hover:text-primary data-active:border-[#84d8ff] data-active:bg-[#ddf4ff] data-active:text-[#1cb0f6] hover:data-active:text-[#1cb0f6]"
                 >
-                  เข้าร่วมแล้ว
+                  {t("list.joined")}
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="all" className="pt-2">

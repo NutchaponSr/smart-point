@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { isLocalizedString, pickLocalized } from "@/lib/i18n/localized";
 import { useCRPC } from "@/lib/convex/crpc";
@@ -27,6 +27,7 @@ interface Props {
 
 export const EditEventView = ({ eventId }: Props) => {
   const locale = useLocale();
+  const t = useTranslations("events.admin");
   const crpc = useCRPC();
   const router = useRouter();
 
@@ -34,7 +35,7 @@ export const EditEventView = ({ eventId }: Props) => {
   const remove = useMutation(crpc.activity.remove.mutationOptions());
 
   const [ConfirmationDialog, confirm] = useConfirm({
-    title: "ลบกิจกรรม",
+    title: t("delete-title"),
   });
 
   const { data: activity } = useSuspenseQuery(crpc.activity.getOne.queryOptions({ activityId: eventId }));
@@ -110,7 +111,7 @@ export const EditEventView = ({ eventId }: Props) => {
             <div className="grid gap-4 p-4! md:p-6!">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="text-xl leading-snug">
-                  ภาพรวม
+                  {t("overview")}
                 </h2>
               </div>
               <EventPreview />
@@ -121,12 +122,12 @@ export const EditEventView = ({ eventId }: Props) => {
                 size="lg"
                 onClick={() => router.push(`/meta/events/${eventId}/join`)}
               >
-                ผู้เข้าร่วม
+                {t("participants")}
               </Button>
             </div>
             <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
               <h2 className="text-xl leading-snug text-destructive">
-                โซนอันตราย
+                {t("danger-zone")}
               </h2>
               <Button
                 type="button"
@@ -136,7 +137,7 @@ export const EditEventView = ({ eventId }: Props) => {
                 title={
                   canDelete
                     ? undefined
-                    : "มีพนักงานเข้าร่วมอยู่ — ลบได้หลังกิจกรรมสิ้นสุด"
+                    : t("delete-blocked")
                 }
                 onClick={async () => {
                   if (!canDelete) return;
@@ -155,11 +156,11 @@ export const EditEventView = ({ eventId }: Props) => {
                   }
                 }}
               >
-                ลบ
+                {t("delete")}
               </Button>
               {!canDelete ? (
                 <p className="text-sm text-muted-foreground">
-                  มีพนักงานเข้าร่วมอยู่ — ลบได้หลังกิจกรรมสิ้นสุด
+                  {t("delete-blocked")}
                 </p>
               ) : null}
             </div>

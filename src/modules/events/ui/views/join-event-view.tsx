@@ -174,6 +174,7 @@ export const JoinEventView = ({ eventId }: Props) => {
   });
 
   const onSubmit = (data: JoinEventSchema) => {
+    if (activityHasEnded) return;
     join.mutate(
       {
         activityId: eventId,
@@ -394,11 +395,11 @@ export const JoinEventView = ({ eventId }: Props) => {
                   </FieldSet>
                 )}
               />
-              <Button  
+              <Button
                 type="submit"
-                disabled={join.isPending}
+                disabled={join.isPending || activityHasEnded}
               >
-                บันทึกข้อมูล
+                {activityHasEnded ? "กิจกรรมสิ้นสุดแล้ว" : "บันทึกข้อมูล"}
               </Button>
             </form>
           </FormProvider>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useMutation } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -17,6 +18,7 @@ import { EventPreview } from "@/modules/events/ui/components/event-preview";
 import { eventSchema, EventSchema } from "@/modules/events/schema";
 
 export const NewEventView = () => {
+  const t = useTranslations("events.admin");
   const crpc = useCRPC();
 
   const create = useMutation(crpc.activity.create.mutationOptions());
@@ -59,15 +61,15 @@ export const NewEventView = () => {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <header className="flex flex-col gap-4 border-b-2 border-border justify-center p-4 md:p-8 h-[82px]">
           <div className="flex min-h-8 items-center justify-between gap-2">
-            <h1 className="line-clamp-2 text-2xl hidden! sm:block!">เพิ่มกิจกรรม</h1>
+            <h1 className="line-clamp-2 text-2xl hidden! sm:block!">{t("new-title")}</h1>
             <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
               <Link href={`/meta/events`}>
                 <Button type="button">
-                  ยกเลิก
+                  {t("cancel")}
                 </Button>
               </Link>
               <Button variant="secondary" type="submit">
-                บันทึกข้อมูล
+                {t("save")}
               </Button>
             </div>
           </div>
@@ -81,10 +83,10 @@ export const NewEventView = () => {
             <div className="flex items-start justify-between gap-4">
               <div className="grid gap-1">
                 <h2 className="text-xl font-extrabold text-[#4b4b4b]">
-                  Preview
+                  {t("preview")}
                 </h2>
                 <p className="text-sm font-medium text-[#777]">
-                  ดูตัวอย่างบัตรพนักงานแบบเรียลไทม์
+                  {t("preview-description")}
                 </p>
               </div>
             </div>

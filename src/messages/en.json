@@ -38,6 +38,36 @@
     "my-events": {
       "title": "My Events"
     },
+    "list": {
+      "title": "Events you can join",
+      "empty-title": "No events found",
+      "empty-description": "Try a different search or filter",
+      "special-points": "Bonus points",
+      "unlimited": "Unlimited",
+      "joined": "Joined",
+      "ended": "Ended",
+      "full": "Full",
+      "join": "Join"
+    },
+    "mine": {
+      "recommended-title": "Recommended events",
+      "recommended-description": "Events you are eligible to join",
+      "recommended-bu-title": "Events for your BU / affiliation",
+      "recommended-bu-description": "Only events open to your BU or affiliation"
+    },
+    "admin": {
+      "delete": "Delete",
+      "delete-title": "Delete event",
+      "delete-blocked": "Employees have joined — you can delete it after the event ends",
+      "new-title": "Add event",
+      "cancel": "Cancel",
+      "save": "Save",
+      "preview": "Preview",
+      "preview-description": "See the employee card preview in real time",
+      "overview": "Overview",
+      "participants": "Participants",
+      "danger-zone": "Danger zone"
+    },
     "filters": {
       "search": "Search",
       "show": "Showing",

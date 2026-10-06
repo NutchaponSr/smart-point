@@ -847,6 +847,7 @@ async function getMyParticipationStatus(
  * กิจกรรมแนะนำสำหรับ Carousel
  * - ENABLE_BU_RECOMMENDED=true: เฉพาะ internal_bu / specials_point ที่กำหนด BU เจาะจง
  * - ENABLE_BU_RECOMMENDED=false: กิจกรรมทั้งหมดที่พนักงานมีสิทธิ์เข้าร่วม (ชั่วคราว)
+ * กิจกรรมที่เลยวันสิ้นสุดยังแสดงอยู่ — ห้ามสมัครที่ mutation join
  * เรียงตาม startDate ล่าสุด
  */
 export const recommended = authQuery
@@ -859,7 +860,6 @@ export const recommended = authQuery
   )
   .query(async ({ ctx, input }) => {
     const employee = ctx.user.employee;
-    const now = input.now ?? null;
 
     const pageResult = await ctx.orm.query.activity
       .select()
@@ -881,10 +881,7 @@ export const recommended = authQuery
         if (!isEmployeeEligibleForActivity(row, employee)) {
           return false;
         }
-        // ตัดกิจกรรมที่จบไปแล้ว (ไม่มี endDate = ยังเปิดอยู่)
-        if (now != null && hasActivityEnded(row, now)) {
-          return false;
-        }
+        // กิจกรรมที่เลย endDate ยังแสดงบนหน้าหลักได้ — ห้ามเข้าร่วมที่ mutation join
         return true;
       })
       .map((row) => row)
@@ -1233,6 +1230,12 @@ export const join = authMutation
       throw new CRPCError({
         code: "BAD_REQUEST",
         message: "Activity is not active",
+      });
+    }
+    if (hasActivityEnded(activity, Date.now())) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "กิจกรรมนี้สิ้นสุดแล้ว ไม่สามารถเข้าร่วมได้",
       });
     }
 

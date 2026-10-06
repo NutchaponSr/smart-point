@@ -26,6 +26,7 @@ import {
   buRestrictedCategories,
   ENABLE_BU_RECOMMENDED,
   getCarouselNow,
+  hasActivityEnded,
 } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
 import { EventDetailDialog } from "@/modules/events/ui/components/event-detail-dialog";
@@ -233,6 +234,11 @@ export const EventCarousel = ({
               event.maxParticipants != null &&
               event.joinedCount >= event.maxParticipants;
             const joined = event.myStatus != null;
+            const ended = hasActivityEnded(
+              event.endDate == null
+                ? null
+                : new Date(event.endDate).getTime(),
+            );
 
             return (
               <article
@@ -339,6 +345,15 @@ export const EventCarousel = ({
                       >
                         <CheckCircle2Icon className="size-5" />
                         เข้าร่วมแล้ว
+                      </Button>
+                    ) : ended ? (
+                      <Button
+                        type="button"
+                        variant="locked"
+                        className="w-full tracking-wide"
+                        disabled
+                      >
+                        สิ้นสุดแล้ว
                       </Button>
                     ) : (
                       <Button

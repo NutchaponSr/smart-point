@@ -4,6 +4,7 @@ import { RowSelectionState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -25,12 +26,13 @@ import { useEventFilters } from "@/modules/events/stores/use-event-filters";
 import { links } from "@/modules/dashboard/constants";
 
 export const EventsView = () => {
+  const t = useTranslations("events");
   const crpc = useCRPC(); 
 
   const [filters, setFilters] = useEventFilters();
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [ConfirmationDialog, confirm] = useConfirm({
-    title: "ลบกิจกรรม",
+    title: t("admin.delete-title"),
   });
 
   const debouncedQuery = useDebounce(filters.q, 400);
@@ -93,7 +95,7 @@ export const EventsView = () => {
 
   return (
     <Main
-      title="กิจกรรม"
+      title={t("title")}
       onImport={onImport}
       onExport={onExport}
       searchValue={filters.q}
@@ -123,11 +125,11 @@ export const EventsView = () => {
                   title={
                     canDeleteSelection
                       ? undefined
-                      : "มีพนักงานเข้าร่วมอยู่ — ลบได้หลังกิจกรรมสิ้นสุด"
+                      : t("admin.delete-blocked")
                   }
                   onClick={onRemove}
                 >
-                  ลบ
+                  {t("admin.delete")}
                 </Button>
               )}
             </div>

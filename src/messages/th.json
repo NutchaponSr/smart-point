@@ -38,6 +38,36 @@
     "my-events": {
       "title": "กิจกรรมของฉัน"
     },
+    "list": {
+      "title": "กิจกรรมที่เข้าร่วมได้",
+      "empty-title": "ไม่พบกิจกรรม",
+      "empty-description": "ลองเปลี่ยนคำค้นหาหรือตัวกรองดูอีกครั้ง",
+      "special-points": "คะแนนพิเศษ",
+      "unlimited": "ไม่จำกัด",
+      "joined": "เข้าร่วมแล้ว",
+      "ended": "สิ้นสุดแล้ว",
+      "full": "เต็มแล้ว",
+      "join": "เข้าร่วม"
+    },
+    "mine": {
+      "recommended-title": "กิจกรรมแนะนำ",
+      "recommended-description": "กิจกรรมที่คุณมีสิทธิ์เข้าร่วม",
+      "recommended-bu-title": "กิจกรรมสำหรับ BU / สังกัดของคุณ",
+      "recommended-bu-description": "แสดงเฉพาะกิจกรรมที่เปิดให้ BU หรือสังกัดของคุณเข้าร่วม"
+    },
+    "admin": {
+      "delete": "ลบ",
+      "delete-title": "ลบกิจกรรม",
+      "delete-blocked": "มีพนักงานเข้าร่วมอยู่ — ลบได้หลังกิจกรรมสิ้นสุด",
+      "new-title": "เพิ่มกิจกรรม",
+      "cancel": "ยกเลิก",
+      "save": "บันทึกข้อมูล",
+      "preview": "ตัวอย่าง",
+      "preview-description": "ดูตัวอย่างบัตรพนักงานแบบเรียลไทม์",
+      "overview": "ภาพรวม",
+      "participants": "ผู้เข้าร่วม",
+      "danger-zone": "โซนอันตราย"
+    },
     "filters": {
       "search": "ค้นหา",
       "show": "แสดง",

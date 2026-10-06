@@ -14,7 +14,7 @@ const buttonVariants = cva(
           "bg-white text-primary border-border border-2 border-b-4 active:border-b-2 hover:bg-[#f7f7f7]",
 
         // custom
-        locked: "bg-neutral-200 text-primary-foreground hover:bg-neutral-200/90 border-neutral-400 border-b-4 active:border-b-0",
+        locked: "bg-[#e5e5e5] text-[#777] border-[#d4d4d4] border-2 border-b-4 hover:bg-[#e5e5e5] disabled:opacity-100",
 
         primary: "bg-[#1cb0f6] text-primary-foreground hover:brightness-[1.1] border-[#0003] border-b-4 active:border-b-0",
         primaryOutline: "bg-white text-[#1cb0f6] hover:bg-[#f7f7f7]",

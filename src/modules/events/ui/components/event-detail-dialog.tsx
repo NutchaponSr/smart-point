@@ -26,6 +26,7 @@ import {
 import {
   buRestrictedCategories,
   categories,
+  hasActivityEnded,
   statuses,
 } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
@@ -100,7 +101,10 @@ export function EventDetailDialog({ event, open, onOpenChange }: Props) {
   const isFull =
     event.maxParticipants != null &&
     (event.joinedCount ?? 0) >= event.maxParticipants;
-  const canJoin = !joined && !isFull;
+  const ended = hasActivityEnded(
+    event.endDate == null ? null : new Date(event.endDate).getTime(),
+  );
+  const canJoin = !joined && !isFull && !ended;
   const participationStatus = (event.myParticipation?.status ??
     event.myStatus) as ParticipationStatus | null;
   const statusLabel =
@@ -281,6 +285,10 @@ export function EventDetailDialog({ event, open, onOpenChange }: Props) {
               <BsCheckCircleFill className="size-4" />
               {statusLabel ?? "เข้าร่วมแล้ว"}
             </div>
+          ) : ended ? (
+            <Button type="button" variant="locked" className="w-full" disabled>
+              กิจกรรมสิ้นสุดแล้ว
+            </Button>
           ) : isFull ? (
             <Button type="button" variant="locked" className="w-full" disabled>
               เต็มแล้ว
