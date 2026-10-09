@@ -22,6 +22,7 @@ export const api = {
     count: createApiLeaf<"query", typeof import("../functions/activity").count>(convexApi["activity"]["count"], { auth: "required", type: "query" }),
     create: createApiLeaf<"mutation", typeof import("../functions/activity").create>(convexApi["activity"]["create"], { auth: "required", type: "mutation" }),
     exportAll: createApiLeaf<"mutation", typeof import("../functions/activity").exportAll>(convexApi["activity"]["exportAll"], { auth: "required", type: "mutation" }),
+    exportParticipants: createApiLeaf<"mutation", typeof import("../functions/activity").exportParticipants>(convexApi["activity"]["exportParticipants"], { auth: "required", type: "mutation" }),
     getMany: createApiLeaf<"query", typeof import("../functions/activity").getMany>(convexApi["activity"]["getMany"], { auth: "required", type: "query" }),
     getOne: createApiLeaf<"query", typeof import("../functions/activity").getOne>(convexApi["activity"]["getOne"], { auth: "required", type: "query" }),
     join: createApiLeaf<"mutation", typeof import("../functions/activity").join>(convexApi["activity"]["join"], { auth: "required", type: "mutation" }),

@@ -134,7 +134,7 @@ function ParticipantAvatar({
       name={name}
       src={participant.image ?? undefined}
       className={{
-        container: "size-8 after:border-[1.5px]",
+        container: "size-8",
         fallback: "text-sm font-medium",
       }}
     />

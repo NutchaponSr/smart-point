@@ -94,7 +94,7 @@ export const JoinEventView = ({ eventId }: Props) => {
   const {
     onImport,
     onExport,
-  } = useParticipantExcel({ activityId: eventId, data: activity.joinedEmployees });
+  } = useParticipantExcel({ activityId: eventId });
 
   const activityHasEnded = hasActivityEnded(activity.endDate);
 
@@ -350,7 +350,7 @@ export const JoinEventView = ({ eventId }: Props) => {
           <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
             <Button 
               type="button" 
-              onClick={() => router.push(`/dashboard/events/${eventId}/edit`)}
+              onClick={() => router.push(`/meta/events/${eventId}/edit`)}
             >
               แก้ไขกิจกรรม
             </Button>
@@ -465,8 +465,8 @@ export const JoinEventView = ({ eventId }: Props) => {
               </Button>
               <h2 className="text-xl leading-snug text-destructive">โซนอันตราย</h2>
               <Button 
-                className="bg-destructive" 
                 type="button" 
+                variant="danger"
                 onClick={async () => {
                   const ok = await confirm();
 

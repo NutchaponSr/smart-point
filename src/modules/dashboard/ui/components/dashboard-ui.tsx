@@ -3,6 +3,21 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+import type { DayRange } from "@/modules/dashboard/date-range";
+
+export function dashboardQueryArgs(
+  range: DayRange,
+  division: string | null,
+  locale: string,
+) {
+  return {
+    start: range.from,
+    end: range.to + 1,
+    division,
+    locale: locale === "en" ? ("en" as const) : ("th" as const),
+  };
+}
+
 export function DashboardPanel({
   children,
   className,

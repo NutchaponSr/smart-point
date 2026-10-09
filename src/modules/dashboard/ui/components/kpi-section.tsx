@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import {
+  BsBuildingFill,
   BsCalendarRangeFill,
   BsChatDotsFill,
   BsDownload,
@@ -20,6 +21,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -34,25 +42,35 @@ import {
   downloadDashboardExcel,
   downloadDashboardPdf,
 } from "@/modules/dashboard/export-report";
+import { divisions } from "@/modules/employee/constants";
 import { DateFilter } from "@/modules/transactions/ui/components/date-filter";
 
-import { DashboardCard, formatCount, SectionBadge } from "./dashboard-ui";
+import {
+  DashboardCard,
+  dashboardQueryArgs,
+  formatCount,
+  SectionBadge,
+} from "./dashboard-ui";
 
 type Props = {
   range: DayRange;
+  division: string | null;
   onRangeChange: (range: DayRange) => void;
+  onDivisionChange: (division: string | null) => void;
 };
 
-export const KpiSection = ({ range, onRangeChange }: Props) => {
+export const KpiSection = ({
+  range,
+  division,
+  onRangeChange,
+  onDivisionChange,
+}: Props) => {
   const t = useTranslations("dashboard");
   const locale = useLocale();
   const crpc = useCRPC();
   const [exporting, setExporting] = useState(false);
 
-  const rangeArgs = {
-    start: range.from,
-    end: range.to + 1,
-  };
+  const rangeArgs = dashboardQueryArgs(range, division, locale);
 
   const { data, isPending } = useQuery(
     crpc.dashboard.getKpis.queryOptions(rangeArgs),
@@ -148,7 +166,36 @@ export const KpiSection = ({ range, onRangeChange }: Props) => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SectionBadge index={1} title={t("section1-title")} />
-        <DateFilter
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={division ?? ""}
+            onValueChange={(value) => onDivisionChange(value || null)}
+            items={[
+              { value: "", label: t("affiliation-all") },
+              ...divisions.map((item) => ({
+                value: item.slug,
+                label: item.name[locale === "en" ? "en" : "th"],
+              })),
+            ]}
+          >
+            <SelectTrigger
+              size="sm"
+              aria-label={t("affiliation")}
+              className="w-auto rounded-md border-2 border-border border-b-4 bg-white font-bold text-[#4b4b4b]"
+            >
+              <BsBuildingFill className="text-[#1cb0f6]" />
+              <SelectValue placeholder={t("affiliation-all")} />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="">{t("affiliation-all")}</SelectItem>
+              {divisions.map((item) => (
+                <SelectItem key={item.slug} value={item.slug}>
+                  {item.name[locale === "en" ? "en" : "th"]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DateFilter
           from={range.from}
           to={range.to}
           onChange={({ from, to }) => {
@@ -166,6 +213,7 @@ export const KpiSection = ({ range, onRangeChange }: Props) => {
             {rangeLabel(range.from, range.to, locale)}
           </Button>
         </DateFilter>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

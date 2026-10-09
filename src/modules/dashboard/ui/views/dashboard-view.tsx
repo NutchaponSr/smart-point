@@ -15,14 +15,20 @@ import { PreorderSection } from "@/modules/dashboard/ui/components/preorder-sect
 export const DashboardView = () => {
   const t = useTranslations("dashboard");
   const [range, setRange] = useState<DayRange>(defaultRange);
+  const [division, setDivision] = useState<string | null>(null);
 
   return (
     <Main title={t("title")} menu={<Navigations links={links} />}>
       <section className="flex flex-col gap-6 p-4 md:p-8">
-        <KpiSection range={range} onRangeChange={setRange} />
+        <KpiSection
+          range={range}
+          division={division}
+          onRangeChange={setRange}
+          onDivisionChange={setDivision}
+        />
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <CultureSection range={range} />
-          <PreorderSection range={range} />
+          <CultureSection range={range} division={division} />
+          <PreorderSection range={range} division={division} />
         </div>
       </section>
     </Main>

@@ -115,6 +115,12 @@ export declare const api: {
       },
       any
     >;
+    exportParticipants: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string },
+      any
+    >;
     getMany: FunctionReference<
       "query",
       "public",
@@ -224,19 +230,34 @@ export declare const api: {
     getCultureStats: FunctionReference<
       "query",
       "public",
-      { end: number; start: number },
+      {
+        division?: string | null;
+        end: number;
+        locale?: "th" | "en";
+        start: number;
+      },
       any
     >;
     getKpis: FunctionReference<
       "query",
       "public",
-      { end: number; start: number },
+      {
+        division?: string | null;
+        end: number;
+        locale?: "th" | "en";
+        start: number;
+      },
       any
     >;
     getOutcomeStats: FunctionReference<
       "query",
       "public",
-      { end: number; start: number },
+      {
+        division?: string | null;
+        end: number;
+        locale?: "th" | "en";
+        start: number;
+      },
       any
     >;
   };

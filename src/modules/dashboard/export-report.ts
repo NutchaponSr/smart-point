@@ -17,11 +17,21 @@ type KpiData = {
 };
 
 type CultureData = {
-  trend: Array<{ date: number; count: number; points: number }>;
-  topDepartments: Array<{
-    department: string;
-    count: number;
+  trend: Array<{
+    date: number;
+    praisePoints: number;
+    praiseCount: number;
+    activityPoints: number;
+  }>;
+  praiseAffiliations: Array<{
+    affiliation: string;
+    people: number;
+    sends: number;
     points: number;
+  }>;
+  activityAffiliations: Array<{
+    affiliation: string;
+    people: number;
   }>;
 };
 
@@ -40,8 +50,8 @@ type OutcomeData = {
     message: string;
     tags: string;
     createdAt: number;
-    sender: { name: string; department: string };
-    receiver: { name: string; department: string };
+    sender: { name: string; department: string; affiliation: string };
+    receiver: { name: string; department: string; affiliation: string };
   }>;
 };
 
@@ -103,18 +113,29 @@ export function downloadDashboardExcel(data: DashboardReportData) {
     "แนวโน้มคำชม",
     culture.trend.map((row) => ({
       วันที่: formatThaiDate(row.date),
-      จำนวนครั้ง: row.count,
+      จำนวนครั้งคำชม: row.praiseCount,
+      คะแนนคำชม: row.praisePoints,
+      คะแนนกิจกรรม: row.activityPoints,
+    })),
+  );
+
+  appendSheet(
+    workbook,
+    "สังกัดที่ส่งคำชม",
+    culture.praiseAffiliations.map((row) => ({
+      สังกัด: row.affiliation,
+      จำนวนคน: row.people,
+      จำนวนครั้ง: row.sends,
       คะแนน: row.points,
     })),
   );
 
   appendSheet(
     workbook,
-    "แผนกผู้ส่ง",
-    culture.topDepartments.map((row) => ({
-      แผนก: row.department,
-      จำนวนครั้ง: row.count,
-      คะแนน: row.points,
+    "สังกัดที่ร่วมกิจกรรม",
+    culture.activityAffiliations.map((row) => ({
+      สังกัด: row.affiliation,
+      จำนวนคน: row.people,
     })),
   );
 
@@ -149,8 +170,10 @@ export function downloadDashboardExcel(data: DashboardReportData) {
     outcome.recentTransactions.map((row) => ({
       วันที่: formatThaiDate(row.createdAt),
       ผู้ส่ง: row.sender.name,
+      สังกัดผู้ส่ง: row.sender.affiliation,
       แผนกผู้ส่ง: row.sender.department,
       ผู้รับ: row.receiver.name,
+      สังกัดผู้รับ: row.receiver.affiliation,
       แผนกผู้รับ: row.receiver.department,
       คะแนน: row.amount,
       ข้อความ: row.message,
@@ -203,16 +226,31 @@ export function downloadDashboardPdf(data: DashboardReportData) {
     <tr><td>รางวัลที่แลก</td><td>${kpis.rewards.redeemedItemCount} ชิ้น / ${kpis.rewards.redeemedPoints} คะแนน</td></tr>
   </table>
 
-  <h2>2. แผนกที่ส่งคำชมมากที่สุด</h2>
+  <h2>2. สังกัดที่ส่งคำชมมากที่สุด</h2>
   <table>
-    <tr><th>แผนก</th><th>จำนวนครั้ง</th><th>คะแนน</th></tr>
+    <tr><th>สังกัด</th><th>จำนวนคน</th><th>คะแนน</th></tr>
     ${
-      culture.topDepartments.length === 0
+      culture.praiseAffiliations.length === 0
         ? "<tr><td colspan='3'>ไม่มีข้อมูล</td></tr>"
-        : culture.topDepartments
+        : culture.praiseAffiliations
             .map(
               (row) =>
-                `<tr><td>${escapeHtml(row.department)}</td><td>${row.count}</td><td>${row.points}</td></tr>`,
+                `<tr><td>${escapeHtml(row.affiliation)}</td><td>${row.people}</td><td>${row.points}</td></tr>`,
+            )
+            .join("")
+    }
+  </table>
+
+  <h2>สังกัดที่เข้าร่วมกิจกรรมมากที่สุด</h2>
+  <table>
+    <tr><th>สังกัด</th><th>จำนวนคน</th></tr>
+    ${
+      culture.activityAffiliations.length === 0
+        ? "<tr><td colspan='2'>ไม่มีข้อมูล</td></tr>"
+        : culture.activityAffiliations
+            .map(
+              (row) =>
+                `<tr><td>${escapeHtml(row.affiliation)}</td><td>${row.people}</td></tr>`,
             )
             .join("")
     }

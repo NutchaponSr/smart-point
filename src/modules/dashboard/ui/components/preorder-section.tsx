@@ -22,6 +22,7 @@ import { tags as smartCultureTags } from "@/modules/transactions/constants";
 import {
   DashboardCard,
   DashboardPanel,
+  dashboardQueryArgs,
   formatBaht,
   formatCount,
   SectionBadge,
@@ -29,6 +30,7 @@ import {
 
 type Props = {
   range: DayRange;
+  division: string | null;
 };
 
 function tagLabel(tagId: string | null | undefined): string | null {
@@ -36,16 +38,15 @@ function tagLabel(tagId: string | null | undefined): string | null {
   return smartCultureTags[tagId] ?? tagId;
 }
 
-export const PreorderSection = ({ range }: Props) => {
+export const PreorderSection = ({ range, division }: Props) => {
   const t = useTranslations("dashboard");
   const locale = useLocale();
   const crpc = useCRPC();
 
   const { data, dataUpdatedAt, isPending } = useQuery(
-    crpc.dashboard.getOutcomeStats.queryOptions({
-      start: range.from,
-      end: range.to + 1,
-    }),
+    crpc.dashboard.getOutcomeStats.queryOptions(
+      dashboardQueryArgs(range, division, locale),
+    ),
   );
 
   const loading = isPending || !data;
@@ -203,12 +204,12 @@ export const PreorderSection = ({ range }: Props) => {
                     <p className="text-sm font-bold text-[#4b4b4b]">
                       {item.sender.name}{" "}
                       <span className="text-[#1cb0f6]">
-                        ({item.sender.department})
+                        ({item.sender.affiliation})
                       </span>
                       {" @ "}
                       {item.receiver.name}{" "}
                       <span className="text-[#1cb0f6]">
-                        ({item.receiver.department})
+                        ({item.receiver.affiliation})
                       </span>
                     </p>
                     <span className="text-xs font-bold text-[#afafaf]">

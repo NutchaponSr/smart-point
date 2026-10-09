@@ -143,7 +143,7 @@ function ParticipantNameCell({ participant }: { participant: Participant }) {
       <UserAvatar
         name={name}
         className={{
-          container: "size-8 after:border-[1.5px]",
+          container: "size-8",
           fallback: "text-sm font-medium",
         }}
       />

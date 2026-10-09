@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { useConfirm } from "@/hooks/use-confirm";
+import { useParticipantExcel } from "@/modules/events/hooks/use-participant-excel";
 
 import {
   DropdownMenu,
@@ -26,6 +27,9 @@ export const EventActions = ({ activity }: Props) => {
   const router = useRouter();
 
   const remove = useMutation(crpc.activity.remove.mutationOptions());
+  const { onExport, isLoading: isExporting } = useParticipantExcel({
+    activityId: activity.id,
+  });
 
   const [ConfirmationDialog, confirm] = useConfirm({
     title: "ลบกิจกรรม",
@@ -45,6 +49,14 @@ export const EventActions = ({ activity }: Props) => {
         <DropdownMenuContent align="end" sideOffset={8}>
           <DropdownMenuItem onClick={() => router.push(`/meta/events/${activity.id}/join`)}>
             ผู้เข้าร่วม
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={isExporting}
+            onSelect={() => {
+              void onExport();
+            }}
+          >
+            ส่งออกผู้เข้าร่วม
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => router.push(`/meta/events/${activity.id}/edit`)}>
             แก้ไข

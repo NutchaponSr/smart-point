@@ -105,11 +105,15 @@ export const participantSchema = z.object({
   employeeId: z.coerce.number().min(1, "กรุณาเลือกพนักงาน"),
   nameTh: z.string().optional().nullable(),
   nameEn: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
   departmentTh: z.string().optional().nullable(),
   departmentEn: z.string().optional().nullable(),
   positionTh: z.string().optional().nullable(),
   positionEn: z.string().optional().nullable(),
   status: z.enum(["registered", "attended", "rewarded", "cancelled"]),
+  statusLabel: z.string().optional().nullable(),
+  evidence: z.string().optional().nullable(),
+  joinedAt: z.string().optional().nullable(),
 });
 
 export type EventSchema = z.infer<typeof eventSchema>;

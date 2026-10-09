@@ -244,6 +244,7 @@ async function listJoinedEmployeeDetails(
         participantId: p._id,
         employeeId: employee._id,
         employeeCode: employee.employeeId,
+        email: employee.email ?? null,
         name: coerceLocalized(employee.name),
         department: coerceLocalized(employee.department),
         position: coerceLocalized(employee.position),
@@ -1156,6 +1157,42 @@ export const exportAll = authMutation
     }
 
     return enrichedList;
+  });
+
+/** ส่งออกผู้เข้าร่วมทั้งหมดของกิจกรรมเดียว (ไม่นับ cancelled) */
+export const exportParticipants = authMutation
+  .input(
+    z.object({
+      activityId: z.string().min(1),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const activityId = input.activityId as Id<"activity">;
+    const activity = await ctx.db.get(activityId);
+    if (!activity) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Activity not found",
+      });
+    }
+
+    const { totalJoined, employees } = await listJoinedEmployeeDetails(
+      ctx,
+      activityId,
+      MAX_EXPORT_ROWS,
+    );
+
+    if (totalJoined > MAX_EXPORT_ROWS) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: `พบผู้เข้าร่วมมากเกิน ${MAX_EXPORT_ROWS} รายการ`,
+      });
+    }
+
+    return {
+      name: coerceLocalized(activity.name),
+      employees,
+    };
   });
 
 export const getOne = authQuery

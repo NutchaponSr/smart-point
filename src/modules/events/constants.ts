@@ -92,20 +92,28 @@ export const participantHeaderMapping: Record<string, string> = {
   "Employee Id": "employeeId",
   "Name (TH)": "nameTh",
   "Name (EN)": "nameEn",
+  Email: "email",
   "Department (TH)": "departmentTh",
   "Department (EN)": "departmentEn",
   "Position (TH)": "positionTh",
   "Position (EN)": "positionEn",
   Status: "status",
+  สถานะ: "statusLabel",
+  Evidence: "evidence",
+  "Joined At": "joinedAt",
 };
 
 export const participantHeaders: Record<string, string> = {
   employeeId: "Employee Id",
   nameTh: "Name (TH)",
   nameEn: "Name (EN)",
+  email: "Email",
   departmentTh: "Department (TH)",
   departmentEn: "Department (EN)",
   positionTh: "Position (TH)",
   positionEn: "Position (EN)",
   status: "Status",
+  statusLabel: "สถานะ",
+  evidence: "Evidence",
+  joinedAt: "Joined At",
 };

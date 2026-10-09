@@ -6,31 +6,75 @@ import { authQuery } from "../lib/crpc";
 import { localizedLabel } from "../lib/localized";
 
 import type { Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
 
 /** กันช่วงเวลากว้างเกินจนสแกนหนัก — จำกัด 31 วัน */
 const MAX_RANGE_MS = 31 * 24 * 60 * 60 * 1000;
+
+const rangeInput = z.object({
+  start: z.number().int().nonnegative(),
+  end: z.number().int().nonnegative(),
+  /** BU / สังกัด — ไม่ส่ง = ทุกสังกัด */
+  division: z.string().optional().nullable(),
+  locale: z.enum(["th", "en"]).optional(),
+});
+
+type DashboardLocale = "th" | "en";
+
+function assertRange(start: number, end: number) {
+  if (end <= start || end - start > MAX_RANGE_MS) {
+    throw new CRPCError({
+      code: "BAD_REQUEST",
+      message: "ช่วงวันที่ไม่ถูกต้อง",
+    });
+  }
+}
+
+function appLocale(value: string | null | undefined): DashboardLocale {
+  return value === "en" ? "en" : "th";
+}
+
+function unknownLabel(locale: DashboardLocale) {
+  return locale === "en" ? "Unknown" : "ไม่ระบุ";
+}
+
+function selectedDivision(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+async function employeeIdsInDivision(ctx: QueryCtx, division: string | null) {
+  if (!division) return null;
+  // eslint-disable-next-line @convex-dev/no-query-collect -- one affiliation
+  const employees = await ctx.db
+    .query("employee")
+    .withIndex("by_division_employeeId", (q) => q.eq("division", division))
+    .collect();
+  return new Set(employees.map((employee) => String(employee._id)));
+}
+
+function belongsToDivision(
+  employeeIds: Set<string> | null,
+  employeeId: string,
+) {
+  return employeeIds == null || employeeIds.has(employeeId);
+}
 
 /**
  * KPI แดชบอร์ดแอดมิน (Section 1) ตามช่วงวันที่เลือกจากปฏิทิน
  * client ส่ง [start, end) เป็น ms — ห้ามใช้ Date.now() ใน query
  */
 export const getKpis = authQuery
-  .input(
-    z.object({
-      start: z.number().int().nonnegative(),
-      end: z.number().int().nonnegative(),
-    }),
-  )
+  .input(rangeInput)
   .query(async ({ ctx, input }) => {
     requireAdmin(ctx.user);
 
     const { start, end } = input;
-    if (end <= start || end - start > MAX_RANGE_MS) {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: "ช่วงวันที่ไม่ถูกต้อง",
-      });
-    }
+    assertRange(start, end);
+    const divisionIds = await employeeIdsInDivision(
+      ctx,
+      selectedDivision(input.division),
+    );
 
     const [wallets, transactions, ledgerRows, participants, redemptions] =
       await Promise.all([
@@ -67,30 +111,48 @@ export const getKpis = authQuery
 
     // 1. จำนวนคนที่ first login แล้ว (สะสมทั้งหมด ไม่กรองตามวัน)
     //    lastDailyBonus ถูกตั้งครั้งแรกตอน dailyLogin และไม่ถูกล้างตอนรีเซ็ต
-    const firstLoginCount = wallets.filter(
+    const scopedWallets = wallets.filter((wallet) =>
+      belongsToDivision(divisionIds, String(wallet.employeeId)),
+    );
+    const firstLoginCount = scopedWallets.filter(
       (w) => w.lastDailyBonus != null,
     ).length;
 
     // 2. คะแนนคำชม P2P ที่ส่งในช่วงวัน (ไม่นับที่ถูกปฏิเสธ)
     const praisePoints = transactions
-      .filter((t) => t.status !== "rejected")
+      .filter(
+        (t) =>
+          t.status !== "rejected" &&
+          belongsToDivision(divisionIds, String(t.senderId)),
+      )
       .reduce((sum, t) => sum + t.amount, 0);
 
     // 2b. คะแนนจากกิจกรรมที่จ่ายในช่วงวัน (ledger sourceType "activity")
     const eventPoints = ledgerRows
-      .filter((row) => row.sourceType === "activity" && row.delta > 0)
+      .filter(
+        (row) =>
+          row.sourceType === "activity" &&
+          row.delta > 0 &&
+          belongsToDivision(divisionIds, String(row.employeeId)),
+      )
       .reduce((sum, row) => sum + row.delta, 0);
 
     // 3. พนักงานที่สมัคร/เข้าร่วมกิจกรรมในช่วงวัน (นับคนไม่ซ้ำ ไม่นับยกเลิก)
     const eventParticipantCount = new Set(
       participants
-        .filter((p) => p.status !== "cancelled")
+        .filter(
+          (p) =>
+            p.status !== "cancelled" &&
+            belongsToDivision(divisionIds, String(p.employeeId)),
+        )
         .map((p) => String(p.employeeId)),
     ).size;
 
     // 4. จำนวนรางวัลที่แลกในช่วงวัน (รวม quantity ไม่นับยกเลิก)
     const activeRedemptions = redemptions.filter(
-      (r) => r.status !== "cancelled",
+      (r) =>
+        r.status !== "cancelled" &&
+        belongsToDivision(divisionIds, String(r.employeeId)),
     );
     const redeemedItemCount = activeRedemptions.reduce(
       (sum, r) => sum + r.quantity,
@@ -104,7 +166,7 @@ export const getKpis = authQuery
     return {
       login: {
         firstLoginCount,
-        totalEmployees: wallets.length,
+        totalEmployees: divisionIds ? divisionIds.size : wallets.length,
       },
       praise: {
         total: praisePoints + eventPoints,
@@ -123,87 +185,147 @@ export const getKpis = authQuery
   });
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const TOP_DEPARTMENT_LIMIT = 6;
+const TOP_AFFILIATION_LIMIT = 9;
 
 /**
- * สถิติวัฒนธรรมองค์กร (Section 2)
- * 1. แนวโน้มการส่งคำชมรายวัน (จำนวนครั้ง + คะแนน)
- * 2. แผนกที่ส่งคำชมบ่อยที่สุด
- * client ส่ง start ที่เที่ยงคืนตามเวลาท้องถิ่น — bucket = start + k วัน
+ * สถิติการมีส่วนร่วม (Section 2)
+ * 1. แนวโน้มรายวัน แยกคะแนนคำชม กับคะแนนจากกิจกรรม
+ * 2. สังกัดที่ส่งคำชมมากที่สุด (นับคน)
+ * 3. สังกัดที่เข้าร่วมกิจกรรมมากที่สุด (นับคน)
  */
 export const getCultureStats = authQuery
-  .input(
-    z.object({
-      start: z.number().int().nonnegative(),
-      end: z.number().int().nonnegative(),
-    }),
-  )
+  .input(rangeInput)
   .query(async ({ ctx, input }) => {
     requireAdmin(ctx.user);
 
     const { start, end } = input;
-    if (end <= start || end - start > MAX_RANGE_MS) {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: "ช่วงวันที่ไม่ถูกต้อง",
-      });
-    }
+    assertRange(start, end);
+    const locale = appLocale(input.locale);
+    const divisionIds = await employeeIdsInDivision(
+      ctx,
+      selectedDivision(input.division),
+    );
+    const missing = unknownLabel(locale);
 
-    const transactions = await ctx.db
-      .query("transaction")
-      .withIndex("by_creation_time", (q) =>
-        q.gte("_creationTime", start).lt("_creationTime", end),
-      )
-      .collect();
+    const [transactions, ledgerRows, participants] = await Promise.all([
+      ctx.db
+        .query("transaction")
+        .withIndex("by_creation_time", (q) =>
+          q.gte("_creationTime", start).lt("_creationTime", end),
+        )
+        .collect(),
+      ctx.db
+        .query("pointLedger")
+        .withIndex("by_creation_time", (q) =>
+          q.gte("_creationTime", start).lt("_creationTime", end),
+        )
+        .collect(),
+      ctx.db
+        .query("activityParticipant")
+        .withIndex("by_creation_time", (q) =>
+          q.gte("_creationTime", start).lt("_creationTime", end),
+        )
+        .collect(),
+    ]);
 
-    const sent = transactions.filter((t) => t.status !== "rejected");
+    const sent = transactions.filter(
+      (row) =>
+        row.status !== "rejected" &&
+        belongsToDivision(divisionIds, String(row.senderId)),
+    );
+    const activityAwards = ledgerRows.filter(
+      (row) =>
+        row.sourceType === "activity" &&
+        row.delta > 0 &&
+        belongsToDivision(divisionIds, String(row.employeeId)),
+    );
+    const joined = participants.filter(
+      (row) =>
+        row.status !== "cancelled" &&
+        belongsToDivision(divisionIds, String(row.employeeId)),
+    );
 
-    // 1. แนวโน้มรายวัน — bucket ตามวันที่ client จัดให้ตรงเที่ยงคืนท้องถิ่น
     const dayCount = Math.ceil((end - start) / DAY_MS);
     const trend = Array.from({ length: dayCount }, (_, index) => ({
       date: start + index * DAY_MS,
-      count: 0,
-      points: 0,
+      praisePoints: 0,
+      praiseCount: 0,
+      activityPoints: 0,
     }));
-    for (const t of sent) {
-      const bucket = Math.floor((t._creationTime - start) / DAY_MS);
-      const row = trend[bucket];
-      if (!row) continue;
-      row.count += 1;
-      row.points += t.amount;
+    for (const row of sent) {
+      const bucket = trend[Math.floor((row._creationTime - start) / DAY_MS)];
+      if (!bucket) continue;
+      bucket.praiseCount += 1;
+      bucket.praisePoints += row.amount;
+    }
+    for (const row of activityAwards) {
+      const bucket = trend[Math.floor((row._creationTime - start) / DAY_MS)];
+      if (!bucket) continue;
+      bucket.activityPoints += row.delta;
     }
 
-    // 2. แผนกผู้ส่งที่ส่งคำชมบ่อยสุด — แคช department ต่อ sender
-    const departmentBySender = new Map<string, string>();
-    const departmentStats = new Map<
+    const divisionByEmployee = new Map<string, string>();
+    const divisionOf = async (employeeId: Id<"employee">) => {
+      const key = String(employeeId);
+      const cached = divisionByEmployee.get(key);
+      if (cached != null) return cached;
+      const employee = await ctx.db.get(employeeId);
+      const division = employee?.division?.trim() || missing;
+      divisionByEmployee.set(key, division);
+      return division;
+    };
+
+    const praiseByAffiliation = new Map<
       string,
-      { department: string; count: number; points: number }
+      { affiliation: string; people: Set<string>; sends: number; points: number }
     >();
-
-    for (const t of sent) {
-      const senderKey = String(t.senderId);
-      let department = departmentBySender.get(senderKey);
-      if (department == null) {
-        const sender = await ctx.db.get(t.senderId);
-        department = sender ? localizedLabel(sender.department, "th") : "ไม่ระบุ";
-        departmentBySender.set(senderKey, department);
-      }
-
-      const entry = departmentStats.get(department) ?? {
-        department,
-        count: 0,
+    for (const row of sent) {
+      const affiliation = await divisionOf(row.senderId);
+      const entry = praiseByAffiliation.get(affiliation) ?? {
+        affiliation,
+        people: new Set<string>(),
+        sends: 0,
         points: 0,
       };
-      entry.count += 1;
-      entry.points += t.amount;
-      departmentStats.set(department, entry);
+      entry.people.add(String(row.senderId));
+      entry.sends += 1;
+      entry.points += row.amount;
+      praiseByAffiliation.set(affiliation, entry);
     }
 
-    const topDepartments = [...departmentStats.values()]
-      .sort((a, b) => b.count - a.count)
-      .slice(0, TOP_DEPARTMENT_LIMIT);
+    const activityByAffiliation = new Map<
+      string,
+      { affiliation: string; people: Set<string> }
+    >();
+    for (const row of joined) {
+      const affiliation = await divisionOf(row.employeeId);
+      const entry = activityByAffiliation.get(affiliation) ?? {
+        affiliation,
+        people: new Set<string>(),
+      };
+      entry.people.add(String(row.employeeId));
+      activityByAffiliation.set(affiliation, entry);
+    }
 
-    return { trend, topDepartments };
+    const praiseAffiliations = [...praiseByAffiliation.values()]
+      .map((row) => ({
+        affiliation: row.affiliation,
+        people: row.people.size,
+        sends: row.sends,
+        points: row.points,
+      }))
+      .sort((a, b) => b.people - a.people)
+      .slice(0, TOP_AFFILIATION_LIMIT);
+
+    const activityAffiliations = [...activityByAffiliation.values()]
+      .map((row) => ({
+        affiliation: row.affiliation,
+        people: row.people.size,
+      }))
+      .sort((a, b) => b.people - a.people)
+      .slice(0, TOP_AFFILIATION_LIMIT);
+
+    return { trend, praiseAffiliations, activityAffiliations };
   });
 
 const TOP_REWARD_LIMIT = 5;
@@ -238,22 +360,18 @@ function bucketLabel(amount: number): PointBucketLabel {
  * 4. คำชมล่าสุดในช่วงวัน
  */
 export const getOutcomeStats = authQuery
-  .input(
-    z.object({
-      start: z.number().int().nonnegative(),
-      end: z.number().int().nonnegative(),
-    }),
-  )
+  .input(rangeInput)
   .query(async ({ ctx, input }) => {
     requireAdmin(ctx.user);
 
     const { start, end } = input;
-    if (end <= start || end - start > MAX_RANGE_MS) {
-      throw new CRPCError({
-        code: "BAD_REQUEST",
-        message: "ช่วงวันที่ไม่ถูกต้อง",
-      });
-    }
+    assertRange(start, end);
+    const locale = appLocale(input.locale);
+    const divisionIds = await employeeIdsInDivision(
+      ctx,
+      selectedDivision(input.division),
+    );
+    const missing = unknownLabel(locale);
 
     const [redemptions, transactions, donations, wallets] = await Promise.all([
       ctx.db
@@ -287,6 +405,7 @@ export const getOutcomeStats = authQuery
     >();
     for (const row of redemptions) {
       if (row.status === "cancelled") continue;
+      if (!belongsToDivision(divisionIds, String(row.employeeId))) continue;
       const key = String(row.rewardId);
       const entry = rewardStats.get(key) ?? {
         rewardId: key,
@@ -307,7 +426,7 @@ export const getOutcomeStats = authQuery
         const reward = await ctx.db.get(row.rewardId as Id<"reward">);
         return {
           rewardId: row.rewardId,
-          name: reward ? localizedLabel(reward.name, "th") : "ไม่ระบุ",
+          name: reward ? localizedLabel(reward.name, locale) : missing,
           quantity: row.quantity,
           points: row.points,
         };
@@ -324,6 +443,7 @@ export const getOutcomeStats = authQuery
       distribution.map((row, index) => [row.label, index]),
     );
     for (const wallet of wallets) {
+      if (!belongsToDivision(divisionIds, String(wallet.employeeId))) continue;
       const balance = wallet.receivingBudget + (wallet.specialBudget ?? 0);
       const label = bucketLabel(balance);
       const index = distributionIndex.get(label);
@@ -333,10 +453,20 @@ export const getOutcomeStats = authQuery
     }
 
     // 3. ยอดบริจาคในช่วงวัน (1 พอยต์ = 1 บาท)
-    const donationPoints = donations.reduce((sum, row) => sum + row.points, 0);
+    const scopedDonations = donations.filter((row) =>
+      belongsToDivision(divisionIds, String(row.donorEmployeeId)),
+    );
+    const donationPoints = scopedDonations.reduce(
+      (sum, row) => sum + row.points,
+      0,
+    );
 
     // 4. คำชมล่าสุดในช่วงวัน (เรียงใหม่ → เก่า)
-    const sent = transactions.filter((t) => t.status !== "rejected");
+    const sent = transactions.filter(
+      (row) =>
+        row.status !== "rejected" &&
+        belongsToDivision(divisionIds, String(row.senderId)),
+    );
     const recent = [...sent]
       .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, REALTIME_FEED_LIMIT);
@@ -354,16 +484,18 @@ export const getOutcomeStats = authQuery
           tags: t.tags,
           createdAt: t._creationTime,
           sender: {
-            name: sender ? localizedLabel(sender.name, "th") : "ไม่ระบุ",
+            name: sender ? localizedLabel(sender.name, locale) : missing,
             department: sender
-              ? localizedLabel(sender.department, "th")
-              : "ไม่ระบุ",
+              ? localizedLabel(sender.department, locale)
+              : missing,
+            affiliation: sender?.division?.trim() || missing,
           },
           receiver: {
-            name: receiver ? localizedLabel(receiver.name, "th") : "ไม่ระบุ",
+            name: receiver ? localizedLabel(receiver.name, locale) : missing,
             department: receiver
-              ? localizedLabel(receiver.department, "th")
-              : "ไม่ระบุ",
+              ? localizedLabel(receiver.department, locale)
+              : missing,
+            affiliation: receiver?.division?.trim() || missing,
           },
         };
       }),
@@ -375,7 +507,7 @@ export const getOutcomeStats = authQuery
       donation: {
         points: donationPoints,
         baht: donationPoints,
-        count: donations.length,
+        count: scopedDonations.length,
       },
       recentTransactions,
     };
