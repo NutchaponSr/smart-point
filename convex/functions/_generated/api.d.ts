@@ -133,6 +133,7 @@ export declare const api: {
         limit: number;
         maxParticipants?: number | null;
         minParticipants?: number | null;
+        now?: number | null;
         q?: string | null;
         view?: Array<
           "external" | "internal" | "internal_bu" | "specials_point"

@@ -31,6 +31,7 @@ const Page = async ({ searchParams }: Props) => {
       minParticipants: minParticipants,
       maxParticipants: maxParticipants,
       eligibleOnly: true,
+      now: getCarouselNow(),
     }),
   );
 

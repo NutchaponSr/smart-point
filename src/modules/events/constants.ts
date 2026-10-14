@@ -1,4 +1,5 @@
 const DAY_MS = 86_400_000;
+const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 /**
  * Temporary: set true เพื่อกลับมาโหมด Bu carousel
@@ -6,8 +7,11 @@ const DAY_MS = 86_400_000;
  */
 export const ENABLE_BU_RECOMMENDED = false;
 
-/** ปัดเวลาเป็นรายวัน (UTC) ให้ query key ของ carousel ตรงกันระหว่าง server prefetch และ client */
-export const getCarouselNow = () => Math.floor(Date.now() / DAY_MS) * DAY_MS;
+/** ปัดเป็นเที่ยงคืนตามเวลาไทย ให้ query key ตรงกันระหว่าง server prefetch และ client */
+export const getCarouselNow = () => {
+  const shifted = Date.now() + BANGKOK_OFFSET_MS;
+  return Math.floor(shifted / DAY_MS) * DAY_MS - BANGKOK_OFFSET_MS;
+};
 
 /** กิจกรรมสิ้นสุดหลัง endDate ครบทั้งวัน (endDate เก็บเป็น 00:00 ของวันนั้น) */
 export function hasActivityEnded(

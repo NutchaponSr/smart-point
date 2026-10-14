@@ -27,6 +27,7 @@ import { Pagination } from "@/components/pagniation";
 import {
   categories,
   buRestrictedCategories,
+  getCarouselNow,
   hasActivityEnded,
 } from "@/modules/events/constants";
 import { formatAllowedBuLabels } from "@/modules/events/utils/bu-labels";
@@ -68,6 +69,7 @@ export const AllEventsScreen = () => {
       minParticipants: filters.minParticipants,
       maxParticipants: filters.maxParticipants,
       eligibleOnly: true,
+      now: getCarouselNow(),
     }),
   );
 

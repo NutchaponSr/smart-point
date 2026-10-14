@@ -269,19 +269,41 @@ async function listJoinedEmployeeDetails(
   };
 }
 
+const DAY_MS = 86_400_000;
+const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+function toTimestamp(value: number | Date) {
+  return value instanceof Date ? value.getTime() : value;
+}
+
+/** เที่ยงคืนตามเวลาไทย — ไม่พึ่ง timezone ของ runtime */
+function startOfBangkokDay(timestamp: number) {
+  const shifted = timestamp + BANGKOK_OFFSET_MS;
+  return Math.floor(shifted / DAY_MS) * DAY_MS - BANGKOK_OFFSET_MS;
+}
+
+/**
+ * แสดงในรายการผู้ใช้เมื่อถึงวันเริ่มต้นแล้ว และยังไม่เลยวันสิ้นสุด
+ * วันสิ้นสุดนับทั้งวัน ไม่มี endDate = ยังไม่สิ้นสุด
+ */
+function isActivityInDisplayWindow(
+  activity: { startDate: number | Date; endDate?: number | Date | null },
+  now: number,
+) {
+  const today = startOfBangkokDay(now);
+  if (startOfBangkokDay(toTimestamp(activity.startDate)) > today) return false;
+  if (activity.endDate == null) return true;
+  return startOfBangkokDay(toTimestamp(activity.endDate)) >= today;
+}
+
 /** กิจกรรมสิ้นสุดแล้วเมื่อเลย endDate ครบทั้งวัน (ไม่มี endDate = ยังไม่สิ้นสุด) */
 function hasActivityEnded(
   activity: { endDate?: number | Date | null },
   now: number,
 ) {
   if (activity.endDate == null) return false;
-  const endTimestamp =
-    activity.endDate instanceof Date
-      ? activity.endDate.getTime()
-      : activity.endDate;
-  const endOfDay = new Date(endTimestamp);
-  endOfDay.setHours(23, 59, 59, 999);
-  return now > endOfDay.getTime();
+  const endDay = startOfBangkokDay(toTimestamp(activity.endDate));
+  return startOfBangkokDay(now) > endDay;
 }
 
 /**
@@ -874,7 +896,7 @@ async function getMyParticipationStatus(
  * กิจกรรมแนะนำสำหรับ Carousel
  * - ENABLE_BU_RECOMMENDED=true: เฉพาะ internal_bu / specials_point ที่กำหนด BU เจาะจง
  * - ENABLE_BU_RECOMMENDED=false: กิจกรรมทั้งหมดที่พนักงานมีสิทธิ์เข้าร่วม (ชั่วคราว)
- * กิจกรรมที่เลยวันสิ้นสุดยังแสดงอยู่ — ห้ามสมัครที่ mutation join
+ * ซ่อนกิจกรรมที่ยังไม่ถึงวันเริ่มต้น หรือสิ้นสุดไปแล้ว
  * เรียงตาม startDate ล่าสุด
  */
 export const recommended = authQuery
@@ -908,7 +930,12 @@ export const recommended = authQuery
         if (!isEmployeeEligibleForActivity(row, employee)) {
           return false;
         }
-        // กิจกรรมที่เลย endDate ยังแสดงบนหน้าหลักได้ — ห้ามเข้าร่วมที่ mutation join
+        if (
+          input.now != null &&
+          !isActivityInDisplayWindow(row, input.now)
+        ) {
+          return false;
+        }
         return true;
       })
       .map((row) => row)
@@ -951,6 +978,8 @@ export const getMany = authQuery
       maxParticipants: z.number().optional().nullable(),
       /** หน้าผู้ใช้ (/events) — กรองตาม BU แม้เป็น admin */
       eligibleOnly: z.boolean().optional().nullable(),
+      /** เวลาปัจจุบันปัดเป็นเที่ยงคืนไทย — ใช้กรองช่วงวันที่เมื่อ eligibleOnly */
+      now: z.number().optional().nullable(),
     }),
   )
   .query(async ({ ctx, input }) => {
@@ -973,6 +1002,13 @@ export const getMany = authQuery
         if (
           applyBuFilter &&
           !isEmployeeEligibleForActivity(row, employee)
+        ) {
+          return false;
+        }
+        if (
+          input.eligibleOnly &&
+          input.now != null &&
+          !isActivityInDisplayWindow(row, input.now)
         ) {
           return false;
         }
