@@ -106,8 +106,8 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
       cell: ({ row }) => (
         <ReviewActions
           canReview={
-            row.original.status === "attended" &&
-            !!row.original.evidenceStorageId
+            row.original.status === "registered" ||
+            row.original.status === "attended"
           }
           pendingApprove={options.approvingIds.has(row.original.participantId)}
           pendingReject={options.rejectingIds.has(row.original.participantId)}

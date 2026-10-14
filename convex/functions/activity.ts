@@ -388,7 +388,10 @@ async function approveActivityParticipantReward(input: {
   if (participant.activityId !== input.activityId) {
     return { approved: false, skipped: true as const };
   }
-  if (participant.status !== "attended" || !participant.evidenceStorageId) {
+  if (
+    participant.status !== "registered" &&
+    participant.status !== "attended"
+  ) {
     return { approved: false, skipped: true as const };
   }
 
@@ -449,7 +452,10 @@ async function rejectActivityParticipant(input: {
   if (participant.activityId !== input.activityId) {
     return { rejected: false, skipped: true as const };
   }
-  if (participant.status !== "attended") {
+  if (
+    participant.status !== "registered" &&
+    participant.status !== "attended"
+  ) {
     return { rejected: false, skipped: true as const };
   }
 
