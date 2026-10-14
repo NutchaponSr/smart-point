@@ -68,6 +68,53 @@
       "participants": "Participants",
       "danger-zone": "Danger zone"
     },
+    "participants": {
+      "delete-title": "Remove participants",
+      "approve-success": "Approved — bonus points were added",
+      "approve-unavailable": "This entry cannot be approved",
+      "approve-error": "Approval failed",
+      "reject-success": "Evidence rejected — the employee can upload again",
+      "reject-unavailable": "This entry cannot be rejected",
+      "reject-error": "Rejection failed",
+      "evidence-title": "Evidence: {name}",
+      "evidence-file": "File: {name}",
+      "evidence-loading": "Loading evidence...",
+      "evidence-alt": "Evidence",
+      "hint": "After evidence is attached, an admin approves or rejects it. Approval adds bonus points.",
+      "hint-ended": "After evidence is attached, an admin approves or rejects it. Approval adds bonus points. This event has ended.",
+      "empty": "No participants yet",
+      "search": "Search participant name",
+      "edit": "Edit event",
+      "add": "Add participant",
+      "employee": "Employee",
+      "employee-placeholder": "Select an employee",
+      "employee-required": "Please select an employee",
+      "ended": "Event has ended",
+      "manage": "Manage participants",
+      "approve-all": "Approve all",
+      "approve-bulk": "Approved {approved} (skipped {skipped}) — bonus points",
+      "reject-all": "Reject all",
+      "reject-bulk": "Rejected {rejected} (skipped {skipped})",
+      "select-all": "Select all",
+      "select-row": "Select row",
+      "columns": {
+        "employee": "Employee",
+        "status": "Status",
+        "evidence": "Evidence",
+        "review": "Review",
+        "view-file": "View file",
+        "approve": "Approve",
+        "approve-title": "Add bonus points for this employee",
+        "reject": "Reject",
+        "reject-title": "Reject the evidence — the employee can upload again"
+      },
+      "status": {
+        "registered": "Registered",
+        "attended": "Attended",
+        "rewarded": "Rewarded",
+        "cancelled": "Cancelled"
+      }
+    },
     "filters": {
       "search": "Search",
       "show": "Showing",
@@ -278,6 +325,7 @@
       "news": "News",
       "logs": "Activity log"
     },
+    "unread": "{count} unopened",
     "loading": "Loading...",
     "empty": {
       "title": "No news yet",

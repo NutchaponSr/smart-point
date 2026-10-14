@@ -17,7 +17,7 @@ import { GoPersonFill } from "react-icons/go";
 import { useDebounce } from "@uidotdev/usehooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
@@ -41,6 +41,7 @@ import { categories, hasActivityEnded } from "@/modules/events/constants";
 import { joinEventSchema, JoinEventSchema } from "@/modules/events/schema";
 import { useSearchEmployee } from "@/modules/wallets/stores/use-search-employee";
 import { useParticipantExcel } from "@/modules/events/hooks/use-participant-excel";
+import { ExcelImportErrorsDialog } from "@/modules/rewards/ui/components/excel-import-errors-dialog";
 
 interface Props {
   eventId: string;
@@ -48,6 +49,7 @@ interface Props {
 
 export const JoinEventView = ({ eventId }: Props) => {
   const locale = useLocale();
+  const t = useTranslations("events");
   const crpc = useCRPC();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -56,7 +58,7 @@ export const JoinEventView = ({ eventId }: Props) => {
 
   const debouncedQuery = useDebounce(query, 300);
   const [ConfirmationDialog, confirm] = useConfirm({
-    title: "ลบผู้เข้าร่วม",
+    title: t("participants.delete-title"),
   });
 
   const { data: employees } = useQuery({
@@ -94,12 +96,13 @@ export const JoinEventView = ({ eventId }: Props) => {
   const {
     onImport,
     onExport,
+    errors: importErrors,
+    clearErrors,
   } = useParticipantExcel({ activityId: eventId });
 
   const activityHasEnded = hasActivityEnded(activity.endDate);
 
-  const approveSuccessMessage = () =>
-    "อนุมัติสำเร็จ — บวกคะแนนพิเศษให้พนักงานแล้ว";
+  const approveSuccessMessage = () => t("participants.approve-success");
 
   const table = useReactTable({
     data: activity.joinedEmployees,
@@ -116,14 +119,14 @@ export const JoinEventView = ({ eventId }: Props) => {
               if (result.approved) {
                 toast.success(approveSuccessMessage());
               } else {
-                toast.error("ไม่สามารถอนุมัติรายการนี้ได้");
+                toast.error(t("participants.approve-unavailable"));
               }
               queryClient.invalidateQueries({
                 queryKey: crpc.activity.getOne.queryKey({ activityId: eventId }),
               });
             },
             onError: () => {
-              toast.error("อนุมัติไม่สำเร็จ");
+              toast.error(t("participants.approve-error"));
             },
             onSettled: () => {
               setApprovingIds((prev) => {
@@ -142,16 +145,16 @@ export const JoinEventView = ({ eventId }: Props) => {
           {
             onSuccess: (result) => {
               if (result.rejected) {
-                toast.success("ปฏิเสธหลักฐานแล้ว — พนักงานสามารถแนบใหม่ได้");
+                toast.success(t("participants.reject-success"));
               } else {
-                toast.error("ไม่สามารถปฏิเสธรายการนี้ได้");
+                toast.error(t("participants.reject-unavailable"));
               }
               queryClient.invalidateQueries({
                 queryKey: crpc.activity.getOne.queryKey({ activityId: eventId }),
               });
             },
             onError: () => {
-              toast.error("ปฏิเสธไม่สำเร็จ");
+              toast.error(t("participants.reject-error"));
             },
             onSettled: () => {
               setRejectingIds((prev) => {
@@ -199,6 +202,7 @@ export const JoinEventView = ({ eventId }: Props) => {
 
   return (
     <>
+      <ExcelImportErrorsDialog errors={importErrors} onClose={clearErrors} />
       <ConfirmationDialog />
       <Dialog
         open={selectedEvidence != null}
@@ -210,27 +214,31 @@ export const JoinEventView = ({ eventId }: Props) => {
           <DialogHidden />
           <div className="grid gap-3">
             <h3 className="text-base font-semibold">
-              หลักฐาน: {pickLocalized(selectedEvidence?.name, locale)}
+              {t("participants.evidence-title", {
+                name: pickLocalized(selectedEvidence?.name, locale),
+              })}
             </h3>
             {selectedEvidence?.evidenceFileName ? (
               <p className="text-sm text-muted-foreground">
-                ไฟล์: {selectedEvidence.evidenceFileName}
+                {t("participants.evidence-file", {
+                  name: selectedEvidence.evidenceFileName,
+                })}
               </p>
             ) : null}
             {selectedEvidence?.evidenceType === "pdf" && evidenceUrl ? (
               <iframe
                 src={evidenceUrl}
                 className="h-[70vh] w-full rounded-xs border-2 border-border"
-                title="evidence pdf"
+                title={t("participants.evidence-alt")}
               />
             ) : selectedEvidence?.evidenceType !== "pdf" && evidenceUrl ? (
               <img
                 src={evidenceUrl}
-                alt="evidence"
+                alt={t("participants.evidence-alt")}
                 className="max-h-[70vh] w-full rounded-xs border-2 border-border object-contain"
               />
             ) : (
-              <p className="text-sm text-muted-foreground">กำลังโหลดไฟล์หลักฐาน...</p>
+              <p className="text-sm text-muted-foreground">{t("participants.evidence-loading")}</p>
             )}
           </div>
         </DialogContent>
@@ -243,7 +251,7 @@ export const JoinEventView = ({ eventId }: Props) => {
           
           <div className="grid flex-1 grid-cols-2 gap-2 has-[>*:only-child]:grid-cols-1 sm:flex sm:flex-none md:-my-2">
             <Button type="button" onClick={() => router.push("/meta/events")}>
-              ยกเลิก
+              {t("admin.cancel")}
             </Button>
           </div>
         </div>
@@ -259,7 +267,7 @@ export const JoinEventView = ({ eventId }: Props) => {
             <section className="grid grid-cols-[auto_minmax(0,1fr)] border-t-2 border-border p-0">
             <div className="border-r-2 p-3">
               <div className="flex items-center gap-1 text-base font-medium text-[#cc348d]">
-                <img src={Ruby.src} alt="คะแนนพิเศษ" className="size-6" />
+                <img src={Ruby.src} alt={t("list.special-points")} className="size-6" />
                 {activity.point}
               </div>
             </div>
@@ -267,10 +275,10 @@ export const JoinEventView = ({ eventId }: Props) => {
                 <div className="flex shrink-0 items-center gap-1">
                   <GoPersonFill className="size-4 stroke-[0.25]" />
                   <span className="text-sm font-normal">
-                    {activity.maxParticipants ? `${activity.joinedCount} / ${activity.maxParticipants}` : "ไม่จำกัด"}
+                    {activity.maxParticipants ? `${activity.joinedCount} / ${activity.maxParticipants}` : t("list.unlimited")}
                   </span>
                 </div>
-                <u className="min-w-0 text-right text-xs [overflow-wrap:anywhere]">{categories[activity.category]?.th}</u>
+                <u className="min-w-0 text-right text-xs [overflow-wrap:anywhere]">{pickLocalized(categories[activity.category], locale)}</u>
               </div>
             </section>
             <section className="min-w-0 border-t-2 border-border p-3">
@@ -278,8 +286,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                 {pickLocalized(activity.description, locale)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                เข้าร่วมแล้วได้คะแนนพิเศษ 5 แต้ม · แนบหลักฐานแล้วรอ admin อนุมัติ/ปฏิเสธ · อนุมัติจะบวกคะแนนพิเศษ
-                {activityHasEnded ? " · กิจกรรมสิ้นสุดแล้ว" : null}
+                {activityHasEnded ? t("participants.hint-ended") : t("participants.hint")}
               </p>
             </section>
           </section>
@@ -326,7 +333,7 @@ export const JoinEventView = ({ eventId }: Props) => {
               )) : (
                 <tr className="block rounded-xs border-b-2 border-border lg:table-row bg-background">
                   <td colSpan={table.getAllColumns().length} className="block p-4 text-left align-middle not-first:border-t not-first:border-border lg:table-cell lg:border-t-2 lg:border-border lg:[table_>_:last-child_>_tr:last-child_>_&:first-child]:rounded-bl-xs lg:[table_>_:last-child_>_tr:last-child_>_&:last-child]:rounded-br-xs"> 
-                    Nothing yet
+                    {t("participants.empty")}
                   </td>
                 </tr>
               )}
@@ -339,7 +346,7 @@ export const JoinEventView = ({ eventId }: Props) => {
               <SearchInput
                 value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
                 onChange={(value) => table.getColumn("name")?.setFilterValue(value)}
-                placeholder="ค้นหาชื่อผู้เข้าร่วม"
+                placeholder={t("participants.search")}
               />
               <ExcelDropdown 
                 onImport={onImport}
@@ -352,21 +359,28 @@ export const JoinEventView = ({ eventId }: Props) => {
               type="button" 
               onClick={() => router.push(`/meta/events/${eventId}/edit`)}
             >
-              แก้ไขกิจกรรม
+              {t("participants.edit")}
             </Button>
           </div>
           <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
               <h2 className="text-xl leading-snug">
-                เพิ่มผู้เข้าร่วม
+                {t("participants.add")}
               </h2>
               <Controller 
                 control={form.control}
                 name="employee"
                 render={({ field }) => (
-                  <FieldSet label="พนักงาน" errorMessage={form.formState.errors.employee?.id?.message}>
+                  <FieldSet
+                    label={t("participants.employee")}
+                    errorMessage={
+                      form.formState.errors.employee?.id
+                        ? t("participants.employee-required")
+                        : undefined
+                    }
+                  >
                     <Selection 
-                      placeholder="ระบุพนักงาน"
+                      placeholder={t("participants.employee-placeholder")}
                       selectedValue={field.value.id || undefined}
                       selectedLabel={field.value.name || undefined}
                       onClear={() => form.resetField("employee")}
@@ -399,13 +413,13 @@ export const JoinEventView = ({ eventId }: Props) => {
                 type="submit"
                 disabled={join.isPending || activityHasEnded}
               >
-                {activityHasEnded ? "กิจกรรมสิ้นสุดแล้ว" : "บันทึกข้อมูล"}
+                {activityHasEnded ? t("participants.ended") : t("admin.save")}
               </Button>
             </form>
           </FormProvider>
           {(table.getIsSomePageRowsSelected() || table.getIsAllPageRowsSelected()) && (
             <div className="grid gap-4 p-4! md:p-6! border-t-2 border-border">
-              <h2 className="text-xl leading-snug">การจัดการผู้เข้าร่วม</h2>
+              <h2 className="text-xl leading-snug">{t("participants.manage")}</h2>
               <Button
                 type="button"
                 disabled={bulkApprove.isPending}
@@ -420,7 +434,10 @@ export const JoinEventView = ({ eventId }: Props) => {
                     {
                       onSuccess: (result) => {
                         toast.success(
-                          `อนุมัติสำเร็จ ${result.approved} รายการ (ข้าม ${result.skipped}) — คะแนนพิเศษ`,
+                          t("participants.approve-bulk", {
+                            approved: result.approved,
+                            skipped: result.skipped,
+                          }),
                         );
                         queryClient.invalidateQueries({
                           queryKey: crpc.activity.getOne.queryKey({
@@ -432,7 +449,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                   );
                 }}
               >
-                อนุมัติทั้งหมด
+                {t("participants.approve-all")}
               </Button>
               <Button
                 type="button"
@@ -449,7 +466,10 @@ export const JoinEventView = ({ eventId }: Props) => {
                     {
                       onSuccess: (result) => {
                         toast.success(
-                          `ปฏิเสธสำเร็จ ${result.rejected} รายการ (ข้าม ${result.skipped})`,
+                          t("participants.reject-bulk", {
+                            rejected: result.rejected,
+                            skipped: result.skipped,
+                          }),
                         );
                         queryClient.invalidateQueries({
                           queryKey: crpc.activity.getOne.queryKey({
@@ -461,9 +481,9 @@ export const JoinEventView = ({ eventId }: Props) => {
                   );
                 }}
               >
-                ปฏิเสธทั้งหมด
+                {t("participants.reject-all")}
               </Button>
-              <h2 className="text-xl leading-snug text-destructive">โซนอันตราย</h2>
+              <h2 className="text-xl leading-snug text-destructive">{t("admin.danger-zone")}</h2>
               <Button 
                 type="button" 
                 variant="danger"
@@ -478,7 +498,7 @@ export const JoinEventView = ({ eventId }: Props) => {
                   }
                 }}
               >
-                ลบ
+                {t("admin.delete")}
               </Button>
             </div>
           )}

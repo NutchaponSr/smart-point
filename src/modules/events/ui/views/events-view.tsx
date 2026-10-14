@@ -22,6 +22,7 @@ import { columns } from "@/modules/events/ui/components/event-columns";
 import { EventFiltersPopover } from "@/modules/events/ui/components/event-filters";
 
 import { useEventExcel } from "@/modules/events/hooks/use-event-excel";
+import { ExcelImportErrorsDialog } from "@/modules/rewards/ui/components/excel-import-errors-dialog";
 import { useEventFilters } from "@/modules/events/stores/use-event-filters";
 import { links } from "@/modules/dashboard/constants";
 
@@ -57,7 +58,7 @@ export const EventsView = () => {
     minParticipants: filters.minParticipants,
     maxParticipants: filters.maxParticipants,
   }));
-  const { onImport, onExport } = useEventExcel({
+  const { onImport, onExport, errors, clearErrors } = useEventExcel({
     searchQuery: debouncedQuery,
     view: filters.view,
     minParticipants: filters.minParticipants ?? null,
@@ -104,6 +105,7 @@ export const EventsView = () => {
       filter={<EventFiltersPopover />}
       menu={<Navigations links={links} />}
     >
+      <ExcelImportErrorsDialog errors={errors} onClose={clearErrors} />
       <ConfirmationDialog />
       <section className="p-4 md:p-8">
         <div className="grid gap-12">

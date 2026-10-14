@@ -2,6 +2,7 @@ import { CRPCError } from "better-convex/server";
 import z from "zod/v4";
 
 import { ENABLE_BU_RECOMMENDED } from "../lib/activity-features";
+import { normalizeText } from "../lib/employee-id";
 import { appendActivityLog } from "../lib/activity-log";
 import { authMutation, authQuery, privateMutation } from "../lib/crpc";
 import {
@@ -436,23 +437,6 @@ async function approveActivityParticipantReward(input: {
   };
 }
 
-async function awardJoinSpecialPoints(
-  ctx: MutationCtx,
-  input: {
-    employeeId: Id<"employee">;
-    participantId: Id<"activityParticipant">;
-    activityName: string;
-  },
-) {
-  await awardSpecialPoints(ctx, {
-    employeeId: input.employeeId,
-    delta: 5,
-    sourceType: "activity",
-    sourceId: `join:${input.participantId}`,
-    note: `เข้าร่วมกิจกรรม: ${input.activityName}`,
-  });
-}
-
 async function rejectActivityParticipant(input: {
   ctx: MutationCtx;
   activityId: Id<"activity">;
@@ -706,43 +690,86 @@ export const bulkAddParticipants = authMutation
       activityId: z.string().min(1),
       rows: z.array(
         z.object({
+          rowIndex: z.number().int().positive(),
           employeeIds: z.array(z.string().min(1)),
         }),
       ),
     }),
   )
   .mutation(async ({ ctx, input }) => {
+    const activityId = input.activityId as Id<"activity">;
+    const activity = await ctx.db.get(activityId);
+    if (!activity) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Activity not found",
+      });
+    }
+    if (!activity.isActive) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "กิจกรรมนี้ไม่เปิดใช้งาน",
+      });
+    }
+    if (hasActivityEnded(activity, Date.now())) {
+      throw new CRPCError({
+        code: "BAD_REQUEST",
+        message: "กิจกรรมนี้สิ้นสุดแล้ว ไม่สามารถเพิ่มผู้เข้าร่วมได้",
+      });
+    }
+
+    const existingRows = await ctx.db
+      .query("activityParticipant")
+      .withIndex("by_activityId", (q) => q.eq("activityId", activityId))
+      .collect();
+    let activeCount = existingRows.filter((p) => p.status !== "cancelled")
+      .length;
+
     let added = 0;
     let reactivated = 0;
     let skipped = 0;
+    const errors: Array<{
+      rowIndex: number;
+      employeeId: string;
+      message: string;
+    }> = [];
+    const seenCodes = new Set<string>();
 
     for (const row of input.rows) {
-      const activityId = input.activityId as Id<"activity">;
-      const activity = await ctx.db.get(activityId);
-      const unique = [...new Set(row.employeeIds)];
+      for (const employeeId of [...new Set(row.employeeIds)]) {
+        const code = normalizeText(employeeId, 5);
+        if (seenCodes.has(code)) {
+          errors.push({
+            rowIndex: row.rowIndex,
+            employeeId: code,
+            message: "รหัสพนักงานซ้ำในไฟล์",
+          });
+          continue;
+        }
+        seenCodes.add(code);
 
-      if (!activity) {
-        skipped += unique.length;
-        continue;
-      }
-
-      const existingRows = await ctx.db
-        .query("activityParticipant")
-        .withIndex("by_activityId", (q) => q.eq("activityId", activityId))
-        .collect();
-      let activeCount = existingRows.filter((p) => p.status !== "cancelled")
-        .length;
-
-      for (const employeeId of unique) {
         const emp = await ctx.db
           .query("employee")
-          .withIndex("by_employeeId", (q) => q.eq("employeeId", employeeId))
+          .withIndex("by_employeeId", (q) => q.eq("employeeId", code))
           .first();
 
         if (!emp) {
-          skipped += 1;
+          errors.push({
+            rowIndex: row.rowIndex,
+            employeeId: code,
+            message: "ไม่พบรหัสพนักงาน",
+          });
           continue;
         }
+        if (!isEmployeeEligibleForActivity(activity, emp)) {
+          errors.push({
+            rowIndex: row.rowIndex,
+            employeeId: code,
+            message: "พนักงานไม่อยู่ใน BU ที่เข้าร่วมกิจกรรมนี้ได้",
+          });
+          continue;
+        }
+
         const existing = await ctx.db
           .query("activityParticipant")
           .withIndex("by_activityId_employeeId", (q) =>
@@ -752,17 +779,28 @@ export const bulkAddParticipants = authMutation
 
         if (existing && existing.status !== "cancelled") {
           skipped += 1;
+          errors.push({
+            rowIndex: row.rowIndex,
+            employeeId: code,
+            message: "เข้าร่วมกิจกรรมนี้อยู่แล้ว",
+          });
+          continue;
+        }
+
+        if (
+          activity.maxParticipants != null &&
+          activeCount >= activity.maxParticipants
+        ) {
+          skipped += 1;
+          errors.push({
+            rowIndex: row.rowIndex,
+            employeeId: code,
+            message: "จำนวนผู้เข้าร่วมเต็มแล้ว",
+          });
           continue;
         }
 
         if (existing && existing.status === "cancelled") {
-          if (
-            activity.maxParticipants != null &&
-            activeCount >= activity.maxParticipants
-          ) {
-            skipped += 1;
-            continue;
-          }
           await ctx.db.patch(existing._id, { status: "registered" });
           await appendActivityLog(ctx, {
             actorEmployeeId: emp._id,
@@ -778,21 +816,8 @@ export const bulkAddParticipants = authMutation
               activityNameEn: localizedLabel(activity.name, "en"),
             },
           });
-          await awardJoinSpecialPoints(ctx, {
-            employeeId: emp._id,
-            participantId: existing._id,
-            activityName: localizedLabel(activity.name),
-          });
           reactivated += 1;
           activeCount += 1;
-          continue;
-        }
-
-        if (
-          activity.maxParticipants != null &&
-          activeCount >= activity.maxParticipants
-        ) {
-          skipped += 1;
           continue;
         }
 
@@ -815,17 +840,12 @@ export const bulkAddParticipants = authMutation
             activityNameEn: localizedLabel(activity.name, "en"),
           },
         });
-        await awardJoinSpecialPoints(ctx, {
-          employeeId: emp._id,
-          participantId,
-          activityName: localizedLabel(activity.name),
-        });
         added += 1;
         activeCount += 1;
       }
     }
 
-    return { added, reactivated, skipped };
+    return { added, reactivated, skipped, errors };
   });
 
 /** สถานะการเข้าร่วมของผู้ใช้ปัจจุบันในกิจกรรมหนึ่ง (null = ยังไม่เข้าร่วม) */
@@ -1350,12 +1370,6 @@ export const join = authMutation
         activityNameTh: localizedLabel(activity.name, "th"),
         activityNameEn: localizedLabel(activity.name, "en"),
       },
-    });
-
-    await awardJoinSpecialPoints(ctx, {
-      employeeId,
-      participantId,
-      activityName: localizedLabel(activity.name),
     });
 
     return { joined: true };

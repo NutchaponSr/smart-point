@@ -101,8 +101,18 @@ export const joinEventSchema = z.object({
   }),
 });
 
+const participantStatus = z.enum([
+  "registered",
+  "attended",
+  "rewarded",
+  "cancelled",
+]);
+
 export const participantSchema = z.object({
-  employeeId: z.coerce.number().min(1, "กรุณาเลือกพนักงาน"),
+  employeeId: z.preprocess(
+    (value) => (value == null ? "" : String(value).trim()),
+    z.string().min(1, "กรุณากรอกรหัสพนักงาน"),
+  ),
   nameTh: z.string().optional().nullable(),
   nameEn: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
@@ -110,7 +120,11 @@ export const participantSchema = z.object({
   departmentEn: z.string().optional().nullable(),
   positionTh: z.string().optional().nullable(),
   positionEn: z.string().optional().nullable(),
-  status: z.enum(["registered", "attended", "rewarded", "cancelled"]),
+  status: z.preprocess((value) => {
+    if (value == null) return undefined;
+    const text = String(value).trim();
+    return text === "" ? undefined : text;
+  }, participantStatus.optional()),
   statusLabel: z.string().optional().nullable(),
   evidence: z.string().optional().nullable(),
   joinedAt: z.string().optional().nullable(),

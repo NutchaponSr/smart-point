@@ -5,7 +5,9 @@ import { format } from "date-fns";
 import { enUS, th } from "date-fns/locale";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+
+import { authClient } from "@/lib/convex/auth-client";
 import {
   BsBoxArrowInRight,
   BsCheckCircle,
@@ -73,6 +75,60 @@ const logTypeTone: Record<ActivityLogType, string> = {
 
 const getDateFnsLocale = (locale: string) => (locale === "th" ? th : enUS);
 
+const SEEN_STORAGE_PREFIX = "smart-point:feed-seen:";
+const SEEN_LIMIT = 80;
+
+type FeedSeen = {
+  news: string[];
+  logs: string[];
+};
+
+function seenStorageKey(userId: string) {
+  return `${SEEN_STORAGE_PREFIX}${userId}`;
+}
+
+function readSeen(userId: string): FeedSeen | null {
+  try {
+    const raw = localStorage.getItem(seenStorageKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FeedSeen>;
+    if (!Array.isArray(parsed.news) || !Array.isArray(parsed.logs)) return null;
+    return {
+      news: parsed.news.filter((id) => typeof id === "string"),
+      logs: parsed.logs.filter((id) => typeof id === "string"),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeSeen(userId: string, seen: FeedSeen) {
+  localStorage.setItem(
+    seenStorageKey(userId),
+    JSON.stringify({
+      news: seen.news.slice(-SEEN_LIMIT),
+      logs: seen.logs.slice(-SEEN_LIMIT),
+    }),
+  );
+}
+
+function unreadCount(ids: string[], seenIds: string[]) {
+  const seen = new Set(seenIds);
+  return ids.filter((id) => !seen.has(id)).length;
+}
+
+function UnreadBadge({ count, label }: { count: number; label: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      aria-label={label}
+      className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff4b4b] px-1 text-[11px] font-bold leading-none text-white"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 const tabTriggerClassName = cn(
   "min-h-11 flex-1 rounded-none border-0 bg-transparent px-3 py-2.5 text-sm font-bold",
   "text-muted-foreground shadow-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#1cb0f6] after:opacity-0",
@@ -108,15 +164,26 @@ function TabPanelFallback() {
   );
 }
 
-function NewsList() {
-  const crpc = useCRPC();
+function NewsList({
+  items,
+  seenIds,
+  onOpen,
+}: {
+  items: Array<{
+    _id: string;
+    title: Parameters<typeof pickLocalized>[0];
+    summary: Parameters<typeof pickLocalized>[0];
+    body: Parameters<typeof pickLocalized>[0];
+    publishedAt: number | string | Date | null;
+    isPinned: boolean;
+  }>;
+  seenIds: string[];
+  onOpen: (id: string) => void;
+}) {
   const locale = useLocale();
   const t = useTranslations("news");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const { data: items } = useSuspenseQuery(
-    crpc.news.getLatest.queryOptions({ limit: 5 }),
-  );
+  const seen = new Set(seenIds);
 
   if (items.length === 0) {
     return (
@@ -131,6 +198,7 @@ function NewsList() {
     <ul className="flex flex-col gap-2">
       {items.map((item) => {
         const isExpanded = expandedId === item._id;
+        const isUnseen = !seen.has(item._id);
         const title = pickLocalized(item.title, locale);
         const summary = pickLocalized(item.summary, locale);
         const body = pickLocalized(item.body, locale);
@@ -150,13 +218,22 @@ function NewsList() {
           >
             <button
               type="button"
-              onClick={() => setExpandedId(isExpanded ? null : item._id)}
+              onClick={() => {
+                onOpen(item._id);
+                setExpandedId(isExpanded ? null : item._id);
+              }}
               className="flex w-full items-start p-3 text-left"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
+                      {isUnseen && (
+                        <span
+                          className="size-2 shrink-0 rounded-full bg-[#ff4b4b]"
+                          aria-hidden
+                        />
+                      )}
                       {item.isPinned && (
                         <BsPinAngleFill className="size-3 shrink-0 text-pink" />
                       )}
@@ -283,13 +360,25 @@ function formatActivityLogMessage(
   return t(`types.${type}`, { amount, name, activityName });
 }
 
-function ActivityLogList() {
-  const crpc = useCRPC();
+function ActivityLogList({
+  items,
+}: {
+  items: Array<{
+    _id: string;
+    type: string;
+    summary: string;
+    amount: number | null;
+    bahtAmount?: number | null;
+    activityName: { th: string; en: string } | string | null;
+    actor: { name: { th: string; en: string } | string } | null;
+    subject: { name: { th: string; en: string } | string } | null;
+    meta: Record<string, unknown> | null;
+    viewerRole?: "actor" | "subject";
+    createdAt: number | string | Date;
+  }>;
+}) {
   const locale = useLocale();
   const tLog = useTranslations("activityLog");
-  const { data: items } = useSuspenseQuery(
-    crpc.activityLog.getLatest.queryOptions({ limit: 10 }),
-  );
 
   if (items.length === 0) {
     return (
@@ -337,21 +426,97 @@ function ActivityLogList() {
   );
 }
 
-export const News = () => {
+function NewsPanel() {
+  const crpc = useCRPC();
   const t = useTranslations("news");
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id ?? null;
+  const [tab, setTab] = useState("news");
+  const [seen, setSeen] = useState<FeedSeen | null>(null);
+  const seenRef = useRef<FeedSeen | null>(null);
+  const bootstrappedUserId = useRef<string | null>(null);
+
+  const { data: news } = useSuspenseQuery(
+    crpc.news.getLatest.queryOptions({ limit: 5 }),
+  );
+  const { data: logs } = useSuspenseQuery(
+    crpc.activityLog.getLatest.queryOptions({ limit: 10 }),
+  );
+
+  const newsIds = news.map((item) => item._id);
+  const logIds = logs.map((item) => item._id);
+  const newsKey = newsIds.join("\0");
+  const logKey = logIds.join("\0");
+
+  useEffect(() => {
+    if (!userId || bootstrappedUserId.current === userId) return;
+    bootstrappedUserId.current = userId;
+    const stored = readSeen(userId) ?? { news: newsIds, logs: logIds };
+    if (!readSeen(userId)) writeSeen(userId, stored);
+    seenRef.current = stored;
+    setSeen(stored);
+  }, [userId, newsKey, logKey, newsIds, logIds]);
+
+  useEffect(() => {
+    if (tab !== "logs" || !userId) return;
+    const current = seenRef.current;
+    if (!current) return;
+    const seenLogs = new Set(current.logs);
+    const missing = logIds.filter((id) => !seenLogs.has(id));
+    if (missing.length === 0) return;
+    const next = {
+      ...current,
+      logs: [...current.logs, ...missing].slice(-SEEN_LIMIT),
+    };
+    seenRef.current = next;
+    setSeen(next);
+    writeSeen(userId, next);
+  }, [tab, userId, logKey, logIds]);
+
+  const markNewsOpened = (id: string) => {
+    if (!userId) return;
+    const current = seenRef.current ?? { news: [], logs: [] };
+    if (current.news.includes(id)) return;
+    const next = {
+      ...current,
+      news: [...current.news, id].slice(-SEEN_LIMIT),
+    };
+    seenRef.current = next;
+    setSeen(next);
+    writeSeen(userId, next);
+  };
+
+  const seenNews = seen?.news ?? newsIds;
+  const seenLogs = seen?.logs ?? logIds;
+  const newsUnread = unreadCount(newsIds, seenNews);
+  const logUnread = unreadCount(logIds, seenLogs);
 
   return (
     <article className="flex flex-col gap-0 overflow-hidden rounded-md border-2 bg-background">
-      <Tabs defaultValue="news" className="gap-0">
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          if (typeof value === "string") setTab(value);
+        }}
+        className="gap-0"
+      >
         <TabsList
           variant="line"
           className="h-auto w-full gap-0 rounded-none border-b border-border bg-transparent p-0"
         >
           <TabsTrigger value="news" className={tabTriggerClassName}>
             {t("tabs.news")}
+            <UnreadBadge
+              count={newsUnread}
+              label={t("unread", { count: newsUnread })}
+            />
           </TabsTrigger>
           <TabsTrigger value="logs" className={tabTriggerClassName}>
             {t("tabs.logs")}
+            <UnreadBadge
+              count={logUnread}
+              label={t("unread", { count: logUnread })}
+            />
           </TabsTrigger>
         </TabsList>
 
@@ -359,19 +524,29 @@ export const News = () => {
           value="news"
           className="max-h-80 overflow-y-auto overscroll-contain p-4 pt-3"
         >
-          <Suspense fallback={<TabPanelFallback />}>
-            <NewsList />
-          </Suspense>
+          <NewsList items={news} seenIds={seenNews} onOpen={markNewsOpened} />
         </TabsContent>
         <TabsContent
           value="logs"
           className="max-h-80 overflow-y-auto overscroll-contain p-4 pt-3"
         >
-          <Suspense fallback={<TabPanelFallback />}>
-            <ActivityLogList />
-          </Suspense>
+          <ActivityLogList items={logs} />
         </TabsContent>
       </Tabs>
     </article>
+  );
+}
+
+export const News = () => {
+  return (
+    <Suspense
+      fallback={
+        <article className="flex flex-col gap-0 overflow-hidden rounded-md border-2 bg-background">
+          <TabPanelFallback />
+        </article>
+      }
+    >
+      <NewsPanel />
+    </Suspense>
   );
 };

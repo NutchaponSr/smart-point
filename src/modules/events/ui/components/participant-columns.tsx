@@ -2,13 +2,12 @@
 
 import { ApiOutputs } from "@convex/api";
 import { ColumnDef } from "@tanstack/react-table";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { pickLocalized } from "@/lib/i18n/localized";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
-import { statuses } from "@/modules/events/constants";
 
 type Participant = ApiOutputs["activity"]["getOne"]["joinedEmployees"][0];
 type ParticipantStatus = Participant["status"];
@@ -28,110 +27,164 @@ const statusBadgeClassName: Record<ParticipantStatus, string> = {
   cancelled: "text-muted-foreground",
 };
 
+function SelectAllCheckbox({
+  table,
+}: {
+  table: {
+    getIsAllPageRowsSelected: () => boolean;
+    getIsSomePageRowsSelected: () => boolean;
+    toggleAllPageRowsSelected: (value: boolean) => void;
+  };
+}) {
+  const t = useTranslations("events.participants");
+  return (
+    <Checkbox
+      checked={
+        table.getIsAllPageRowsSelected() ||
+        (table.getIsSomePageRowsSelected() && "indeterminate")
+      }
+      onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+      aria-label={t("select-all")}
+      onClick={(e) => e.stopPropagation()}
+      className="size-5"
+    />
+  );
+}
+
+function SelectRowCheckbox({
+  row,
+}: {
+  row: {
+    getIsSelected: () => boolean;
+    toggleSelected: (value: boolean) => void;
+  };
+}) {
+  const t = useTranslations("events.participants");
+  return (
+    <Checkbox
+      checked={row.getIsSelected()}
+      onCheckedChange={(value) => row.toggleSelected(!!value)}
+      aria-label={t("select-row")}
+      className="size-5"
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+}
+
 export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
   return [
     {
       id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          onClick={(e) => e.stopPropagation()}
-          className="size-5"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="size-5"
-          onClick={(e) => e.stopPropagation()}
-        />
-      ),
+      header: ({ table }) => <SelectAllCheckbox table={table} />,
+      cell: ({ row }) => <SelectRowCheckbox row={row} />,
       enableSorting: false,
       enableHiding: false,
     },
     {
       accessorKey: "name",
-      header: "พนักงาน",
+      header: () => <ColumnLabel name="employee" />,
       cell: ({ row }) => <ParticipantNameCell participant={row.original} />,
     },
     {
       accessorKey: "status",
-      header: "สถานะ",
-      cell: ({ row }) => {
-        const status = row.original.status;
-        const label =
-          status in statuses
-            ? statuses[status as keyof typeof statuses].th
-            : status;
-        return (
-          <span
-            className={`text-sm font-semibold ${statusBadgeClassName[status] ?? ""}`}
-          >
-            {label}
-          </span>
-        );
-      },
+      header: () => <ColumnLabel name="status" />,
+      cell: ({ row }) => <ParticipantStatusCell status={row.original.status} />,
     },
     {
       id: "evidence",
-      header: "หลักฐาน",
+      header: () => <ColumnLabel name="evidence" />,
       cell: ({ row }) =>
         row.original.evidenceStorageId ? (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => options.onOpenEvidence(row.original)}
-          >
-            ดูไฟล์
-          </Button>
+          <EvidenceButton onClick={() => options.onOpenEvidence(row.original)} />
         ) : (
           <span className="text-xs text-muted-foreground">-</span>
         ),
     },
     {
       id: "review",
-      header: "ตรวจสอบ",
-      cell: ({ row }) => {
-        const canReview =
-          row.original.status === "attended" &&
-          !!row.original.evidenceStorageId;
-        const participantId = row.original.participantId;
-
-        return (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              title="บวกคะแนนพิเศษให้พนักงาน"
-              disabled={!canReview || options.approvingIds.has(participantId)}
-              onClick={() => options.onApprove(participantId)}
-            >
-              อนุมัติ
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="danger"
-              title="ปฏิเสธหลักฐาน — พนักงานสามารถแนบใหม่ได้"
-              disabled={!canReview || options.rejectingIds.has(participantId)}
-              onClick={() => options.onReject(participantId)}
-            >
-              ปฏิเสธ
-            </Button>
-          </div>
-        );
-      },
+      header: () => <ColumnLabel name="review" />,
+      cell: ({ row }) => (
+        <ReviewActions
+          canReview={
+            row.original.status === "attended" &&
+            !!row.original.evidenceStorageId
+          }
+          pendingApprove={options.approvingIds.has(row.original.participantId)}
+          pendingReject={options.rejectingIds.has(row.original.participantId)}
+          onApprove={() => options.onApprove(row.original.participantId)}
+          onReject={() => options.onReject(row.original.participantId)}
+        />
+      ),
     },
   ];
 };
+
+function ColumnLabel({
+  name,
+}: {
+  name: "employee" | "status" | "evidence" | "review";
+}) {
+  const t = useTranslations("events.participants.columns");
+  return t(name);
+}
+
+function ParticipantStatusCell({ status }: { status: ParticipantStatus }) {
+  const t = useTranslations("events.participants.status");
+  return (
+    <span className={`text-sm font-semibold ${statusBadgeClassName[status] ?? ""}`}>
+      {t(status)}
+    </span>
+  );
+}
+
+function EvidenceButton({ onClick }: { onClick: () => void }) {
+  const t = useTranslations("events.participants.columns");
+  return (
+    <Button type="button" size="sm" onClick={onClick}>
+      {t("view-file")}
+    </Button>
+  );
+}
+
+function ReviewActions({
+  canReview,
+  pendingApprove,
+  pendingReject,
+  onApprove,
+  onReject,
+}: {
+  canReview: boolean;
+  pendingApprove: boolean;
+  pendingReject: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  const t = useTranslations("events.participants.columns");
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        title={t("approve-title")}
+        disabled={!canReview || pendingApprove}
+        onClick={onApprove}
+      >
+        {t("approve")}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="danger"
+        title={t("reject-title")}
+        disabled={!canReview || pendingReject}
+        onClick={onReject}
+      >
+        {t("reject")}
+      </Button>
+    </div>
+  );
+}
 
 function ParticipantNameCell({ participant }: { participant: Participant }) {
   const locale = useLocale();

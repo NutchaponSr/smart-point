@@ -40,7 +40,10 @@ export declare const api: {
     bulkAddParticipants: FunctionReference<
       "mutation",
       "public",
-      { activityId: string; rows: Array<{ employeeIds: Array<string> }> },
+      {
+        activityId: string;
+        rows: Array<{ employeeIds: Array<string>; rowIndex: number }>;
+      },
       any
     >;
     bulkApprove: FunctionReference<

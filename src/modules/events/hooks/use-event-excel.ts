@@ -3,7 +3,7 @@
 import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { defaultCRPCTransformer } from "better-convex/crpc";
 
 import { isLocalizedString } from "@/lib/i18n/localized";
@@ -31,6 +31,15 @@ export type ExcelOperationState =
   | { status: "error"; errors: ValidationError[] }
   | { status: "success"; operation: "import" | "export" };
 
+function logImportErrorLines(errors: ValidationError[]) {
+  for (const err of errors) {
+    const value = err.value == null ? "" : ` | ค่า: ${String(err.value)}`;
+    console.error(
+      `[event-excel] แถว ${err.row} | ${err.field}: ${err.message}${value}`,
+    );
+  }
+}
+
 export function useEventExcel({
   searchQuery,
   view,
@@ -38,6 +47,7 @@ export function useEventExcel({
   maxParticipants,
 }: Props) {
   const crpc = useCRPC();
+  const queryClient = useQueryClient();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkCreate = useMutation(crpc.activity.bulkCreate.mutationOptions());
@@ -53,12 +63,13 @@ export function useEventExcel({
       });
 
       if (result.errors.length > 0) {
-        console.error("[event-excel] import validation failed", result.errors);
+        logImportErrorLines(result.errors);
         setState({ status: "error", errors: result.errors });
+        toast.error(`นำเข้าไม่สำเร็จ ${result.errors.length} แถว`);
         return;
       }
 
-      await bulkCreate.mutateAsync({
+      const created = await bulkCreate.mutateAsync({
         rows: result.data.map((row) => ({
           name: { th: row.nameTh, en: row.nameEn },
           description: {
@@ -76,21 +87,23 @@ export function useEventExcel({
       });
 
       setState({ status: "success", operation: "import" });
+      toast.success(`นำเข้ากิจกรรมสำเร็จ ${created.inserted} รายการ`);
+      await queryClient.invalidateQueries({
+        queryKey: crpc.activity.getMany.queryKey(),
+      });
     } catch (error) {
-      console.error("[event-excel] import failed", error);
       const message =
         error instanceof Error ? error.message : "Something went wrong";
-      setState({
-        status: "error",
-        errors: [
-          {
-            row: 0,
-            field: "file",
-            message,
-            value: null,
-          },
-        ],
-      });
+      const errors: ValidationError[] = [
+        {
+          row: 0,
+          field: "file",
+          message,
+          value: null,
+        },
+      ];
+      logImportErrorLines(errors);
+      setState({ status: "error", errors });
       toast.error(message);
     }
   };

@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useCRPC } from "@/lib/convex/crpc";
 import { formatThaiDate } from "@/lib/format-thai-date";
@@ -58,8 +58,18 @@ export type ExcelOperationState =
   | { status: "error"; errors: ValidationError[] }
   | { status: "success"; operation: "import" | "export" };
 
+function logImportErrorLines(errors: ValidationError[]) {
+  for (const err of errors) {
+    const value = err.value == null ? "" : ` | ค่า: ${String(err.value)}`;
+    console.error(
+      `[participant-excel] แถว ${err.row} | ${err.field}: ${err.message}${value}`,
+    );
+  }
+}
+
 export function useParticipantExcel({ activityId }: Props) {
   const crpc = useCRPC();
+  const queryClient = useQueryClient();
   const [state, setState] = useState<ExcelOperationState>({ status: "idle" });
 
   const bulkCreate = useMutation(crpc.activity.bulkAddParticipants.mutationOptions());
@@ -77,31 +87,74 @@ export function useParticipantExcel({ activityId }: Props) {
       });
 
       if (result.errors.length > 0) {
+        logImportErrorLines(result.errors);
         setState({ status: "error", errors: result.errors });
+        toast.error(`นำเข้าไม่สำเร็จ ${result.errors.length} แถว`);
         return;
       }
 
-      await bulkCreate.mutateAsync({
-        activityId,
-        rows: result.data.map((row) => ({
-          employeeIds: [String(row.employeeId)],
-        })),
-      });
-
-      setState({ status: "success", operation: "import" });
-    } catch (error) {
-      setState({
-        status: "error",
-        errors: [
+      if (result.data.length === 0) {
+        const errors: ValidationError[] = [
           {
             row: 0,
             field: "file",
-            message:
-              error instanceof Error ? error.message : "Something went wrong",
+            message: "ไม่มีข้อมูลให้นำเข้า",
             value: null,
           },
-        ],
+        ];
+        logImportErrorLines(errors);
+        setState({ status: "error", errors });
+        toast.error("ไม่มีข้อมูลให้นำเข้า");
+        return;
+      }
+
+      const created = await bulkCreate.mutateAsync({
+        activityId,
+        rows: result.data.map((row, index) => ({
+          rowIndex: index + 1,
+          employeeIds: [row.employeeId],
+        })),
       });
+
+      const importErrors: ValidationError[] = created.errors.map((err) => ({
+        row: err.rowIndex,
+        field: "employeeId",
+        message: err.message,
+        value: err.employeeId,
+      }));
+      const imported = created.added + created.reactivated;
+
+      await queryClient.invalidateQueries({
+        queryKey: crpc.activity.getOne.queryKey({ activityId }),
+      });
+
+      if (importErrors.length > 0) {
+        logImportErrorLines(importErrors);
+        setState({ status: "error", errors: importErrors });
+        toast.error(
+          imported > 0
+            ? `นำเข้าได้ ${imported} รายการ, ไม่สำเร็จ ${importErrors.length} แถว`
+            : `นำเข้าไม่สำเร็จ ${importErrors.length} แถว`,
+        );
+        return;
+      }
+
+      setState({ status: "success", operation: "import" });
+      toast.success(`นำเข้าผู้เข้าร่วมสำเร็จ ${imported} รายการ`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "นำเข้าผู้เข้าร่วมไม่สำเร็จ";
+      const errors: ValidationError[] = [
+        {
+          row: 0,
+          field: "file",
+          message,
+          value: null,
+        },
+      ];
+      logImportErrorLines(errors);
+      setState({ status: "error", errors });
+      toast.error(message);
     }
   };
 
