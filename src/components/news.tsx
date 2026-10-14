@@ -172,10 +172,10 @@ function NewsList({
   items: Array<{
     _id: string;
     title: Parameters<typeof pickLocalized>[0];
-    summary: Parameters<typeof pickLocalized>[0];
+    summary?: Parameters<typeof pickLocalized>[0];
     body: Parameters<typeof pickLocalized>[0];
-    publishedAt: number | string | Date | null;
-    isPinned: boolean;
+    publishedAt?: number | string | Date | null;
+    isPinned?: boolean | null;
   }>;
   seenIds: string[];
   onOpen: (id: string) => void;
