@@ -60,6 +60,21 @@ export const JoinEventView = ({ eventId }: Props) => {
   const [ConfirmationDialog, confirm] = useConfirm({
     title: t("participants.delete-title"),
   });
+  const [ApproveDialog, confirmApprove] = useConfirm({
+    title: t("participants.approve-confirm"),
+  });
+  const [RejectDialog, confirmReject] = useConfirm({
+    title: t("participants.reject-confirm"),
+  });
+  const [BulkApproveDialog, confirmBulkApprove] = useConfirm({
+    title: t("participants.approve-bulk-confirm"),
+  });
+  const [BulkRejectDialog, confirmBulkReject] = useConfirm({
+    title: t("participants.reject-bulk-confirm"),
+  });
+  const [RevokeDialog, confirmRevoke] = useConfirm({
+    title: t("participants.revoke-confirm"),
+  });
 
   const { data: employees } = useQuery({
     enabled: debouncedQuery.trim().length > 0,
@@ -74,6 +89,7 @@ export const JoinEventView = ({ eventId }: Props) => {
   const approve = useMutation(crpc.activity.approve.mutationOptions());
   const bulkApprove = useMutation(crpc.activity.bulkApprove.mutationOptions());
   const reject = useMutation(crpc.activity.reject.mutationOptions());
+  const revoke = useMutation(crpc.activity.revoke.mutationOptions());
   const bulkReject = useMutation(crpc.activity.bulkReject.mutationOptions());
   const form = useForm<JoinEventSchema>({
     resolver: zodResolver(joinEventSchema),
@@ -89,6 +105,7 @@ export const JoinEventView = ({ eventId }: Props) => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [rejectingIds, setRejectingIds] = useState<Set<string>>(new Set());
+  const [revokingIds, setRevokingIds] = useState<Set<string>>(new Set());
   const [selectedEvidence, setSelectedEvidence] = useState<
     ApiOutputs["activity"]["getOne"]["joinedEmployees"][0] | null
   >(null);
@@ -109,8 +126,11 @@ export const JoinEventView = ({ eventId }: Props) => {
     columns: columns({
       approvingIds,
       rejectingIds,
+      revokingIds,
       onOpenEvidence: (participant) => setSelectedEvidence(participant),
-      onApprove: (participantId) => {
+      onApprove: async (participantId) => {
+        const ok = await confirmApprove();
+        if (!ok) return;
         setApprovingIds((prev) => new Set(prev).add(participantId));
         approve.mutate(
           { activityId: eventId, participantId },
@@ -138,7 +158,9 @@ export const JoinEventView = ({ eventId }: Props) => {
           },
         );
       },
-      onReject: (participantId) => {
+      onReject: async (participantId) => {
+        const ok = await confirmReject();
+        if (!ok) return;
         setRejectingIds((prev) => new Set(prev).add(participantId));
         reject.mutate(
           { activityId: eventId, participantId },
@@ -158,6 +180,36 @@ export const JoinEventView = ({ eventId }: Props) => {
             },
             onSettled: () => {
               setRejectingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(participantId);
+                return next;
+              });
+            },
+          },
+        );
+      },
+      onRevoke: async (participantId) => {
+        const ok = await confirmRevoke();
+        if (!ok) return;
+        setRevokingIds((prev) => new Set(prev).add(participantId));
+        revoke.mutate(
+          { activityId: eventId, participantId },
+          {
+            onSuccess: (result) => {
+              if (result.revoked) {
+                toast.success(t("participants.revoke-success"));
+              } else {
+                toast.error(t("participants.revoke-unavailable"));
+              }
+              queryClient.invalidateQueries({
+                queryKey: crpc.activity.getOne.queryKey({ activityId: eventId }),
+              });
+            },
+            onError: () => {
+              toast.error(t("participants.revoke-error"));
+            },
+            onSettled: () => {
+              setRevokingIds((prev) => {
                 const next = new Set(prev);
                 next.delete(participantId);
                 return next;
@@ -204,6 +256,11 @@ export const JoinEventView = ({ eventId }: Props) => {
     <>
       <ExcelImportErrorsDialog errors={importErrors} onClose={clearErrors} />
       <ConfirmationDialog />
+      <ApproveDialog />
+      <RejectDialog />
+      <BulkApproveDialog />
+      <BulkRejectDialog />
+      <RevokeDialog />
       <Dialog
         open={selectedEvidence != null}
         onOpenChange={(open) => {
@@ -423,7 +480,9 @@ export const JoinEventView = ({ eventId }: Props) => {
               <Button
                 type="button"
                 disabled={bulkApprove.isPending}
-                onClick={() => {
+                onClick={async () => {
+                  const ok = await confirmBulkApprove();
+                  if (!ok) return;
                   bulkApprove.mutate(
                     {
                       activityId: eventId,
@@ -455,7 +514,9 @@ export const JoinEventView = ({ eventId }: Props) => {
                 type="button"
                 variant="danger"
                 disabled={bulkReject.isPending}
-                onClick={() => {
+                onClick={async () => {
+                  const ok = await confirmBulkReject();
+                  if (!ok) return;
                   bulkReject.mutate(
                     {
                       activityId: eventId,

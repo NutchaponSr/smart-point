@@ -40,6 +40,7 @@ function createProcedureRegistry() {
   "recommended": ["query", typedProcedureResolver(api["activity"]["recommended"], () => (require("../activity") as Record<string, unknown>)["recommended"])],
   "reject": ["mutation", typedProcedureResolver(api["activity"]["reject"], () => (require("../activity") as Record<string, unknown>)["reject"])],
   "remove": ["mutation", typedProcedureResolver(api["activity"]["remove"], () => (require("../activity") as Record<string, unknown>)["remove"])],
+  "revoke": ["mutation", typedProcedureResolver(api["activity"]["revoke"], () => (require("../activity") as Record<string, unknown>)["revoke"])],
   "update": ["mutation", typedProcedureResolver(api["activity"]["update"], () => (require("../activity") as Record<string, unknown>)["update"])],
 } as const;
 

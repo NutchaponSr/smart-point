@@ -76,6 +76,14 @@
       "reject-success": "ปฏิเสธหลักฐานแล้ว — พนักงานสามารถแนบใหม่ได้",
       "reject-unavailable": "ไม่สามารถปฏิเสธรายการนี้ได้",
       "reject-error": "ปฏิเสธไม่สำเร็จ",
+      "revoke-success": "ถอนการอนุมัติแล้ว — ดึงคะแนนคืนและแจ้งให้พนักงานแนบหลักฐานใหม่",
+      "revoke-unavailable": "ไม่สามารถถอนการอนุมัติรายการนี้ได้",
+      "revoke-error": "ถอนการอนุมัติไม่สำเร็จ",
+      "revoke-confirm": "ถอนการอนุมัติและดึงคะแนนคืน",
+      "approve-confirm": "อนุมัติและบวกคะแนนพิเศษให้พนักงานคนนี้",
+      "reject-confirm": "ปฏิเสธหลักฐาน และให้พนักงานแนบใหม่",
+      "approve-bulk-confirm": "อนุมัติรายการที่เลือกและบวกคะแนนพิเศษ",
+      "reject-bulk-confirm": "ปฏิเสธรายการที่เลือก และให้พนักงานแนบใหม่",
       "evidence-title": "หลักฐาน: {name}",
       "evidence-file": "ไฟล์: {name}",
       "evidence-loading": "กำลังโหลดไฟล์หลักฐาน...",
@@ -106,7 +114,9 @@
         "approve": "อนุมัติ",
         "approve-title": "บวกคะแนนพิเศษให้พนักงาน",
         "reject": "ปฏิเสธ",
-        "reject-title": "ปฏิเสธหลักฐาน — พนักงานสามารถแนบใหม่ได้"
+        "reject-title": "ปฏิเสธหลักฐาน — พนักงานสามารถแนบใหม่ได้",
+        "revoke": "ถอนการอนุมัติ",
+        "revoke-title": "ถอนการอนุมัติ ดึงคะแนนคืน และให้พนักงานแนบหลักฐานใหม่"
       },
       "status": {
         "registered": "สมัครเข้าร่วม",
@@ -384,7 +394,7 @@
       "praise_streak": "ส่งคำชมครบโควต้า 3 เดือนติดต่อกัน รับ +{amount} Special Points",
       "event_joined": "เข้าร่วมกิจกรรม: {activityName}",
       "event_completed": "ขอบคุณสำหรับการร่วมกิจกรรม: {activityName}",
-      "event_rejected": "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม",
+      "event_rejected": "กรุณาแนบหลักฐานใหม่ตามเงื่อนไขกิจกรรม: {activityName}",
       "donation": "บริจาค {amount} พอยต์ ({bahtAmount} บาท) ให้ {name}",
       "donation_received": "ได้รับบริจาค {amount} พอยต์ ({bahtAmount} บาท) จาก {name}"
     }

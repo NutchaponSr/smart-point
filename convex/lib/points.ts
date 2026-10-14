@@ -101,3 +101,73 @@ export async function awardSpecialPoints(
 
   return { awarded: true, newBalance };
 }
+
+/**
+ * ดึง Special Points ที่ให้จากกิจกรรมคืน
+ * เลื่อน sourceId ของแถวเดิมออก เพื่อไม่ให้หักซ้ำ และให้อนุมัติครั้งถัดไปให้แต้มได้
+ */
+export async function clawbackActivityPoints(
+  ctx: PointsMutationCtx,
+  input: {
+    employeeId: Id<"employee">;
+    participantId: string;
+  },
+): Promise<{ clawed: number }> {
+  const rows = await ctx.db
+    .query("pointLedger")
+    .withIndex("by_sourceType_sourceId", (q) =>
+      q.eq("sourceType", "activity").eq("sourceId", input.participantId),
+    )
+    .collect();
+
+  const awards = rows.filter(
+    (row) =>
+      row.delta > 0 &&
+      row.balanceType === "special" &&
+      row.employeeId === input.employeeId,
+  );
+  if (awards.length === 0) return { clawed: 0 };
+
+  const wallet = await getWalletOrThrow(ctx, input.employeeId);
+  let balance = wallet.specialBudget ?? 0;
+  let clawed = 0;
+
+  for (const row of awards) {
+    const revokeSourceId = `revoke:${row._id}`;
+    const already = await ctx.db
+      .query("pointLedger")
+      .withIndex("by_sourceType_sourceId", (q) =>
+        q.eq("sourceType", "activity").eq("sourceId", revokeSourceId),
+      )
+      .first();
+    if (already) continue;
+
+    await ctx.db.patch(row._id, { sourceId: `void:${row._id}` });
+
+    const take = Math.min(balance, row.delta);
+    const shortfall = row.delta - take;
+    balance -= take;
+    clawed += take;
+
+    await ctx.db.insert("pointLedger", {
+      employeeId: input.employeeId,
+      delta: -take,
+      balanceAfter: balance,
+      balanceType: "special",
+      sourceType: "activity",
+      sourceId: revokeSourceId,
+      note:
+        shortfall > 0
+          ? `ถอนรางวัลกิจกรรม (ใช้แต้มไปแล้ว ${shortfall} คะแนน จึงดึงคืนไม่ครบ)`
+          : "ถอนรางวัลกิจกรรม",
+      createdAt: Date.now(),
+    });
+  }
+
+  if (clawed > 0) {
+    await ctx.db.patch(wallet._id, { specialBudget: balance });
+    await syncLeaderboardEntry(ctx, input.employeeId);
+  }
+
+  return { clawed };
+}

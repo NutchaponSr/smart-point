@@ -186,6 +186,12 @@ export declare const api: {
       { activityId: string },
       any
     >;
+    revoke: FunctionReference<
+      "mutation",
+      "public",
+      { activityId: string; participantId: string },
+      { pointClawed: number; revoked: boolean; skipped: boolean }
+    >;
     update: FunctionReference<
       "mutation",
       "public",

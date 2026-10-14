@@ -31,6 +31,7 @@ export const api = {
     recommended: createApiLeaf<"query", typeof import("../functions/activity").recommended>(convexApi["activity"]["recommended"], { auth: "required", type: "query" }),
     reject: createApiLeaf<"mutation", typeof import("../functions/activity").reject>(convexApi["activity"]["reject"], { auth: "required", type: "mutation" }),
     remove: createApiLeaf<"mutation", typeof import("../functions/activity").remove>(convexApi["activity"]["remove"], { auth: "required", type: "mutation" }),
+    revoke: createApiLeaf<"mutation", typeof import("../functions/activity").revoke>(convexApi["activity"]["revoke"], { auth: "required", type: "mutation" }),
     update: createApiLeaf<"mutation", typeof import("../functions/activity").update>(convexApi["activity"]["update"], { auth: "required", type: "mutation" }),
   },
   activityLog: {

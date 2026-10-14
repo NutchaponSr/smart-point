@@ -15,8 +15,10 @@ type ParticipantStatus = Participant["status"];
 interface ColumnOptions {
   approvingIds: Set<string>;
   rejectingIds: Set<string>;
+  revokingIds: Set<string>;
   onApprove: (participantId: string) => void;
   onReject: (participantId: string) => void;
+  onRevoke: (participantId: string) => void;
   onOpenEvidence: (participant: Participant) => void;
 }
 
@@ -109,10 +111,13 @@ export const columns = (options: ColumnOptions): ColumnDef<Participant>[] => {
             row.original.status === "registered" ||
             row.original.status === "attended"
           }
+          canRevoke={row.original.status === "rewarded"}
           pendingApprove={options.approvingIds.has(row.original.participantId)}
           pendingReject={options.rejectingIds.has(row.original.participantId)}
+          pendingRevoke={options.revokingIds.has(row.original.participantId)}
           onApprove={() => options.onApprove(row.original.participantId)}
           onReject={() => options.onReject(row.original.participantId)}
+          onRevoke={() => options.onRevoke(row.original.participantId)}
         />
       ),
     },
@@ -148,40 +153,61 @@ function EvidenceButton({ onClick }: { onClick: () => void }) {
 
 function ReviewActions({
   canReview,
+  canRevoke,
   pendingApprove,
   pendingReject,
+  pendingRevoke,
   onApprove,
   onReject,
+  onRevoke,
 }: {
   canReview: boolean;
+  canRevoke: boolean;
   pendingApprove: boolean;
   pendingReject: boolean;
+  pendingRevoke: boolean;
   onApprove: () => void;
   onReject: () => void;
+  onRevoke: () => void;
 }) {
   const t = useTranslations("events.participants.columns");
   return (
     <div className="flex flex-wrap gap-2">
-      <Button
-        type="button"
-        size="sm"
-        variant="secondary"
-        title={t("approve-title")}
-        disabled={!canReview || pendingApprove}
-        onClick={onApprove}
-      >
-        {t("approve")}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="danger"
-        title={t("reject-title")}
-        disabled={!canReview || pendingReject}
-        onClick={onReject}
-      >
-        {t("reject")}
-      </Button>
+      {canRevoke ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="danger"
+          title={t("revoke-title")}
+          disabled={pendingRevoke}
+          onClick={onRevoke}
+        >
+          {t("revoke")}
+        </Button>
+      ) : (
+        <>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            title={t("approve-title")}
+            disabled={!canReview || pendingApprove}
+            onClick={onApprove}
+          >
+            {t("approve")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="danger"
+            title={t("reject-title")}
+            disabled={!canReview || pendingReject}
+            onClick={onReject}
+          >
+            {t("reject")}
+          </Button>
+        </>
+      )}
     </div>
   );
 }

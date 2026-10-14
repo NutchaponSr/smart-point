@@ -17,7 +17,7 @@ import {
   toLocalizedString,
   type LocalizedString,
 } from "../lib/localized";
-import { awardSpecialPoints } from "../lib/points";
+import { awardSpecialPoints, clawbackActivityPoints } from "../lib/points";
 
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./generated/server";
@@ -481,6 +481,8 @@ async function rejectActivityParticipant(input: {
     return { rejected: false, skipped: true as const };
   }
 
+  const activity = await input.ctx.db.get(input.activityId);
+
   await input.ctx.db.patch(participant._id, {
     status: "registered",
     evidenceStorageId: null,
@@ -496,15 +498,79 @@ async function rejectActivityParticipant(input: {
     actorEmployeeId: participant.employeeId,
     type: "event_rejected",
     sourceId: `reject:${participant._id}:${Date.now()}`,
-    summary: "กรุณาแนบหลักฐานตามเงื่อนไขกิจกรรม",
+    summary: "กรุณาแนบหลักฐานใหม่ตามเงื่อนไขกิจกรรม",
     meta: {
       activityId: String(input.activityId),
       participantId: String(participant._id),
       employeeId: String(participant.employeeId),
+      activityName: activity ? localizedLabel(activity.name) : "",
+      activityNameTh: activity ? localizedLabel(activity.name, "th") : "",
+      activityNameEn: activity ? localizedLabel(activity.name, "en") : "",
     },
   });
 
   return { rejected: true as const, skipped: false as const };
+}
+
+/** ถอนการอนุมัติที่ให้แต้มไปแล้ว เมื่อหลักฐานไม่จริง แล้วให้พนักงานแนบใหม่ */
+async function revokeActivityParticipant(input: {
+  ctx: MutationCtx;
+  activityId: Id<"activity">;
+  participantId: Id<"activityParticipant">;
+}) {
+  const participant = await input.ctx.db.get(input.participantId);
+  if (!participant || participant.activityId !== input.activityId) {
+    return { revoked: false as const, skipped: true as const, pointClawed: 0 };
+  }
+  if (participant.status !== "rewarded") {
+    return { revoked: false as const, skipped: true as const, pointClawed: 0 };
+  }
+
+  const activity = await input.ctx.db.get(input.activityId);
+  if (!activity) {
+    throw new CRPCError({ code: "NOT_FOUND", message: "Activity not found" });
+  }
+
+  const { clawed } = await clawbackActivityPoints(input.ctx, {
+    employeeId: participant.employeeId,
+    participantId: String(participant._id),
+  });
+
+  await input.ctx.db.patch(participant._id, {
+    status: "registered",
+    evidenceStorageId: null,
+    evidenceType: null,
+    evidenceMimeType: null,
+    evidenceFileName: null,
+    evidenceSize: null,
+    evidenceUploadedAt: null,
+    evidenceUploadedBy: null,
+    pointAwarded: null,
+    awardedBy: null,
+    awardedAt: null,
+  });
+
+  await appendActivityLog(input.ctx, {
+    actorEmployeeId: participant.employeeId,
+    type: "event_rejected",
+    sourceId: `reject:${participant._id}:${Date.now()}`,
+    summary: "กรุณาแนบหลักฐานใหม่ตามเงื่อนไขกิจกรรม",
+    meta: {
+      activityId: String(activity._id),
+      participantId: String(participant._id),
+      employeeId: String(participant.employeeId),
+      activityName: localizedLabel(activity.name),
+      activityNameTh: localizedLabel(activity.name, "th"),
+      activityNameEn: localizedLabel(activity.name, "en"),
+      pointClawed: clawed,
+    },
+  });
+
+  return {
+    revoked: true as const,
+    skipped: false as const,
+    pointClawed: clawed,
+  };
 }
 
 const activityRow = z
@@ -1697,6 +1763,37 @@ export const reject = authMutation
       });
     }
     return await rejectActivityParticipant({
+      ctx,
+      activityId,
+      participantId,
+    });
+  });
+
+export const revoke = authMutation
+  .input(
+    z.object({
+      activityId: z.string().min(1),
+      participantId: z.string().min(1),
+    }),
+  )
+  .output(
+    z.object({
+      revoked: z.boolean(),
+      skipped: z.boolean(),
+      pointClawed: z.number(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const activityId = input.activityId as Id<"activity">;
+    const participantId = input.participantId as Id<"activityParticipant">;
+    const activity = await ctx.db.get(activityId);
+    if (!activity) {
+      throw new CRPCError({
+        code: "NOT_FOUND",
+        message: "Activity not found",
+      });
+    }
+    return await revokeActivityParticipant({
       ctx,
       activityId,
       participantId,

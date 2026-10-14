@@ -76,6 +76,14 @@
       "reject-success": "Evidence rejected — the employee can upload again",
       "reject-unavailable": "This entry cannot be rejected",
       "reject-error": "Rejection failed",
+      "revoke-success": "Approval revoked — points were taken back and the employee was asked to attach evidence again",
+      "revoke-unavailable": "This approval cannot be revoked",
+      "revoke-error": "Could not revoke the approval",
+      "revoke-confirm": "Revoke approval and take points back",
+      "approve-confirm": "Approve and add bonus points for this employee",
+      "reject-confirm": "Reject the evidence and ask the employee to attach it again",
+      "approve-bulk-confirm": "Approve the selected rows and add bonus points",
+      "reject-bulk-confirm": "Reject the selected rows and ask employees to attach evidence again",
       "evidence-title": "Evidence: {name}",
       "evidence-file": "File: {name}",
       "evidence-loading": "Loading evidence...",
@@ -106,7 +114,9 @@
         "approve": "Approve",
         "approve-title": "Add bonus points for this employee",
         "reject": "Reject",
-        "reject-title": "Reject the evidence — the employee can upload again"
+        "reject-title": "Reject the evidence — the employee can upload again",
+        "revoke": "Revoke approval",
+        "revoke-title": "Revoke approval, take points back, and ask the employee to attach evidence again"
       },
       "status": {
         "registered": "Registered",
@@ -384,7 +394,7 @@
       "praise_streak": "Gave the full quota for 3 months in a row: +{amount} Special Points",
       "event_joined": "Joined event: {activityName}",
       "event_completed": "Thanks for joining: {activityName}",
-      "event_rejected": "Please attach evidence as required by the event",
+      "event_rejected": "Please attach new evidence for the event: {activityName}",
       "donation": "Donated {amount} points ({bahtAmount} baht) to {name}",
       "donation_received": "Received a donation of {amount} points ({bahtAmount} baht) from {name}"
     }
