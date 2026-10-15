@@ -442,7 +442,7 @@ async function approveActivityParticipantReward(input: {
   await appendActivityLog(input.ctx, {
     actorEmployeeId: participant.employeeId,
     type: "event_completed",
-    sourceId: String(participant._id),
+    sourceId: `complete:${participant._id}:${Date.now()}`,
     summary: "ขอบคุณสำหรับการร่วมกิจกรรม",
     meta: {
       activityId: String(activity._id),
