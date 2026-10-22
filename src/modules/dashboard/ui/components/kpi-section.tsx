@@ -12,15 +12,19 @@ import {
   BsPeopleFill,
   BsStars,
 } from "react-icons/bs";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -38,10 +42,7 @@ import {
   MAX_RANGE_MS,
   rangeLabel,
 } from "@/modules/dashboard/date-range";
-import {
-  downloadDashboardExcel,
-  downloadDashboardPdf,
-} from "@/modules/dashboard/export-report";
+import { downloadDashboardExcel } from "@/modules/dashboard/export-report";
 import { divisions } from "@/modules/employee/constants";
 import { DateFilter } from "@/modules/transactions/ui/components/date-filter";
 
@@ -72,18 +73,30 @@ export const KpiSection = ({
 
   const rangeArgs = dashboardQueryArgs(range, division, locale);
 
-  const { data, isPending } = useQuery(
+  const { data, isPending, isFetching } = useQuery(
     crpc.dashboard.getKpis.queryOptions(rangeArgs),
   );
-  const { data: culture } = useQuery(
+  const { data: culture, isFetching: cultureFetching } = useQuery(
     crpc.dashboard.getCultureStats.queryOptions(rangeArgs),
   );
-  const { data: outcome } = useQuery(
+  const { data: outcome, isFetching: outcomeFetching } = useQuery(
     crpc.dashboard.getOutcomeStats.queryOptions(rangeArgs),
   );
 
   const loading = isPending || !data;
-  const canExport = Boolean(data && culture && outcome) && !exporting;
+  const canExport =
+    Boolean(data && culture && outcome) &&
+    !exporting &&
+    !isFetching &&
+    !cultureFetching &&
+    !outcomeFetching;
+  const firstLoginByBu = data?.login.byDivision ?? [];
+
+  const divisionLabel = division
+    ? (divisions.find((item) => item.slug === division)?.name[
+        locale === "en" ? "en" : "th"
+      ] ?? division)
+    : t("affiliation-all");
 
   const buildReport = () => {
     if (!data || !culture || !outcome) {
@@ -91,6 +104,8 @@ export const KpiSection = ({
     }
     return {
       range,
+      division,
+      divisionLabel,
       kpis: data,
       culture,
       outcome: {
@@ -117,19 +132,6 @@ export const KpiSection = ({
     }
   };
 
-  const onExportPdf = () => {
-    try {
-      setExporting(true);
-      downloadDashboardPdf(buildReport());
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("export-pdf-error"),
-      );
-    } finally {
-      setExporting(false);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 rounded-md border-2 border-[#e5e5e5] border-b-4 bg-white p-4 lg:flex-row lg:items-start lg:justify-between">
@@ -140,27 +142,16 @@ export const KpiSection = ({
           <p className="text-sm font-bold text-[#777]">{t("audience")}</p>
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                disabled={!canExport}
-              >
-                <BsDownload className="size-4 stroke-[0.3]" />
-                {exporting ? t("exporting") : t("export")}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={8}>
-              <DropdownMenuItem onSelect={onExportExcel}>
-                {t("export-excel")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onExportPdf}>
-                {t("export-pdf")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={!canExport}
+            onClick={onExportExcel}
+          >
+            <BsDownload className="size-4 stroke-[0.3]" />
+            {exporting ? t("exporting") : t("export-excel")}
+          </Button>
         </div>
       </div>
 
@@ -286,6 +277,73 @@ export const KpiSection = ({
           </p>
         </DashboardCard>
       </div>
+
+      <DashboardCard>
+        <h3 className="text-sm font-extrabold text-[#4b4b4b]">
+          {t("kpi.first-login-by-bu")}
+        </h3>
+        {loading ? (
+          <p className="text-sm font-bold text-[#afafaf]">{t("loading")}</p>
+        ) : (
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={firstLoginByBu}
+                layout="vertical"
+                margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  stroke="#e5e5e5"
+                  horizontal={false}
+                />
+                <XAxis
+                  type="number"
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: "#777", fontWeight: 700 }}
+                  tickLine={false}
+                  axisLine={{ stroke: "#e5e5e5" }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="affiliation"
+                  width={56}
+                  tick={{ fontSize: 11, fill: "#4b4b4b", fontWeight: 700 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  formatter={(value: number) => [
+                    formatCount(value, locale),
+                    t("people"),
+                  ]}
+                  labelStyle={{ fontWeight: 700, color: "#4b4b4b" }}
+                  contentStyle={{
+                    border: "2px solid #e5e5e5",
+                    borderRadius: 8,
+                    fontWeight: 700,
+                  }}
+                />
+                <Bar dataKey="people" radius={[4, 4, 4, 4]} barSize={16}>
+                  {firstLoginByBu.map((row) => (
+                    <Cell
+                      key={row.affiliation}
+                      fill={
+                        !division || division === row.affiliation
+                          ? "#1cb0f6"
+                          : "#d0d0d0"
+                      }
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        <p className="text-xs font-bold text-[#afafaf]">
+          {t("kpi.first-login-by-bu-hint")}
+        </p>
+      </DashboardCard>
     </div>
   );
 };

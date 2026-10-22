@@ -3,6 +3,7 @@ import z from "zod/v4";
 
 import { requireAdmin } from "../lib/auth-helper";
 import { authQuery } from "../lib/crpc";
+import { DIVISION_SLUGS } from "../lib/divisions";
 import { localizedLabel } from "../lib/localized";
 
 import type { Id } from "./_generated/dataModel";
@@ -78,7 +79,6 @@ export const getKpis = authQuery
 
     const [wallets, transactions, ledgerRows, participants, redemptions] =
       await Promise.all([
-        // จำนวนแถว = จำนวนพนักงาน — ใช้หา login วันนั้นจาก lastDailyBonus
         // eslint-disable-next-line @convex-dev/no-query-collect -- bounded by employee count
         ctx.db
           .query("wallet")
@@ -109,14 +109,49 @@ export const getKpis = authQuery
           .collect(),
       ]);
 
-    // 1. จำนวนคนที่ first login แล้ว (สะสมทั้งหมด ไม่กรองตามวัน)
-    //    lastDailyBonus ถูกตั้งครั้งแรกตอน dailyLogin และไม่ถูกล้างตอนรีเซ็ต
-    const scopedWallets = wallets.filter((wallet) =>
-      belongsToDivision(divisionIds, String(wallet.employeeId)),
+    // 1. คนที่ได้รับขวัญถุงแรกเข้าในช่วงวันที่เลือก (ไม่ใช่ยอดสะสมทั้งระบบ)
+    //    เวลาอยู่ที่ pointLedger sourceType "first_login" — lastDailyBonus ถูกอัปเดตทุกวันที่เข้า
+    const locale = appLocale(input.locale);
+    const missing = unknownLabel(locale);
+    const divisionByEmployee = new Map<string, string>();
+    const divisionOf = async (employeeId: Id<"employee">) => {
+      const key = String(employeeId);
+      const cached = divisionByEmployee.get(key);
+      if (cached != null) return cached;
+      const employee = await ctx.db.get(employeeId);
+      const division = employee?.division?.trim() || missing;
+      divisionByEmployee.set(key, division);
+      return division;
+    };
+
+    const peopleByDivision = new Map<string, Set<string>>(
+      DIVISION_SLUGS.map((slug) => [slug, new Set<string>()]),
     );
-    const firstLoginCount = scopedWallets.filter(
-      (w) => w.lastDailyBonus != null,
-    ).length;
+    for (const row of ledgerRows) {
+      if (row.sourceType !== "first_login" || row.delta <= 0) continue;
+      const affiliation = await divisionOf(row.employeeId);
+      const people = peopleByDivision.get(affiliation) ?? new Set<string>();
+      people.add(String(row.employeeId));
+      peopleByDivision.set(affiliation, people);
+    }
+
+    const knownDivisions = new Set<string>(DIVISION_SLUGS);
+    const byDivision = [
+      ...DIVISION_SLUGS.map((slug) => ({
+        affiliation: slug,
+        people: peopleByDivision.get(slug)?.size ?? 0,
+      })),
+      ...[...peopleByDivision.entries()]
+        .filter(([affiliation]) => !knownDivisions.has(affiliation))
+        .map(([affiliation, people]) => ({
+          affiliation,
+          people: people.size,
+        })),
+    ];
+    const division = selectedDivision(input.division);
+    const firstLoginCount = division
+      ? (peopleByDivision.get(division)?.size ?? 0)
+      : byDivision.reduce((sum, row) => sum + row.people, 0);
 
     // 2. คะแนนคำชม P2P ที่ส่งในช่วงวัน (ไม่นับที่ถูกปฏิเสธ)
     const praisePoints = transactions
@@ -167,6 +202,7 @@ export const getKpis = authQuery
       login: {
         firstLoginCount,
         totalEmployees: divisionIds ? divisionIds.size : wallets.length,
+        byDivision,
       },
       praise: {
         total: praisePoints + eventPoints,
