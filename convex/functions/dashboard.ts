@@ -9,9 +9,6 @@ import { localizedLabel } from "../lib/localized";
 import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 
-/** กันช่วงเวลากว้างเกินจนสแกนหนัก — จำกัด 31 วัน */
-const MAX_RANGE_MS = 31 * 24 * 60 * 60 * 1000;
-
 const rangeInput = z.object({
   start: z.number().int().nonnegative(),
   end: z.number().int().nonnegative(),
@@ -23,7 +20,7 @@ const rangeInput = z.object({
 type DashboardLocale = "th" | "en";
 
 function assertRange(start: number, end: number) {
-  if (end <= start || end - start > MAX_RANGE_MS) {
+  if (end <= start) {
     throw new CRPCError({
       code: "BAD_REQUEST",
       message: "ช่วงวันที่ไม่ถูกต้อง",

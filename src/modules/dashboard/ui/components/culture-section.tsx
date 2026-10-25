@@ -51,7 +51,7 @@ export const CultureSection = ({ range, division }: Props) => {
   const activityAffiliations = data?.activityAffiliations ?? [];
 
   return (
-    <DashboardPanel>
+    <DashboardPanel className="col-span-2">
       <SectionBadge index={2} title={t("section2-title")} />
 
       <div className="grid gap-4">

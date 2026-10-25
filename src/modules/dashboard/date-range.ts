@@ -1,8 +1,6 @@
 import { formatLocalizedDate } from "@/lib/format-thai-date";
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
-/** ตรงกับ MAX_RANGE_MS ฝั่ง query — จำกัดช่วง 31 วัน */
-export const MAX_RANGE_MS = 31 * DAY_MS;
 
 export type DayRange = { from: number; to: number };
 

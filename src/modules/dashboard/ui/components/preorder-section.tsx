@@ -3,16 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { BsChatDotsFill, BsGiftFill, BsHeartFill } from "react-icons/bs";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
@@ -27,6 +17,7 @@ import {
   formatCount,
   SectionBadge,
 } from "./dashboard-ui";
+import { LabeledBarChart } from "./labeled-bar-chart";
 
 type Props = {
   range: DayRange;
@@ -108,46 +99,15 @@ export const PreorderSection = ({ range, division }: Props) => {
           <h3 className="text-sm font-extrabold text-[#4b4b4b]">
             {t("outcome.distribution-title")}
           </h3>
-          <div className="h-52 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={distribution}
-                margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-              >
-                <CartesianGrid strokeDasharray="4 4" stroke="#e5e5e5" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: "#777", fontWeight: 700 }}
-                  tickLine={false}
-                  axisLine={{ stroke: "#e5e5e5" }}
-                />
-                <YAxis
-                  width={28}
-                  allowDecimals={false}
-                  tick={{ fontSize: 11, fill: "#777", fontWeight: 700 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  formatter={(value: number) => [
-                    formatCount(value, locale),
-                    t("outcome.people-count"),
-                  ]}
-                  labelStyle={{ fontWeight: 700, color: "#4b4b4b" }}
-                  contentStyle={{
-                    border: "2px solid #e5e5e5",
-                    borderRadius: 8,
-                    fontWeight: 700,
-                  }}
-                />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={28}>
-                  {distribution.map((entry) => (
-                    <Cell key={entry.label} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <LabeledBarChart
+            data={distribution.map((entry) => ({
+              label: entry.label,
+              value: entry.count,
+              color: entry.color,
+            }))}
+            locale={locale}
+            seriesLabel={t("outcome.people-count")}
+          />
           <p className="text-xs font-bold text-[#afafaf]">
             {t("outcome.distribution-hint")}
           </p>

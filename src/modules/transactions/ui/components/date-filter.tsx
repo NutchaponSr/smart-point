@@ -1,4 +1,7 @@
+"use client";
+
 import { endOfDay, startOfDay } from "date-fns";
+import { useState } from "react";
 import { type DateRange } from "react-day-picker";
 
 import {
@@ -22,7 +25,9 @@ export const DateFilter = ({
   to,
   onChange,
 }: DateFilterProps) => {
-  const date: DateRange | undefined =
+  const [pending, setPending] = useState<DateRange | undefined>();
+
+  const committed: DateRange | undefined =
     from != null || to != null
       ? {
           from: from != null ? new Date(from) : undefined,
@@ -32,17 +37,27 @@ export const DateFilter = ({
 
   const onSelect = (range: DateRange | undefined) => {
     if (!range?.from) {
+      setPending(undefined);
       onChange({ from: null, to: null });
       return;
     }
-    const fromMs = startOfDay(range.from).getTime();
-    const endDate = range.to ?? range.from;
-    const toMs = endOfDay(endDate).getTime();
-    onChange({ from: fromMs, to: toMs });
+    if (!range.to) {
+      setPending({ from: range.from, to: undefined });
+      return;
+    }
+    setPending(undefined);
+    onChange({
+      from: startOfDay(range.from).getTime(),
+      to: endOfDay(range.to).getTime(),
+    });
   };
 
   return (
-    <Popover>
+    <Popover
+      onOpenChange={(open) => {
+        if (!open) setPending(undefined);
+      }}
+    >
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent align="end" sideOffset={12} className="w-fit">
         <div className="flex items-center justify-end border-b-2 border-dashed border-border p-2">
@@ -53,8 +68,8 @@ export const DateFilter = ({
         <div className="p-2">
           <Calendar
             mode="range"
-            defaultMonth={date?.from ?? new Date()}
-            selected={date}
+            defaultMonth={pending?.from ?? committed?.from ?? new Date()}
+            selected={pending ?? committed}
             onSelect={onSelect}
             numberOfMonths={2}
           />

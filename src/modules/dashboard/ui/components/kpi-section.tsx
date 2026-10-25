@@ -12,16 +12,6 @@ import {
   BsPeopleFill,
   BsStars,
 } from "react-icons/bs";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -36,10 +26,8 @@ import {
 import { useCRPC } from "@/lib/convex/crpc";
 
 import {
-  DAY_MS,
   type DayRange,
   defaultRange,
-  MAX_RANGE_MS,
   rangeLabel,
 } from "@/modules/dashboard/date-range";
 import { downloadDashboardExcel } from "@/modules/dashboard/export-report";
@@ -52,6 +40,7 @@ import {
   formatCount,
   SectionBadge,
 } from "./dashboard-ui";
+import { LabeledBarChart } from "./labeled-bar-chart";
 
 type Props = {
   range: DayRange;
@@ -187,23 +176,21 @@ export const KpiSection = ({
             </SelectContent>
           </Select>
           <DateFilter
-          from={range.from}
-          to={range.to}
-          onChange={({ from, to }) => {
-            if (from == null) {
-              onRangeChange(defaultRange());
-              return;
-            }
-            const end = to ?? from + DAY_MS - 1;
-            const clampedEnd = Math.min(end, from + MAX_RANGE_MS - 1);
-            onRangeChange({ from, to: clampedEnd });
-          }}
-        >
-          <Button type="button" size="sm">
-            <BsCalendarRangeFill className="text-[#1cb0f6]" />
-            {rangeLabel(range.from, range.to, locale)}
-          </Button>
-        </DateFilter>
+            from={range.from}
+            to={range.to}
+            onChange={({ from, to }) => {
+              if (from == null || to == null) {
+                onRangeChange(defaultRange());
+                return;
+              }
+              onRangeChange({ from, to });
+            }}
+          >
+            <Button type="button" size="sm">
+              <BsCalendarRangeFill className="text-[#1cb0f6]" />
+              {rangeLabel(range.from, range.to, locale)}
+            </Button>
+          </DateFilter>
         </div>
       </div>
 
@@ -285,60 +272,18 @@ export const KpiSection = ({
         {loading ? (
           <p className="text-sm font-bold text-[#afafaf]">{t("loading")}</p>
         ) : (
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={firstLoginByBu}
-                layout="vertical"
-                margin={{ top: 8, right: 16, bottom: 0, left: 8 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="4 4"
-                  stroke="#e5e5e5"
-                  horizontal={false}
-                />
-                <XAxis
-                  type="number"
-                  allowDecimals={false}
-                  tick={{ fontSize: 11, fill: "#777", fontWeight: 700 }}
-                  tickLine={false}
-                  axisLine={{ stroke: "#e5e5e5" }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="affiliation"
-                  width={56}
-                  tick={{ fontSize: 11, fill: "#4b4b4b", fontWeight: 700 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  formatter={(value: number) => [
-                    formatCount(value, locale),
-                    t("people"),
-                  ]}
-                  labelStyle={{ fontWeight: 700, color: "#4b4b4b" }}
-                  contentStyle={{
-                    border: "2px solid #e5e5e5",
-                    borderRadius: 8,
-                    fontWeight: 700,
-                  }}
-                />
-                <Bar dataKey="people" radius={[4, 4, 4, 4]} barSize={16}>
-                  {firstLoginByBu.map((row) => (
-                    <Cell
-                      key={row.affiliation}
-                      fill={
-                        !division || division === row.affiliation
-                          ? "#1cb0f6"
-                          : "#d0d0d0"
-                      }
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <LabeledBarChart
+            data={firstLoginByBu.map((row) => ({
+              label: row.affiliation,
+              value: row.people,
+              color:
+                !division || division === row.affiliation
+                  ? "#8ec5ff"
+                  : "#d0d0d0",
+            }))}
+            locale={locale}
+            seriesLabel={t("people")}
+          />
         )}
         <p className="text-xs font-bold text-[#afafaf]">
           {t("kpi.first-login-by-bu-hint")}

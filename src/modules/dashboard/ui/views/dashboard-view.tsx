@@ -26,7 +26,7 @@ export const DashboardView = () => {
           onRangeChange={setRange}
           onDivisionChange={setDivision}
         />
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <CultureSection range={range} division={division} />
           <PreorderSection range={range} division={division} />
         </div>
