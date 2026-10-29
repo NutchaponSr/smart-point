@@ -16,6 +16,7 @@ const c = initCRPC
 export const publicQuery = c.query;
 export const publicMutation = c.mutation;
 
+export const privateQuery = c.query.internal();
 export const privateMutation = c.mutation.internal();
 export const privateAction = c.action.internal();
 

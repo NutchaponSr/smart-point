@@ -20,6 +20,7 @@ function createProcedureRegistry() {
 
   const procedureRegistry = {
   "confirmDelivery": ["mutation", typedProcedureResolver(api["redemption"]["confirmDelivery"], () => (require("../redemption") as Record<string, unknown>)["confirmDelivery"])],
+  "exportAll": ["mutation", typedProcedureResolver(api["redemption"]["exportAll"], () => (require("../redemption") as Record<string, unknown>)["exportAll"])],
   "getManyAdmin": ["query", typedProcedureResolver(api["redemption"]["getManyAdmin"], () => (require("../redemption") as Record<string, unknown>)["getManyAdmin"])],
   "getMany": ["query", typedProcedureResolver(api["redemption"]["getMany"], () => (require("../redemption") as Record<string, unknown>)["getMany"])],
   "reviewRedemption": ["mutation", typedProcedureResolver(api["redemption"]["reviewRedemption"], () => (require("../redemption") as Record<string, unknown>)["reviewRedemption"])],

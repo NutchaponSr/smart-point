@@ -76,6 +76,11 @@ export const metadata: MetadataItem[] = [
     isAdmin: true,
   },
   {
+    label: "donations",
+    href: "/meta/donations",
+    isAdmin: true,
+  },
+  {
     label: "events",
     href: "/meta/events",
     isAdmin: true,

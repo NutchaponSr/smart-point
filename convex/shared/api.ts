@@ -51,6 +51,8 @@ export const api = {
   },
   donation: {
     donate: createApiLeaf<"mutation", typeof import("../functions/donation").donate>(convexApi["donation"]["donate"], { auth: "required", type: "mutation" }),
+    exportAll: createApiLeaf<"mutation", typeof import("../functions/donation").exportAll>(convexApi["donation"]["exportAll"], { auth: "required", type: "mutation" }),
+    getManyAdmin: createApiLeaf<"query", typeof import("../functions/donation").getManyAdmin>(convexApi["donation"]["getManyAdmin"], { auth: "required", type: "query" }),
     getTotals: createApiLeaf<"query", typeof import("../functions/donation").getTotals>(convexApi["donation"]["getTotals"], { auth: "required", type: "query" }),
   },
   employee: {
@@ -85,6 +87,7 @@ export const api = {
   },
   redemption: {
     confirmDelivery: createApiLeaf<"mutation", typeof import("../functions/redemption").confirmDelivery>(convexApi["redemption"]["confirmDelivery"], { auth: "required", type: "mutation" }),
+    exportAll: createApiLeaf<"mutation", typeof import("../functions/redemption").exportAll>(convexApi["redemption"]["exportAll"], { auth: "required", type: "mutation" }),
     getMany: createApiLeaf<"query", typeof import("../functions/redemption").getMany>(convexApi["redemption"]["getMany"], { auth: "required", type: "query" }),
     getManyAdmin: createApiLeaf<"query", typeof import("../functions/redemption").getManyAdmin>(convexApi["redemption"]["getManyAdmin"], { auth: "required", type: "query" }),
     reviewRedemption: createApiLeaf<"mutation", typeof import("../functions/redemption").reviewRedemption>(convexApi["redemption"]["reviewRedemption"], { auth: "required", type: "mutation" }),

@@ -8,6 +8,7 @@ import {
   privateAction,
   privateAuthAction,
   privateMutation,
+  privateQuery,
 } from "../lib/crpc";
 import {
   findDepartmentBySlug,
@@ -837,6 +838,354 @@ export const patchEmployeePasswordInternal = privateMutation
       await ctx.db.delete(session._id);
     }
   });
+
+function employeeLoginName(name: LocalizedString | string): string {
+  if (typeof name === "string") return name.trim();
+  return name.th.trim() || name.en.trim();
+}
+
+function alignedLoginEmail(
+  employeeEmail: string | undefined,
+  userEmail: string | undefined,
+  currentUsername: string,
+  businessEmployeeId: string,
+  renaming: boolean,
+): string | undefined {
+  const fromEmployee = employeeEmail?.trim();
+  if (fromEmployee) return fromEmployee;
+  if (!renaming) return undefined;
+  const current = userEmail?.trim() ?? "";
+  const oldPlaceholder = `${currentUsername}@example.somboon.co.th`;
+  if (!current || current.toLowerCase() === oldPlaceholder.toLowerCase()) {
+    return defaultSignupEmail(businessEmployeeId);
+  }
+  return undefined;
+}
+
+/** บัญชีที่ username ไม่ตรงรหัสพนักงาน — อ่านอย่างเดียว เพื่อให้ action แฮชรหัสผ่านก่อนเขียน */
+export const planAlignedEmployeeLoginsInternal = privateQuery.query(
+  async ({ ctx }) => {
+    const employees = await ctx.db.query("employee").collect();
+    const users = await ctx.db.query("user").collect();
+    const usersByEmployee = new Map<string, typeof users>();
+    const userByUsername = new Map<string, (typeof users)[number]>();
+    for (const user of users) {
+      const key = String(user.employeeId);
+      const list = usersByEmployee.get(key) ?? [];
+      list.push(user);
+      usersByEmployee.set(key, list);
+      userByUsername.set(user.username, user);
+    }
+
+    const rows: Array<{
+      employeeBusinessId: string;
+      citizenId: string;
+      keeperUserId: Id<"user">;
+      accountId: Id<"account">;
+      staleUserIds: Array<Id<"user">>;
+      renameKeeper: boolean;
+    }> = [];
+    const skipped: Array<{ employeeId: string; reason: string }> = [];
+
+    for (const employee of employees) {
+      const linked = usersByEmployee.get(String(employee._id)) ?? [];
+      const matching = linked.filter(
+        (user) => user.username === employee.employeeId,
+      );
+      const stale = linked.filter(
+        (user) => user.username !== employee.employeeId,
+      );
+      if (stale.length === 0) continue;
+
+      if (matching.length > 1 || (matching.length === 0 && stale.length !== 1)) {
+        skipped.push({
+          employeeId: employee.employeeId,
+          reason: "มี user หลายใบ จับคู่ username อัตโนมัติไม่ได้",
+        });
+        continue;
+      }
+
+      const keeper = matching[0] ?? stale[0];
+      const renameKeeper = matching.length === 0;
+      if (!keeper) continue;
+
+      if (renameKeeper) {
+        const taken = userByUsername.get(employee.employeeId);
+        if (taken && taken._id !== keeper._id) {
+          skipped.push({
+            employeeId: employee.employeeId,
+            reason: "รหัสพนักงานนี้ถูกใช้เป็น username ของคนอื่นแล้ว",
+          });
+          continue;
+        }
+      }
+
+      const citizenId =
+        typeof employee.citizenId === "string" ? employee.citizenId.trim() : "";
+      if (!/^\d{5}$/.test(citizenId)) {
+        skipped.push({
+          employeeId: employee.employeeId,
+          reason: "ไม่มีเลขท้ายบัตร 5 หลักสำหรับตั้งรหัสผ่าน",
+        });
+        continue;
+      }
+
+      const accounts = await ctx.db
+        .query("account")
+        .withIndex("by_userId", (q) => q.eq("userId", keeper._id))
+        .collect();
+      const account =
+        accounts.find((row) => row.providerId === "credential") ?? accounts[0];
+      if (!account) {
+        skipped.push({
+          employeeId: employee.employeeId,
+          reason: "ไม่มี account",
+        });
+        continue;
+      }
+
+      rows.push({
+        employeeBusinessId: employee.employeeId,
+        citizenId,
+        keeperUserId: keeper._id,
+        accountId: account._id,
+        staleUserIds: renameKeeper ? [] : stale.map((user) => user._id),
+        renameKeeper,
+      });
+    }
+
+    return { rows, skipped };
+  },
+);
+
+export const applyAlignedEmployeeLoginsInternal = privateMutation
+  .input(
+    z.object({
+      rows: z.array(
+        z.object({
+          employeeBusinessId: z.string(),
+          citizenId: z.string(),
+          keeperUserId: zUserDocId,
+          accountId: zAccountDocId,
+          staleUserIds: z.array(zUserDocId),
+          renameKeeper: z.boolean(),
+          passwordHash: z.string().min(1),
+        }),
+      ),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const renamed: Array<{ from: string; to: string }> = [];
+    const removedUsernames: string[] = [];
+    const passwordsReset: string[] = [];
+    const skipped: Array<{ employeeId: string; reason: string }> = [];
+    let refsMoved = 0;
+
+    const staleIds = input.rows.flatMap((row) => row.staleUserIds);
+    const participants =
+      staleIds.length > 0
+        ? await ctx.db.query("activityParticipant").collect()
+        : [];
+
+    for (const row of input.rows) {
+      const employee = await ctx.db
+        .query("employee")
+        .withIndex("by_employeeId", (q) =>
+          q.eq("employeeId", row.employeeBusinessId),
+        )
+        .first();
+      const keeper = await ctx.db.get(row.keeperUserId);
+      const account = await ctx.db.get(row.accountId);
+      if (!employee || !keeper || !account || account.userId !== keeper._id) {
+        skipped.push({
+          employeeId: row.employeeBusinessId,
+          reason: "ข้อมูล user หรือ account เปลี่ยนไประหว่างจัดบัญชี",
+        });
+        continue;
+      }
+      if (keeper.employeeId !== employee._id) {
+        skipped.push({
+          employeeId: row.employeeBusinessId,
+          reason: "user ไม่ได้ผูกกับพนักงานคนนี้",
+        });
+        continue;
+      }
+      if ((employee.citizenId ?? "") !== row.citizenId) {
+        skipped.push({
+          employeeId: row.employeeBusinessId,
+          reason: "เลขท้ายบัตรเปลี่ยนไประหว่างจัดบัญชี",
+        });
+        continue;
+      }
+
+      if (row.renameKeeper) {
+        const taken = await ctx.db
+          .query("user")
+          .withIndex("by_username", (q) =>
+            q.eq("username", employee.employeeId),
+          )
+          .first();
+        if (taken && taken._id !== keeper._id) {
+          skipped.push({
+            employeeId: employee.employeeId,
+            reason: "รหัสพนักงานนี้ถูกใช้เป็น username ของคนอื่นแล้ว",
+          });
+          continue;
+        }
+      }
+
+      const staleUsers = [];
+      let staleOk = true;
+      for (const staleId of row.staleUserIds) {
+        const stale = await ctx.db.get(staleId);
+        if (
+          !stale ||
+          stale.employeeId !== employee._id ||
+          stale.username === employee.employeeId
+        ) {
+          staleOk = false;
+          break;
+        }
+        staleUsers.push(stale);
+      }
+      if (!staleOk) {
+        skipped.push({
+          employeeId: employee.employeeId,
+          reason: "user รหัสเก่าเปลี่ยนไประหว่างจัดบัญชี",
+        });
+        continue;
+      }
+
+      const email = alignedLoginEmail(
+        employee.email ?? undefined,
+        keeper.email ?? undefined,
+        keeper.username,
+        employee.employeeId,
+        row.renameKeeper,
+      );
+      const name = employeeLoginName(employee.name as LocalizedString | string);
+      const previousUsername = keeper.username;
+
+      await ctx.db.patch(keeper._id, {
+        displayUsername: employee.employeeId,
+        ...(row.renameKeeper ? { username: employee.employeeId } : {}),
+        ...(name ? { name } : {}),
+        ...(email ? { email } : {}),
+      });
+      if (row.renameKeeper) {
+        renamed.push({ from: previousUsername, to: employee.employeeId });
+      }
+
+      for (const stale of staleUsers) {
+        for (const review of await ctx.db
+          .query("review")
+          .withIndex("by_userId", (q) => q.eq("userId", stale._id))
+          .collect()) {
+          const clash = await ctx.db
+            .query("review")
+            .withIndex("by_userId", (q) => q.eq("userId", keeper._id))
+            .filter((q) => q.eq(q.field("redemptionId"), review.redemptionId))
+            .first();
+          if (clash) {
+            await ctx.db.delete(review._id);
+          } else {
+            await ctx.db.patch(review._id, { userId: keeper._id });
+          }
+          refsMoved += 1;
+        }
+
+        for (const news of await ctx.db
+          .query("news")
+          .withIndex("by_createdBy", (q) => q.eq("createdBy", stale._id))
+          .collect()) {
+          await ctx.db.patch(news._id, { createdBy: keeper._id });
+          refsMoved += 1;
+        }
+
+        for (const participant of participants) {
+          const patch: {
+            awardedBy?: Id<"user">;
+            evidenceUploadedBy?: Id<"user">;
+          } = {};
+          if (participant.awardedBy === stale._id) patch.awardedBy = keeper._id;
+          if (participant.evidenceUploadedBy === stale._id) {
+            patch.evidenceUploadedBy = keeper._id;
+          }
+          if (patch.awardedBy || patch.evidenceUploadedBy) {
+            await ctx.db.patch(participant._id, patch);
+            refsMoved += 1;
+          }
+        }
+
+        for (const session of await ctx.db
+          .query("session")
+          .withIndex("by_userId", (q) => q.eq("userId", stale._id))
+          .collect()) {
+          await ctx.db.delete(session._id);
+        }
+        for (const staleAccount of await ctx.db
+          .query("account")
+          .withIndex("by_userId", (q) => q.eq("userId", stale._id))
+          .collect()) {
+          await ctx.db.delete(staleAccount._id);
+        }
+        await ctx.db.delete(stale._id);
+        removedUsernames.push(stale.username);
+      }
+
+      await ctx.db.patch(row.accountId, { password: row.passwordHash });
+      for (const session of await ctx.db
+        .query("session")
+        .withIndex("by_userId", (q) => q.eq("userId", keeper._id))
+        .collect()) {
+        await ctx.db.delete(session._id);
+      }
+      passwordsReset.push(employee.employeeId);
+    }
+
+    return { renamed, removedUsernames, passwordsReset, skipped, refsMoved };
+  });
+
+/** จัด username / account / รหัสผ่านให้ตรงพนักงาน เฉพาะบัญชีที่ username ไม่ตรงรหัส */
+export const alignMismatchedEmployeeLoginsInternal = privateAction.action(
+  async ({ ctx }) => {
+    const plan = await ctx.runQuery(
+      internal.employee.planAlignedEmployeeLoginsInternal,
+      {},
+    );
+    const rows = [];
+    for (const row of plan.rows) {
+      rows.push({
+        employeeBusinessId: row.employeeBusinessId,
+        citizenId: row.citizenId,
+        keeperUserId: row.keeperUserId,
+        accountId: row.accountId,
+        staleUserIds: row.staleUserIds,
+        renameKeeper: row.renameKeeper,
+        passwordHash: await hashPassword(normalizeText(row.citizenId, 5)),
+      });
+    }
+
+    if (rows.length === 0) {
+      return {
+        renamed: [],
+        removedUsernames: [],
+        passwordsReset: [],
+        skipped: plan.skipped,
+        refsMoved: 0,
+      };
+    }
+
+    const applied = await ctx.runMutation(
+      internal.employee.applyAlignedEmployeeLoginsInternal,
+      { rows },
+    );
+    return {
+      ...applied,
+      skipped: [...plan.skipped, ...applied.skipped],
+    };
+  },
+);
 
 export const create = authMutation
   .input(

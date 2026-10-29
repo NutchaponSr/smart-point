@@ -14,6 +14,7 @@ import { Pagination } from "@/components/pagniation";
 import { Navigations } from "@/components/navigations";
 
 import { links } from "@/modules/dashboard/constants";
+import { useRedemptionExcel } from "@/modules/redemptions/hooks/use-redemption-excel";
 import { useRedemptionAdminFilters } from "@/modules/redemptions/stores/use-redemption-admin-filters";
 import { RedemptionShippingFilters } from "@/modules/redemptions/ui/components/redemption-shipping-filters";
 import {
@@ -67,8 +68,22 @@ export const RedemptionShippingView = () => {
   const canGoForward =
     redemptions.hasNextPage && redemptions.continueCursor != null;
 
+  const { onExport } = useRedemptionExcel({
+    q: debouncedQuery,
+    shippingStatus: filters.shippingStatus,
+    status: filters.status,
+    sort: filters.sort,
+    from: filters.from,
+    to: filters.to,
+    by: debouncedBy.trim() === "" ? null : debouncedBy,
+  });
+
   return (
-    <Main title="จัดส่งรางวัล" menu={<Navigations links={links} />}>
+    <Main
+      title="จัดส่งรางวัล"
+      menu={<Navigations links={links} />}
+      onExport={onExport}
+    >
       <UpdateShippingDialog
         row={selectedRow}
         open={dialogOpen}
@@ -79,17 +94,8 @@ export const RedemptionShippingView = () => {
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_4fr]">
           <RedemptionShippingFilters total={redemptions.page.length} />
 
-          <div className="w-full">
-            <header className="relative mb-4 overflow-hidden rounded-md border-2 border-[#0003] bg-[#58cc02] p-4">
-              <h2 className="text-xl font-bold text-white sm:text-2xl">
-                รายการจัดส่งรางวัล
-              </h2>
-              <p className="mt-1 text-sm font-medium text-white/90">
-                อัปเดตสถานะการจัดส่งและเลขพัสดุให้พนักงานติดตามได้ทันที
-              </p>
-            </header>
-
-            <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+          <div className="w-full space-y-4">
+            <div className="flex flex-wrap items-center justify-end gap-3">
               <Pagination
                 canGoBack={canGoBack}
                 canGoForward={canGoForward}

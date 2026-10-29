@@ -19,6 +19,8 @@ function createProcedureRegistry() {
     (require("../_generated/api.js") as typeof import('../_generated/api.js'));
 
   const procedureRegistry = {
+  "alignMismatchedEmployeeLoginsInternal": ["action", typedProcedureResolver(internal["employee"]["alignMismatchedEmployeeLoginsInternal"], () => (require("../employee") as Record<string, unknown>)["alignMismatchedEmployeeLoginsInternal"])],
+  "applyAlignedEmployeeLoginsInternal": ["mutation", typedProcedureResolver(internal["employee"]["applyAlignedEmployeeLoginsInternal"], () => (require("../employee") as Record<string, unknown>)["applyAlignedEmployeeLoginsInternal"])],
   "bulkDelete": ["mutation", typedProcedureResolver(api["employee"]["bulkDelete"], () => (require("../employee") as Record<string, unknown>)["bulkDelete"])],
   "bulkImport": ["mutation", typedProcedureResolver(api["employee"]["bulkImport"], () => (require("../employee") as Record<string, unknown>)["bulkImport"])],
   "create": ["mutation", typedProcedureResolver(api["employee"]["create"], () => (require("../employee") as Record<string, unknown>)["create"])],
@@ -27,6 +29,7 @@ function createProcedureRegistry() {
   "getOne": ["query", typedProcedureResolver(api["employee"]["getOne"], () => (require("../employee") as Record<string, unknown>)["getOne"])],
   "migrateEmployeeLocalizedFields": ["mutation", typedProcedureResolver(internal["employee"]["migrateEmployeeLocalizedFields"], () => (require("../employee") as Record<string, unknown>)["migrateEmployeeLocalizedFields"])],
   "patchEmployeePasswordInternal": ["mutation", typedProcedureResolver(internal["employee"]["patchEmployeePasswordInternal"], () => (require("../employee") as Record<string, unknown>)["patchEmployeePasswordInternal"])],
+  "planAlignedEmployeeLoginsInternal": ["query", typedProcedureResolver(internal["employee"]["planAlignedEmployeeLoginsInternal"], () => (require("../employee") as Record<string, unknown>)["planAlignedEmployeeLoginsInternal"])],
   "remove": ["mutation", typedProcedureResolver(api["employee"]["remove"], () => (require("../employee") as Record<string, unknown>)["remove"])],
   "search": ["query", typedProcedureResolver(api["employee"]["search"], () => (require("../employee") as Record<string, unknown>)["search"])],
   "setEmployeePasswordInternal": ["action", typedProcedureResolver(internal["employee"]["setEmployeePasswordInternal"], () => (require("../employee") as Record<string, unknown>)["setEmployeePasswordInternal"])],

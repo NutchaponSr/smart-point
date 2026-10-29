@@ -28,6 +28,13 @@ export const links = [
     },
   },
   {
+    slug: "donations",
+    name: {
+      th: "บริจาค",
+      en: "Donations",
+    },
+  },
+  {
     slug: "events",
     name: {
       th: "กิจกรรม",

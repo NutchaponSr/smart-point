@@ -14,6 +14,7 @@
     "employees": "Employees",
     "transaction": "Transactions",
     "redemptions": "Redemptions",
+    "donations": "Donations",
     "news": "News"
   },
   "filter": {

@@ -273,6 +273,34 @@ export declare const api: {
   };
   donation: {
     donate: FunctionReference<"mutation", "public", { points: number }, any>;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        by?: string | null;
+        from?: number | null;
+        max?: number | null;
+        min?: number | null;
+        q?: string | null;
+        to?: number | null;
+      },
+      any
+    >;
+    getManyAdmin: FunctionReference<
+      "query",
+      "public",
+      {
+        by?: string | null;
+        cursor?: string | null;
+        from?: number | null;
+        limit: number;
+        max?: number | null;
+        min?: number | null;
+        q?: string | null;
+        to?: number | null;
+      },
+      any
+    >;
     getTotals: FunctionReference<"query", "public", {}, any>;
   };
   employee: {
@@ -446,6 +474,22 @@ export declare const api: {
       "mutation",
       "public",
       { redemptionId: string },
+      any
+    >;
+    exportAll: FunctionReference<
+      "mutation",
+      "public",
+      {
+        by?: string | null;
+        from?: number | null;
+        q?: string | null;
+        shippingStatus?: Array<
+          "pending" | "processing" | "shipped" | "delivered"
+        > | null;
+        sort?: "recently-updated" | "purchase-date" | null;
+        status?: Array<"pending" | "fulfilled" | "cancelled"> | null;
+        to?: number | null;
+      },
       any
     >;
     getMany: FunctionReference<
@@ -810,6 +854,28 @@ export declare const internal: {
     migrateLocalizedStrings: FunctionReference<"mutation", "internal", {}, any>;
   };
   employee: {
+    alignMismatchedEmployeeLoginsInternal: FunctionReference<
+      "action",
+      "internal",
+      {},
+      any
+    >;
+    applyAlignedEmployeeLoginsInternal: FunctionReference<
+      "mutation",
+      "internal",
+      {
+        rows: Array<{
+          accountId: any;
+          citizenId: string;
+          employeeBusinessId: string;
+          keeperUserId: any;
+          passwordHash: string;
+          renameKeeper: boolean;
+          staleUserIds: Array<any>;
+        }>;
+      },
+      any
+    >;
     migrateEmployeeLocalizedFields: FunctionReference<
       "mutation",
       "internal",
@@ -820,6 +886,12 @@ export declare const internal: {
       "mutation",
       "internal",
       { accountId: any; passwordHash: string; userId: any },
+      any
+    >;
+    planAlignedEmployeeLoginsInternal: FunctionReference<
+      "query",
+      "internal",
+      {},
       any
     >;
     setEmployeePasswordInternal: FunctionReference<

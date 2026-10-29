@@ -14,6 +14,9 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./generated/server";
 import { internal } from "./_generated/api";
 
+const MAX_EXPORT_ROWS = 10_000;
+const EXPORT_PAGE_SIZE = 100;
+
 const SORT_VALUES = ["recently-updated", "purchase-date"] as const;
 type PurchaseSort = (typeof SORT_VALUES)[number];
 
@@ -738,6 +741,157 @@ export const getManyAdmin = authQuery
       page,
       hasNextPage,
     };
+  });
+
+/** ส่งออกรายการจัดส่งทั้งหมดที่ตรง filter เดียวกับ getManyAdmin */
+export const exportAll = authMutation
+  .input(
+    z.object({
+      q: z.string().optional().nullable(),
+      shippingStatus: z
+        .array(z.enum(SHIPPING_STATUS_VALUES))
+        .optional()
+        .nullable(),
+      status: z
+        .array(z.enum(REDEMPTION_STATUS_VALUES))
+        .optional()
+        .nullable(),
+      sort: z.enum(SORT_VALUES).optional().nullable(),
+      from: z.number().nullish(),
+      to: z.number().nullish(),
+      by: z.string().optional().nullable(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
+
+    const readCtx = ctx as QueryCtx;
+    const normalizedQuery = input.q?.trim().toLowerCase() ?? "";
+    const sortKey: PurchaseSort = input.sort ?? "purchase-date";
+    const dateFrom = input.from ?? null;
+    const dateTo = input.to ?? null;
+    const shippingStatusFilter = input.shippingStatus ?? null;
+    const statusFilter = input.status ?? null;
+
+    assertRedemptionDateRange(dateFrom, dateTo);
+
+    const employeeDocId =
+      input.by != null
+        ? await resolveEmployeeDocIdFromPublicId(readCtx, input.by)
+        : null;
+
+    if (input.by != null && input.by.trim() !== "" && employeeDocId == null) {
+      return [];
+    }
+
+    const indexShippingStatus =
+      shippingStatusFilter?.length === 1 ? shippingStatusFilter[0] : null;
+    const indexStatus = statusFilter?.length === 1 ? statusFilter[0] : null;
+    const filterParams = {
+      normalizedQuery,
+      dateFrom,
+      dateTo,
+      shippingStatusFilter,
+      statusFilter,
+    };
+
+    const baseQuery = redemptionAdminListBaseQuery(
+      readCtx,
+      sortKey,
+      indexShippingStatus,
+      indexStatus,
+      employeeDocId,
+    );
+
+    const rows: Array<{
+      employeeId: string;
+      employeeName: LocalizedString;
+      department: LocalizedString;
+      division: string;
+      rewardName: LocalizedString;
+      quantity: number;
+      pointSpent: number;
+      status: RedemptionStatus;
+      shippingStatus: ShippingStatus;
+      trackingNumber: string | null;
+      carrier: string | null;
+      note: string | null;
+      createdAt: number;
+      shippedAt: number | null;
+      deliveredAt: number | null;
+    }> = [];
+
+    let pageResult = await baseQuery.paginate({
+      cursor: null,
+      limit: EXPORT_PAGE_SIZE,
+    });
+
+    while (true) {
+      const redemptionBatch = await hydrateRedemptionDocsFromOrmPage(
+        readCtx,
+        pageResult.page,
+      );
+      const rewardsByIndex = await Promise.all(
+        redemptionBatch.map((row) => readCtx.db.get(row.rewardId)),
+      );
+      const employeesByIndex = await Promise.all(
+        redemptionBatch.map((row) => readCtx.db.get(row.employeeId)),
+      );
+
+      for (let i = 0; i < redemptionBatch.length; i++) {
+        const redemption = redemptionBatch[i];
+        const reward = rewardsByIndex[i] ?? null;
+        const employee = employeesByIndex[i] ?? null;
+        if (redemption == null) continue;
+        if (
+          !redemptionAdminRowMatchesFilters(
+            redemption,
+            reward,
+            employee,
+            filterParams,
+          )
+        ) {
+          continue;
+        }
+        if (reward == null || employee == null) continue;
+
+        rows.push({
+          employeeId: employee.employeeId,
+          employeeName: coerceLocalized(employee.name),
+          department: coerceLocalized(employee.department),
+          division: employee.division,
+          rewardName: reward.name,
+          quantity: redemption.quantity,
+          pointSpent: redemption.pointSpent,
+          status: redemption.status,
+          shippingStatus: resolveEffectiveShippingStatus(redemption),
+          trackingNumber: redemption.trackingNumber ?? null,
+          carrier: redemption.carrier ?? null,
+          note: redemption.note ?? null,
+          createdAt: redemption.createdAt ?? redemption._creationTime,
+          shippedAt: redemption.shippedAt ?? null,
+          deliveredAt: redemption.deliveredAt ?? null,
+        });
+
+        if (rows.length > MAX_EXPORT_ROWS) {
+          throw new CRPCError({
+            code: "BAD_REQUEST",
+            message: `พบข้อมูลมากเกิน ${MAX_EXPORT_ROWS} รายการ กรุณาใช้ตัวกรองให้แคบลง`,
+          });
+        }
+      }
+
+      if (pageResult.isDone || pageResult.continueCursor == null) {
+        break;
+      }
+
+      pageResult = await baseQuery.paginate({
+        cursor: pageResult.continueCursor,
+        limit: EXPORT_PAGE_SIZE,
+      });
+    }
+
+    return rows;
   });
 
 export const reviewRedemption = authMutation
