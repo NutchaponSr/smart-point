@@ -470,6 +470,16 @@ export declare const api: {
     >;
   };
   redemption: {
+    bulkUpdateShippingStatus: FunctionReference<
+      "mutation",
+      "public",
+      {
+        note?: string;
+        redemptionIds: Array<string>;
+        shippingStatus: "pending" | "processing" | "shipped" | "delivered";
+      },
+      any
+    >;
     confirmDelivery: FunctionReference<
       "mutation",
       "public",

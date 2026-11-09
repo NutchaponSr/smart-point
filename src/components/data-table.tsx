@@ -3,6 +3,7 @@ import {
   flexRender,
   getCoreRowModel,
   OnChangeFn,
+  Row,
   RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -15,7 +16,7 @@ interface Props<T> {
   data: T[];
   columns: ColumnDef<T>[];
   footer?: React.ReactNode;
-  enableRowSelection?: boolean;
+  enableRowSelection?: boolean | ((row: Row<T>) => boolean);
   getRowId?: (originalRow: T, index: number) => string;
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;

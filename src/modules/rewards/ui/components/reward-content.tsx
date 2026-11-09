@@ -41,7 +41,7 @@ export const RewardContent = ({ rewards, hasNextPage, onLoad }: Props) => {
       </div>
 
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border rounded-md">
+        <div className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-border rounded-md p-4">
           <img src={illustrationSrc} alt={t("empty-alt")} className="size-20" />
 
           <div className="text-center">

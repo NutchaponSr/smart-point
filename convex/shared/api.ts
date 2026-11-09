@@ -86,6 +86,7 @@ export const api = {
     update: createApiLeaf<"mutation", typeof import("../functions/news").update>(convexApi["news"]["update"], { auth: "required", type: "mutation" }),
   },
   redemption: {
+    bulkUpdateShippingStatus: createApiLeaf<"mutation", typeof import("../functions/redemption").bulkUpdateShippingStatus>(convexApi["redemption"]["bulkUpdateShippingStatus"], { auth: "required", type: "mutation" }),
     confirmDelivery: createApiLeaf<"mutation", typeof import("../functions/redemption").confirmDelivery>(convexApi["redemption"]["confirmDelivery"], { auth: "required", type: "mutation" }),
     exportAll: createApiLeaf<"mutation", typeof import("../functions/redemption").exportAll>(convexApi["redemption"]["exportAll"], { auth: "required", type: "mutation" }),
     getMany: createApiLeaf<"query", typeof import("../functions/redemption").getMany>(convexApi["redemption"]["getMany"], { auth: "required", type: "query" }),

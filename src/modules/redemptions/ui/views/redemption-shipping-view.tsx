@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { RowSelectionState } from "@tanstack/react-table";
 
 import { useCRPC } from "@/lib/convex/crpc";
 
 import { usePagination } from "@/hooks/use-pagination";
 
+import { Button } from "@/components/ui/button";
 import { Main } from "@/components/main";
 import { DataTable } from "@/components/data-table";
 import { Pagination } from "@/components/pagniation";
@@ -21,6 +23,7 @@ import {
   redemptionShippingColumns,
   type RedemptionAdminRow,
 } from "@/modules/redemptions/ui/components/redemption-shipping-columns";
+import { BulkUpdateShippingDialog } from "@/modules/redemptions/ui/components/bulk-update-shipping-dialog";
 import { UpdateShippingDialog } from "@/modules/redemptions/ui/components/update-shipping-dialog";
 
 export const RedemptionShippingView = () => {
@@ -53,6 +56,16 @@ export const RedemptionShippingView = () => {
 
   const [selectedRow, setSelectedRow] = useState<RedemptionAdminRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  const selectionKey = `${filters.page}|${debouncedQuery}|${debouncedBy}|${filters.shippingStatus?.join(",") ?? ""}|${filters.status?.join(",") ?? ""}|${filters.sort}|${filters.from ?? ""}|${filters.to ?? ""}`;
+
+  useEffect(() => {
+    setRowSelection({});
+  }, [selectionKey]);
+
+  const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
 
   const tableColumns = useMemo(
     () =>
@@ -89,6 +102,12 @@ export const RedemptionShippingView = () => {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
+      <BulkUpdateShippingDialog
+        redemptionIds={selectedIds}
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        onUpdated={() => setRowSelection({})}
+      />
 
       <section className="space-y-4 p-4 md:p-8">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_4fr]">
@@ -96,6 +115,15 @@ export const RedemptionShippingView = () => {
 
           <div className="w-full space-y-4">
             <div className="flex flex-wrap items-center justify-end gap-3">
+              {selectedIds.length > 0 && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setBulkOpen(true)}
+                >
+                  อัปเดต {selectedIds.length} รายการ
+                </Button>
+              )}
               <Pagination
                 canGoBack={canGoBack}
                 canGoForward={canGoForward}
@@ -120,6 +148,12 @@ export const RedemptionShippingView = () => {
               <DataTable
                 data={redemptions.page}
                 columns={tableColumns}
+                enableRowSelection={(row) =>
+                  row.original.redemption.status !== "cancelled"
+                }
+                getRowId={(row) => row.redemption._id}
+                rowSelection={rowSelection}
+                onRowSelectionChange={setRowSelection}
               />
             )}
           </div>

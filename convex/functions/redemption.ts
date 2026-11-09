@@ -11,7 +11,7 @@ import {
 import { previousFortnightRange } from "../lib/program-rules";
 
 import type { Doc, Id } from "./_generated/dataModel";
-import type { QueryCtx } from "./generated/server";
+import type { MutationCtx, QueryCtx } from "./generated/server";
 import { internal } from "./_generated/api";
 
 const MAX_EXPORT_ROWS = 10_000;
@@ -1013,6 +1013,55 @@ export const confirmDelivery = authMutation
     });
   });
 
+type ShippingStatusPatchInput = {
+  shippingStatus: ShippingStatus;
+  trackingNumber?: string;
+  carrier?: string;
+  note?: string;
+};
+
+async function applyShippingStatusUpdate(
+  ctx: MutationCtx,
+  actorEmployeeId: Doc<"redemption">["fulfilledBy"],
+  redemptionId: Id<"redemption">,
+  input: ShippingStatusPatchInput,
+): Promise<"updated" | "missing" | "cancelled"> {
+  const redemption = await ctx.db.get(redemptionId);
+  if (!redemption) return "missing";
+  if (redemption.status === "cancelled") return "cancelled";
+
+  const now = Date.now();
+  const patch: Partial<Doc<"redemption">> = {
+    shippingStatus: input.shippingStatus,
+  };
+
+  if (input.trackingNumber !== undefined) {
+    patch.trackingNumber = input.trackingNumber || undefined;
+  }
+  if (input.carrier !== undefined) {
+    patch.carrier = input.carrier || undefined;
+  }
+  if (input.note !== undefined) {
+    patch.note = input.note || undefined;
+  }
+
+  if (input.shippingStatus === "shipped" && redemption.shippedAt == null) {
+    patch.shippedAt = now;
+  }
+
+  if (input.shippingStatus === "delivered") {
+    if (redemption.deliveredAt == null) {
+      patch.deliveredAt = now;
+    }
+    patch.status = "fulfilled";
+    patch.fulfilledAt = redemption.fulfilledAt ?? now;
+    patch.fulfilledBy = redemption.fulfilledBy ?? actorEmployeeId;
+  }
+
+  await ctx.db.patch(redemptionId, patch);
+  return "updated";
+}
+
 export const updateShippingStatus = authMutation
   .input(
     z.object({
@@ -1026,52 +1075,58 @@ export const updateShippingStatus = authMutation
   .mutation(async ({ ctx, input }) => {
     requireAdmin(ctx.user);
 
-    const redemptionId = input.redemptionId as Id<"redemption">;
-    const redemption = await ctx.db.get(redemptionId);
+    const result = await applyShippingStatusUpdate(
+      ctx,
+      ctx.user.employeeId,
+      input.redemptionId as Id<"redemption">,
+      input,
+    );
 
-    if (!redemption) {
+    if (result === "missing") {
       throw new CRPCError({
         code: "NOT_FOUND",
         message: "Redemption not found",
       });
     }
-
-    if (redemption.status === "cancelled") {
+    if (result === "cancelled") {
       throw new CRPCError({
         code: "BAD_REQUEST",
         message: "Cannot update shipping for a cancelled redemption",
       });
     }
+  });
 
-    const now = Date.now();
-    const patch: Partial<Doc<"redemption">> = {
-      shippingStatus: input.shippingStatus,
-    };
+/** อัปเดตสถานะจัดส่งหลายรายการพร้อมกัน ข้ามรายการที่ยกเลิกหรือหาไม่เจอ */
+export const bulkUpdateShippingStatus = authMutation
+  .input(
+    z.object({
+      redemptionIds: z.array(z.string()).min(1).max(100),
+      shippingStatus: z.enum(SHIPPING_STATUS_VALUES),
+      note: z.string().trim().max(2000).optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    requireAdmin(ctx.user);
 
-    if (input.trackingNumber !== undefined) {
-      patch.trackingNumber = input.trackingNumber || undefined;
-    }
-    if (input.carrier !== undefined) {
-      patch.carrier = input.carrier || undefined;
-    }
-    if (input.note !== undefined) {
-      patch.note = input.note || undefined;
+    const uniqueIds = [...new Set(input.redemptionIds)];
+    let updated = 0;
+    let skipped = 0;
+
+    for (const redemptionId of uniqueIds) {
+      const result = await applyShippingStatusUpdate(
+        ctx,
+        ctx.user.employeeId,
+        redemptionId as Id<"redemption">,
+        {
+          shippingStatus: input.shippingStatus,
+          note: input.note,
+        },
+      );
+      if (result === "updated") updated += 1;
+      else skipped += 1;
     }
 
-    if (input.shippingStatus === "shipped" && redemption.shippedAt == null) {
-      patch.shippedAt = now;
-    }
-
-    if (input.shippingStatus === "delivered") {
-      if (redemption.deliveredAt == null) {
-        patch.deliveredAt = now;
-      }
-      patch.status = "fulfilled";
-      patch.fulfilledAt = redemption.fulfilledAt ?? now;
-      patch.fulfilledBy = redemption.fulfilledBy ?? ctx.user.employeeId;
-    }
-
-    await ctx.db.patch(redemptionId, patch);
+    return { updated, skipped };
   });
 
 const SUMMARY_BATCH = 100;

@@ -11,6 +11,7 @@ import { useLocale } from "next-intl";
 import { pickLocalized } from "@/lib/i18n/localized";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/modules/auth/ui/components/user-avatar";
 import {
   shippingStatuses,
@@ -72,6 +73,36 @@ function ShippingStatusBadge({
 export const redemptionShippingColumns = ({
   onUpdate,
 }: ColumnOptions): ColumnDef<RedemptionAdminRow>[] => [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="เลือกทั้งหมด"
+        onClick={(event) => event.stopPropagation()}
+        className="size-5"
+      />
+    ),
+    cell: ({ row }) => {
+      const cancelled = row.original.redemption.status === "cancelled";
+      return (
+        <Checkbox
+          checked={row.getIsSelected()}
+          disabled={cancelled}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="เลือกรายการ"
+          onClick={(event) => event.stopPropagation()}
+          className="size-5"
+        />
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "employee",
     header: "พนักงาน",
