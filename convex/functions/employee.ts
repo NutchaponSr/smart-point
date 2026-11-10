@@ -129,30 +129,6 @@ async function findEmployeeByBusinessId(
     .first();
 }
 
-async function findEmployeeByCitizenId(
-  ctx: QueryCtx | MutationCtx,
-  citizenId: string,
-) {
-  return await ctx.db
-    .query("employee")
-    .withIndex("by_citizenId", (q) => q.eq("citizenId", citizenId))
-    .first();
-}
-
-async function assertCitizenIdAvailable(
-  ctx: QueryCtx | MutationCtx,
-  citizenId: string,
-  exceptEmployeeDocId?: Id<"employee">,
-) {
-  const existing = await findEmployeeByCitizenId(ctx, citizenId);
-  if (existing && existing._id !== exceptEmployeeDocId) {
-    throw new CRPCError({
-      code: "CONFLICT",
-      message: "เลขบัตรประชาชนนี้ถูกใช้แล้ว",
-    });
-  }
-}
-
 async function syncBusinessEmployeeId(
   ctx: MutationCtx,
   employeeDocId: Id<"employee">,
@@ -237,7 +213,6 @@ async function insertEmployeeWalletAndScheduleSignup(
       message: "เลขบัตรประชาชน (5 หลักท้าย) ไม่ถูกต้อง ต้องเป็นตัวเลข 5 หลัก",
     });
   }
-  await assertCitizenIdAvailable(ctx, citizenId);
 
   const name = requireLocalizedName(row.name);
   const department = coerceDepartment(row.department);
@@ -649,7 +624,6 @@ export const bulkImport = authMutation
       message: string;
     }> = [];
     const seenEmployeeIds = new Set<string>();
-    const seenCitizenIds = new Set<string>();
 
     for (const row of input.rows) {
       const businessEmployeeId = normalizeText(row.employeeId, 5);
@@ -673,15 +647,11 @@ export const bulkImport = authMutation
         continue;
       }
 
-      if (
-        seenEmployeeIds.has(businessEmployeeId) ||
-        seenCitizenIds.has(citizenId)
-      ) {
+      if (seenEmployeeIds.has(businessEmployeeId)) {
         skipped += 1;
         continue;
       }
       seenEmployeeIds.add(businessEmployeeId);
-      seenCitizenIds.add(citizenId);
 
       try {
         const email = normalizeOptionalEmail(row.email);
@@ -689,29 +659,11 @@ export const bulkImport = authMutation
           ctx,
           businessEmployeeId,
         );
-        const byCitizenId = await findEmployeeByCitizenId(ctx, citizenId);
 
-        if (
-          byEmployeeId &&
-          byCitizenId &&
-          byEmployeeId._id !== byCitizenId._id
-        ) {
-          errors.push({
-            rowIndex: row.rowIndex,
-            employeeId: row.employeeId,
-            message: "employeeId และ citizenId ชี้คนละคน",
-          });
-          continue;
-        }
-
-        const target = byEmployeeId ?? byCitizenId ?? null;
-
-        if (target) {
+        if (byEmployeeId) {
           if (
-            target.citizenId &&
-            target.citizenId !== citizenId &&
-            byEmployeeId &&
-            !byCitizenId
+            byEmployeeId.citizenId &&
+            byEmployeeId.citizenId !== citizenId
           ) {
             errors.push({
               rowIndex: row.rowIndex,
@@ -723,11 +675,11 @@ export const bulkImport = authMutation
 
           await syncBusinessEmployeeId(
             ctx,
-            target._id,
+            byEmployeeId._id,
             businessEmployeeId,
-            target.employeeId,
+            byEmployeeId.employeeId,
           );
-          await applyEmployeeProfilePatch(ctx, target._id, {
+          await applyEmployeeProfilePatch(ctx, byEmployeeId._id, {
             name: requireLocalizedName(row.name),
             department: coerceDepartment(row.department),
             position: coercePosition(row.position),
@@ -1298,9 +1250,6 @@ export const update = authMutation
       nextBusinessId,
       employee.employeeId,
     );
-    if (citizenId !== undefined) {
-      await assertCitizenIdAvailable(ctx, citizenId, input.employeeId);
-    }
     await applyEmployeeProfilePatch(ctx, input.employeeId, {
       name,
       department,

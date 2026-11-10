@@ -70,7 +70,11 @@ export const EmployeeInfoView = ({ employeeId }: Props) => {
   });
 
   const remove = useMutation(crpc.employee.remove.mutationOptions());
-  const update = useMutation(crpc.employee.update.mutationOptions());
+  const update = useMutation(
+    crpc.employee.update.mutationOptions({
+      meta: { skipErrorToast: true },
+    }),
+  );
 
   const onSubmit = (data: EmployeeEditSchema) => {
     const newPassword = data.newPassword.trim();

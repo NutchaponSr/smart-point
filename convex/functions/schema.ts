@@ -131,7 +131,8 @@ export const employee = convexTable(
     nameSearch: text(),
     email: text(),
     /**
-     * Last 5 digits of national ID — stable identity for monthly import upsert.
+     * Last 5 digits of national ID — also the initial login password.
+     * Not unique: several employees may share the same 5 digits.
      * Optional for legacy rows; required on new create/import once filled.
      */
     citizenId: text(),
@@ -157,7 +158,6 @@ export const employee = convexTable(
       t.employeeId,
     ),
     uniqueIndex("by_employeeId").on(t.employeeId),
-    uniqueIndex("by_citizenId").on(t.citizenId),
     searchIndex("search_name").on(t.nameSearch),
     searchIndex("search_department").on(t.departmentSearch),
     searchIndex("search_email").on(t.email),

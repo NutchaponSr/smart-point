@@ -581,7 +581,6 @@ export type DataModel = {
     indexes: {
       by_id: ["_id"];
       by_creation_time: ["_creationTime"];
-      by_citizenId: ["citizenId", "_creationTime"];
       by_department: ["department", "_creationTime"];
       by_department_employeeId: ["department", "employeeId", "_creationTime"];
       by_division_department_employeeId: [

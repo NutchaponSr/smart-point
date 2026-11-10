@@ -22,8 +22,16 @@ import { employeeSchema, EmployeeSchema } from "@/modules/employee/schema";
 export const NewEmployeeView = () => {
   const crpc = useCRPC();
 
-  const create = useMutation(crpc.employee.create.mutationOptions());
-  const upsertK2 = useMutation(crpc.k2Workflow.upsertViewers.mutationOptions());
+  const create = useMutation(
+    crpc.employee.create.mutationOptions({
+      meta: { skipErrorToast: true },
+    }),
+  );
+  const upsertK2 = useMutation(
+    crpc.k2Workflow.upsertViewers.mutationOptions({
+      meta: { skipErrorToast: true },
+    }),
+  );
   const [k2Viewers, setK2Viewers] = useState<K2ViewerEntry[]>([]);
 
   const form = useForm<EmployeeSchema>({
@@ -66,6 +74,7 @@ export const NewEmployeeView = () => {
             .then(() => {
               form.reset();
               setK2Viewers([]);
+              toast.success("บันทึกข้อมูลพนักงานสำเร็จ");
             })
             .catch((error: unknown) => {
               toast.error(
@@ -74,6 +83,11 @@ export const NewEmployeeView = () => {
                   : "สร้างพนักงานแล้ว แต่บันทึกสิทธิ์ K2 ไม่สำเร็จ",
               );
             });
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "บันทึกไม่สำเร็จ",
+          );
         },
       },
     );
